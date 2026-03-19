@@ -24,6 +24,7 @@ transformers==4.57.6
 huggingface_hub==0.34.0
 hdbscan==0.8.41
 loguru==0.7.2
+setuptools>=70.0.0
 
 # 注意：CPU 模式不包含 qwen-asr[vllm]（vLLM 不支持 CPU）
 # 如需使用 Qwen3-ASR，请使用 GPU 镜像
