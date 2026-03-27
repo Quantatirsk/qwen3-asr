@@ -26,7 +26,7 @@ class Settings:
     API_KEY: Optional[str] = None  # 从环境变量API_KEY读取，如果为None则鉴权可选
 
     # 设备配置
-    DEVICE: str = "auto"  # auto, cpu, cuda:0, npu:0
+    DEVICE: str = "auto"  # auto, cpu, cuda:0, mps, npu:0
 
     # 路径配置
     BASE_DIR: Path = Path(__file__).parent.parent.parent

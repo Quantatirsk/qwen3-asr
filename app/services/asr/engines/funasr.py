@@ -27,6 +27,105 @@ from app.services.asr.engines.global_models import (
 
 logger = logging.getLogger(__name__)
 
+SENTENCE_END_CHARS = frozenset({"。", "！", "？", "；", "!", "?", ";"})
+NO_TIMESTAMP_CHARS = frozenset(
+    {
+        "。",
+        "！",
+        "？",
+        "；",
+        "!",
+        "?",
+        ";",
+        "，",
+        ",",
+        "、",
+        "：",
+        ":",
+        "“",
+        "”",
+        "\"",
+        "'",
+        "（",
+        "）",
+        "(",
+        ")",
+        "[",
+        "]",
+        "{",
+        "}",
+    }
+)
+
+
+def _char_uses_timestamp(ch: str) -> bool:
+    return bool(ch.strip()) and ch not in NO_TIMESTAMP_CHARS
+
+
+def _segments_from_text_timestamps(
+    text: str,
+    timestamps: list[Any],
+) -> list[ASRSegmentResult]:
+    """Build sentence-level segments from punctuated text and token timestamps."""
+    if not text or not timestamps:
+        return []
+
+    segments: list[ASRSegmentResult] = []
+    current_chars: list[str] = []
+    current_start: float | None = None
+    current_end: float | None = None
+    last_known_time = 0.0
+    timestamp_index = 0
+
+    def flush_segment() -> None:
+        nonlocal current_chars, current_start, current_end
+        segment_text = "".join(current_chars).strip()
+        if not segment_text:
+            current_chars = []
+            current_start = None
+            current_end = None
+            return
+
+        start_time = current_start if current_start is not None else last_known_time
+        end_time = current_end if current_end is not None else start_time
+        segments.append(
+            ASRSegmentResult(
+                text=segment_text,
+                start_time=start_time,
+                end_time=max(end_time, start_time),
+            )
+        )
+        current_chars = []
+        current_start = None
+        current_end = None
+
+    for ch in text:
+        current_chars.append(ch)
+
+        if _char_uses_timestamp(ch) and timestamp_index < len(timestamps):
+            raw_timestamp = timestamps[timestamp_index]
+            timestamp_index += 1
+            if (
+                isinstance(raw_timestamp, (list, tuple))
+                and len(raw_timestamp) >= 2
+            ):
+                char_start = float(raw_timestamp[0]) / 1000.0
+                char_end = float(raw_timestamp[1]) / 1000.0
+                if current_start is None:
+                    current_start = char_start
+                current_end = char_end
+                last_known_time = char_end
+
+        if ch in SENTENCE_END_CHARS:
+            flush_segment()
+
+    flush_segment()
+    return [
+        segment
+        for segment in segments
+        if segment.text.strip()
+    ]
+
 
 class TempAutoModelWrapper:
     """临时AutoModel包装器，用于动态组合VAD/PUNC模型"""
@@ -40,6 +139,11 @@ class TempAutoModelWrapper:
         self.vad_kwargs: Any = {}
         self.punc_model: Any = None
         self.punc_kwargs: Any = {}
+        self._base_kwargs_map: Any = None
+
+    def _reset_runtime_configs(self) -> None:
+        """Compat shim for newer FunASR AutoModel.generate()."""
+        return None
 
     def inference(self, *args: Any, **kwargs: Any) -> Any:
         """调用AutoModel.inference"""
@@ -340,20 +444,18 @@ class FunASREngine(RealTimeASREngine):
                 # 如果没有解析到分段信息，尝试从 timestamp 字段解析
                 if not segments:
                     timestamp = result[0].get("timestamp", [])
-                    if timestamp and isinstance(timestamp, list) and len(timestamp) > 0 and full_text:
+                    if (
+                        timestamp
+                        and isinstance(timestamp, list)
+                        and len(timestamp) > 0
+                        and full_text
+                    ):
                         try:
-                            # timestamp 格式: [[start_ms, end_ms], ...]
-                            first_ts = timestamp[0]
-                            last_ts = timestamp[-1]
-                            if isinstance(first_ts, (list, tuple)) and len(first_ts) >= 2:
-                                start_ms = first_ts[0]
-                                end_ms = last_ts[1] if isinstance(last_ts, (list, tuple)) and len(last_ts) >= 2 else first_ts[1]
-                                segments.append(ASRSegmentResult(
-                                    text=full_text,
-                                    start_time=start_ms / 1000.0,
-                                    end_time=end_ms / 1000.0,
-                                ))
-                        except (IndexError, TypeError) as e:
+                            segments = _segments_from_text_timestamps(
+                                full_text,
+                                timestamp,
+                            )
+                        except (IndexError, TypeError, ValueError) as e:
                             logger.warning(f"解析 timestamp 失败: {e}")
 
                 # 应用 ITN 处理
@@ -506,7 +608,7 @@ class FunASREngine(RealTimeASREngine):
             for idx, seg in valid_segments:
                 try:
                     # 加载音频数据为numpy数组
-                    audio_data, sr = librosa.load(seg.temp_file, sr=sample_rate)
+                    audio_data, _sr = librosa.load(seg.temp_file, sr=sample_rate)
                     audio_inputs.append(audio_data)
                 except Exception as e:
                     logger.error(f"加载音频片段 {idx + 1} 失败: {e}")
@@ -602,7 +704,7 @@ class FunASREngine(RealTimeASREngine):
 
 
 # 自动注册 FunASR 引擎（由 manager.py 显式触发）
-def _register_funasr_engine(register_func, model_config_cls):
+def _register_funasr_engine(register_func, _model_config_cls):
     """注册 FunASR 引擎到引擎注册表
 
     Args:

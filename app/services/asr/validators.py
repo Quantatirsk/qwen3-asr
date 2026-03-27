@@ -15,27 +15,13 @@ from ...core.config import settings
 def _detect_qwen_model_by_vram() -> str:
     """根据显存检测应该使用哪个 Qwen 模型
 
-    < 32GB 用 0.6b, >= 32GB 用 1.7b
+    CUDA/MPS: < 32GB 用 0.6b, >= 32GB 用 1.7b
+    CPU: 默认 0.6b
     """
-    try:
-        import torch
+    from app.core.device import get_vram_gb
 
-        if not torch.cuda.is_available():
-            return "qwen3-asr-0.6b"
-
-        # 获取最小显存（多卡情况下）
-        gpu_count = torch.cuda.device_count()
-        min_vram = float('inf')
-        for i in range(gpu_count):
-            vram = torch.cuda.get_device_properties(i).total_memory / (1024**3)
-            min_vram = min(min_vram, vram)
-
-        if min_vram >= 32:
-            return "qwen3-asr-1.7b"
-        else:
-            return "qwen3-asr-0.6b"
-    except Exception:
-        return "qwen3-asr-0.6b"
+    vram = get_vram_gb()
+    return "qwen3-asr-1.7b" if vram >= 32 else "qwen3-asr-0.6b"
 
 
 def _get_active_qwen_model() -> str:
@@ -110,12 +96,11 @@ def _get_dynamic_model_list() -> List[str]:
     # 注册表为空时，返回配置文件中启用的模型（向后兼容）
     all_models = _load_supported_models()
 
-    import torch
-    has_cuda = torch.cuda.is_available()
+    from app.core.device import has_gpu
 
     models = []
-    # Qwen 模型在前
-    if has_cuda:
+    # Qwen 模型在前（CUDA 或 MPS 均可运行）
+    if has_gpu():
         active_qwen = _get_active_qwen_model()
         if active_qwen in all_models:
             models.append(active_qwen)

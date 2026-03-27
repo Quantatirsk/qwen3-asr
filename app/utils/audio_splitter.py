@@ -158,7 +158,7 @@ class AudioSplitter:
                 normalized.append((start_ms, end_ms))
                 continue
 
-            last_start, last_end = normalized[-1]
+            last_end = normalized[-1][1]
             # 有重叠时，优先保持边界，避免与上一段重复采样
             if start_ms < last_end:
                 start_ms = last_end
@@ -183,7 +183,7 @@ class AudioSplitter:
 
             if idx == 0:
                 # 首段过短：并入后段
-                next_start, next_end = merged[idx + 1]
+                next_end = merged[idx + 1][1]
                 merged[idx + 1] = (start_ms, next_end)
                 del merged[idx]
                 continue
@@ -197,8 +197,8 @@ class AudioSplitter:
                 continue
 
             # 中间短段：优先并入时长更短的一侧，避免单段过长
-            prev_start, prev_end = merged[idx - 1]
-            next_start, next_end = merged[idx + 1]
+            prev_start = merged[idx - 1][0]
+            next_end = merged[idx + 1][1]
             merged_with_prev_duration = end_ms - prev_start
             merged_with_next_duration = next_end - start_ms
 

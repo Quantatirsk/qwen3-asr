@@ -185,27 +185,19 @@ class ModelManager:
         return self._default_model_id
 
     def _auto_select_by_vram(self) -> Optional[str]:
-        """根据显存大小自动选择模型
+        """根据显存/内存大小自动选择模型
 
-        < 32GB 用 0.6B, >= 32GB 用 1.7B
-        无 CUDA 时禁用 Qwen3（vLLM 不支持 CPU），使用 paraformer-large
+        CUDA/MPS: < 32GB 用 0.6B, >= 32GB 用 1.7B
+        CPU: 使用 paraformer-large
         """
-        try:
-            import torch
+        from app.core.device import has_gpu, get_vram_gb
 
-            if not torch.cuda.is_available():
+        try:
+            if not has_gpu():
                 return "paraformer-large" if "paraformer-large" in self._models_config else None
 
-            # 获取所有 GPU 的显存，使用最小的那个
-            gpu_count = torch.cuda.device_count()
-            min_vram = float('inf')
-            for i in range(gpu_count):
-                vram = torch.cuda.get_device_properties(i).total_memory / (1024**3)
-                min_vram = min(min_vram, vram)
-
-            total_vram = min_vram  # 使用最小显存作为限制
-
-            if total_vram >= 32:
+            vram = get_vram_gb()
+            if vram >= 32:
                 if "qwen3-asr-1.7b" in self._models_config:
                     return "qwen3-asr-1.7b"
             else:
@@ -383,13 +375,13 @@ class ModelManager:
             预加载结果统计
         """
         logger.info("开始预加载所有模型...")
-        results = {
+        results: dict[str, list[str]] = {
             "success": [],
             "failed": [],
             "skipped": [],
         }
 
-        for model_id, config in self._models_config.items():
+        for model_id, _config in self._models_config.items():
             try:
                 logger.info(f"预加载模型: {model_id}")
                 engine = self.get_asr_engine(model_id)

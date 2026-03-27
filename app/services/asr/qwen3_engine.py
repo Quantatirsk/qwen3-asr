@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Qwen3-ASR 引擎 - 内嵌 vLLM 后端"""
+"""Qwen3-ASR 引擎 - 支持 vLLM（CUDA）和 transformers（MPS/CPU）后端"""
 
 import os
 import logging
@@ -11,7 +11,6 @@ import numpy as np
 
 from .engines import BaseASREngine, ASRRawResult, ASRSegmentResult, WordToken
 from .engines.global_models import get_main_asr_inference_lock
-from ...core.config import settings
 from ...core.exceptions import DefaultServerErrorException
 
 logger = logging.getLogger(__name__)
@@ -151,7 +150,8 @@ class Qwen3ASREngine(BaseASREngine):
 
     @property
     def supports_realtime(self) -> bool:
-        return True
+        # Streaming is only supported by the vLLM backend
+        return getattr(self, "_use_vllm", False)
 
     def __init__(
         self,
@@ -161,44 +161,48 @@ class Qwen3ASREngine(BaseASREngine):
         max_inference_batch_size: int = 32,
         max_new_tokens: int = 1024,
         max_model_len: Optional[int] = None,
-        **kwargs,
+        **_kwargs,
     ):
-        """Initialize Qwen3-ASR engine with dynamic GPU memory allocation
+        """Initialize Qwen3-ASR engine
 
-        Args:
-            model_path: Path to Qwen3-ASR model
-            device: Device to use (auto/cuda/cpu)
-            forced_aligner_path: Path to forced aligner model (optional)
-            max_inference_batch_size: Maximum batch size for inference
-            max_new_tokens: Maximum new tokens for generation (qwen-asr param)
-            max_model_len: Maximum model context length (vLLM param)
-            **kwargs: Additional arguments (ignored for compatibility)
-
-        Environment Variables:
-            QWEN_GPU_MEMORY_UTILIZATION: Override automatic calculation (0.0-1.0)
+        CUDA  → vLLM backend (high throughput)
+        MPS/CPU → transformers backend (compatibility)
         """
+        from app.core.device import detect_device, is_cuda
+
         Qwen3ASRModel = _get_qwen_model()
-        self._device = self._detect_device(device)
+        self._device = detect_device(device)
         self.model_path = model_path
+        self._use_vllm = is_cuda()
 
-        # Dynamic GPU memory allocation
+        try:
+            if self._use_vllm:
+                self.model = self._load_vllm(
+                    Qwen3ASRModel, model_path, forced_aligner_path,
+                    max_inference_batch_size, max_new_tokens, max_model_len,
+                )
+            else:
+                self.model = self._load_transformers(
+                    Qwen3ASRModel, model_path, forced_aligner_path,
+                    max_inference_batch_size, max_new_tokens,
+                )
+            logger.info("Qwen3-ASR model loaded successfully")
+        except Exception as e:
+            logger.error(f"Failed to load Qwen3-ASR model: {e}")
+            raise DefaultServerErrorException(f"Failed to load Qwen3-ASR model: {e}")
+
+    def _load_vllm(
+        self, cls: Any, model_path: str, forced_aligner_path: Optional[str],
+        max_inference_batch_size: int, max_new_tokens: int,
+        max_model_len: Optional[int],
+    ) -> Any:
+        """Load model via vLLM backend (CUDA only)"""
         gpu_memory_utilization = calculate_gpu_memory_utilization(model_path)
-
-        # Prepare forced aligner kwargs
-        fa_kwargs = None
-        if forced_aligner_path:
-            fa_kwargs = {
-                "dtype": torch.bfloat16,
-                "device_map": self._device.split(":")[0] if ":" in self._device else "cuda:0"
-            }
-
         logger.info(
-            f"Loading Qwen3-ASR: {model_path}, "
+            f"Loading Qwen3-ASR (vLLM): {model_path}, "
             f"device={self._device}, gpu_memory_utilization={gpu_memory_utilization}"
         )
 
-        # Separate vLLM kwargs from qwen-asr kwargs
-        # vLLM kwargs (passed to vllm.LLM)
         vllm_kwargs: dict[str, Any] = {
             "model": model_path,
             "gpu_memory_utilization": gpu_memory_utilization,
@@ -206,24 +210,40 @@ class Qwen3ASREngine(BaseASREngine):
         if max_model_len is not None:
             vllm_kwargs["max_model_len"] = max_model_len
 
-        # qwen-asr kwargs (NOT passed to vLLM, handled by qwen-asr library)
         qwen_asr_kwargs: dict[str, Any] = {
             "max_inference_batch_size": max_inference_batch_size,
             "max_new_tokens": max_new_tokens,
         }
         if forced_aligner_path:
             qwen_asr_kwargs["forced_aligner"] = forced_aligner_path
-            qwen_asr_kwargs["forced_aligner_kwargs"] = fa_kwargs
+            qwen_asr_kwargs["forced_aligner_kwargs"] = {
+                "dtype": torch.bfloat16,
+                "device_map": self._device.split(":")[0] if ":" in self._device else "cuda",
+            }
 
-        # Merge and pass to qwen-asr (it will internally pass vLLM kwargs to vllm.LLM)
-        llm_kwargs = {**vllm_kwargs, **qwen_asr_kwargs}
+        return cls.LLM(**{**vllm_kwargs, **qwen_asr_kwargs})
 
-        try:
-            self.model = Qwen3ASRModel.LLM(**llm_kwargs)
-            logger.info("Qwen3-ASR model loaded successfully")
-        except Exception as e:
-            logger.error(f"Failed to load Qwen3-ASR model: {e}")
-            raise DefaultServerErrorException(f"Failed to load Qwen3-ASR model: {e}")
+    def _load_transformers(
+        self, cls: Any, model_path: str, forced_aligner_path: Optional[str],
+        max_inference_batch_size: int, max_new_tokens: int,
+    ) -> Any:
+        """Load model via transformers backend (MPS / CPU)"""
+        logger.info(f"Loading Qwen3-ASR (transformers): {model_path}, device={self._device}")
+
+        pt_kwargs: dict[str, Any] = {
+            "dtype": torch.float16,
+            "device_map": self._device,
+            "max_inference_batch_size": max_inference_batch_size,
+            "max_new_tokens": max_new_tokens,
+        }
+        if forced_aligner_path:
+            pt_kwargs["forced_aligner"] = forced_aligner_path
+            pt_kwargs["forced_aligner_kwargs"] = {
+                "dtype": torch.float16,
+                "device_map": self._device,
+            }
+
+        return cls.from_pretrained(model_path, **pt_kwargs)
 
     @_handle_asr_error("转写")
     def transcribe_file(
@@ -271,8 +291,9 @@ class Qwen3ASREngine(BaseASREngine):
 
     def _to_segments(self, text: str, time_stamps: Any, word_level: bool) -> List[ASRSegmentResult]:
         """转换时间戳为分段"""
-        items = getattr(getattr(time_stamps, "items", None), "__iter__", lambda: [])()
-        items = list(items)
+        items: List[Any] = list(
+            getattr(getattr(time_stamps, "items", None), "__iter__", lambda: [])()
+        )
 
         if not items:
             return [ASRSegmentResult(text=text, start_time=0.0, end_time=0.0)] if text else []
@@ -405,7 +426,7 @@ class Qwen3ASREngine(BaseASREngine):
         return self._device
 
 
-def _register_qwen3_engine(register_func, model_config_cls):
+def _register_qwen3_engine(register_func, _model_config_cls):
     from app.core.config import settings
 
     def _create(config):

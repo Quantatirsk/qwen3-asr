@@ -37,9 +37,9 @@ _main_asr_inference_lock = threading.Lock()
 
 def _resolve_device(device: str) -> str:
     """解析设备字符串，将 auto 转换为实际的设备"""
-    if device == "auto":
-        return "cuda" if torch.cuda.is_available() else "cpu"
-    return device
+    from app.core.device import detect_device
+
+    return detect_device(device)
 
 
 def get_global_vad_model(device: str):

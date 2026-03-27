@@ -5,11 +5,12 @@
 """
 
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def print_model_statistics(result: dict, use_logger: bool = True):
+def print_model_statistics(result: dict[str, Any], use_logger: bool = True) -> None:
     """打印模型加载统计信息 - KISS版本：只显示已加载的模型"""
     output = logger.info if use_logger else print
 
@@ -40,40 +41,25 @@ def print_model_statistics(result: dict, use_logger: bool = True):
     output("=" * 50)
 
 
-def _has_cuda() -> bool:
-    """检查是否有 CUDA 可用"""
-    try:
-        import torch
-        return torch.cuda.is_available()
-    except Exception:
-        return False
-
-
 def _detect_qwen_model_by_vram() -> str | None:
     """根据显存检测应该使用哪个 Qwen 模型
 
-    < 32GB 用 0.6b, >= 32GB 用 1.7b
-    CPU 环境返回 None（vLLM 不支持 CPU）
+    CUDA/MPS: < 32GB 用 0.6b, >= 32GB 用 1.7b
+    CPU: 返回 None（不支持 Qwen）
     """
-    if not _has_cuda():
+    from ..core.device import has_gpu, get_vram_gb
+
+    if not has_gpu():
         return None
 
-    try:
-        import torch
-
-        min_vram = min(
-            torch.cuda.get_device_properties(i).total_memory / (1024**3)
-            for i in range(torch.cuda.device_count())
-        )
-        return "qwen3-asr-1.7b" if min_vram >= 32 else "qwen3-asr-0.6b"
-    except Exception:
-        return "qwen3-asr-0.6b"
+    vram = get_vram_gb()
+    return "qwen3-asr-1.7b" if vram >= 32 else "qwen3-asr-0.6b"
 
 
 def _resolve_models_to_load(all_available_models: list[str], config: str) -> list[str]:
     """解析配置，返回应加载的模型列表
 
-    CPU 环境下自动过滤 Qwen 模型（vLLM 不支持 CPU）
+    纯 CPU 环境下自动过滤 Qwen 模型
 
     Args:
         all_available_models: 所有可用模型ID
@@ -82,16 +68,17 @@ def _resolve_models_to_load(all_available_models: list[str], config: str) -> lis
     Returns:
         应加载的模型ID列表
     """
+    from ..core.device import has_gpu
+
     cfg = config.strip()
     cfg_lower = cfg.lower()
-    has_cuda = _has_cuda()
+    gpu_available = has_gpu()
 
-    # all: 加载所有（CPU 下过滤 Qwen）
+    # all: 加载所有（纯 CPU 下过滤 Qwen）
     if cfg_lower == "all":
-        if has_cuda:
+        if gpu_available:
             logger.info("📝 ENABLED_MODELS=all，加载所有模型")
             return all_available_models
-        # CPU: 只加载非 Qwen 模型
         filtered = [m for m in all_available_models if not m.startswith("qwen3-asr-")]
         logger.info(f"📝 ENABLED_MODELS=all，CPU环境过滤Qwen，加载: {filtered}")
         return filtered
@@ -107,17 +94,16 @@ def _resolve_models_to_load(all_available_models: list[str], config: str) -> lis
             models.append("paraformer-large")
         return models
 
-    # 其他: 精确匹配，过滤掉不存在的（CPU 下额外过滤 Qwen）
+    # 其他: 精确匹配，过滤掉不存在的（纯 CPU 下额外过滤 Qwen）
     requested = [m.strip() for m in config.split(",") if m.strip()]
     result = [m for m in requested if m in all_available_models]
-    if not has_cuda:
-        # CPU 环境过滤 Qwen
+    if not gpu_available:
         result = [m for m in result if not m.startswith("qwen3-asr-")]
     logger.info(f"📝 ENABLED_MODELS={config}，加载指定模型: {result}")
     return result
 
 
-def preload_models() -> dict:
+def preload_models() -> dict[str, Any]:
     """
     预加载所有需要的模型（根据 ENABLE_* 配置过滤）
 
@@ -131,7 +117,7 @@ def preload_models() -> dict:
     except Exception:
         pass  # 修复失败不影响启动
 
-    result = {
+    result: dict[str, Any] = {
         "asr_models": {},  # 所有ASR模型加载状态
         "vad_model": {"loaded": False, "error": None},
         "punc_model": {"loaded": False, "error": None},

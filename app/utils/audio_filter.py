@@ -26,7 +26,7 @@ def calculate_rms_energy(audio_array: np.ndarray) -> float:
 
 def is_nearfield_voice(
     audio_array: np.ndarray,
-    sample_rate: int = 16000,
+    sample_rate: int = 16000,  # noqa: ARG001
     rms_threshold: float = 0.01,
     enable_filter: bool = True,
 ) -> Tuple[bool, Dict]:

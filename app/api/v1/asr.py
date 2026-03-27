@@ -321,7 +321,7 @@ async def asr_transcribe(
 
         # 使用音频服务处理音频
         target_sample_rate = int(params.sample_rate) if params.sample_rate else 16000
-        normalized_audio_path, audio_duration, audio_path = await audio_service.process_from_request(
+        normalized_audio_path, _audio_duration, audio_path = await audio_service.process_from_request(
             request=request,
             audio_address=params.audio_address,
             task_id=task_id,

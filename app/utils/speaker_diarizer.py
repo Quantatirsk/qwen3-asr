@@ -52,16 +52,18 @@ class SpeakerSegment:
 
 
 def _resolve_modelscope_device() -> str:
-    """根据配置和硬件自动选择 modelscope pipeline 设备"""
-    configured_device = settings.DEVICE.strip().lower()
+    """根据配置和硬件自动选择 modelscope pipeline 设备
 
-    if configured_device == "auto":
-        return "cuda:0" if torch.cuda.is_available() else "cpu"
+    CAM++ 固定 CPU: ModelScope pipeline 内部预处理产出 CPU tensor，
+    与 MPS 模型不兼容（NNPack convolution 报错）。
+    CAM++ 计算量极小（RTF~0.002），CPU 无性能影响。
+    """
+    from ..core.device import detect_device
 
-    if configured_device == "cuda":
-        return "cuda:0"
-
-    return configured_device
+    device = detect_device(settings.DEVICE)
+    if device == "mps":
+        return "cpu"
+    return device
 
 
 def _move_pipeline_model_to_device(pipeline_instance: Any, modelscope_device: str) -> None:

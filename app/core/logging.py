@@ -9,9 +9,8 @@ import logging.handlers
 import sys
 import os
 import json
-import time
-from datetime import datetime
-from typing import Optional, Dict, Any, Union
+from datetime import datetime, timezone
+from typing import Optional, Dict, Any
 from pathlib import Path
 from .config import settings
 
@@ -53,7 +52,7 @@ class StructuredLogFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """将日志记录格式化为JSON"""
         log_data: Dict[str, Any] = {
-            "timestamp": datetime.utcfromtimestamp(record.created).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
+            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -271,7 +270,7 @@ def setup_logging(
     # 创建处理器列表
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(formatter)
-    handlers = [stream_handler]
+    handlers: list[logging.Handler] = [stream_handler]
 
     # 确定日志文件路径
     if log_file_path:
@@ -341,5 +340,4 @@ def setup_logging(
     if workers > 1 and worker_log_path:
         logger = logging.getLogger(__name__)
         logger.info(f"Worker {current_worker_id} 日志系统已初始化，日志文件: {worker_log_path}")
-
 

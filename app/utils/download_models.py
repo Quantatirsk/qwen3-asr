@@ -49,20 +49,21 @@ def _get_qwen_models() -> list[tuple[str, str]]:
             ("Qwen/Qwen3-ForcedAligner-0.6B", "Qwen3-ForcedAligner"),
         ]
 
-    # auto 模式（或空列表时）根据显存选择
+    # auto 模式（或空列表时）根据显存/内存选择
     try:
-        import torch
-        if torch.cuda.is_available():
-            vram = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-            if vram >= 32:
-                print(f"ENABLED_MODELS=auto，显存 {vram:.1f}GB >= 32GB，加载 Qwen3-ASR-1.7B")
-                return [("Qwen/Qwen3-ASR-1.7B", "Qwen3-ASR 1.7B"), ("Qwen/Qwen3-ForcedAligner-0.6B", "Qwen3-ForcedAligner")]
-            else:
-                print(f"ENABLED_MODELS=auto，显存 {vram:.1f}GB < 32GB，加载 Qwen3-ASR-0.6B")
-                return [("Qwen/Qwen3-ASR-0.6B", "Qwen3-ASR 0.6B"), ("Qwen/Qwen3-ForcedAligner-0.6B", "Qwen3-ForcedAligner")]
+        from app.core.device import has_gpu, get_vram_gb
+
+        if not has_gpu():
+            print("无 GPU，跳过 Qwen3-ASR")
+            return []
+
+        vram = get_vram_gb()
+        if vram >= 32:
+            print(f"ENABLED_MODELS=auto，显存/内存 {vram:.1f}GB >= 32GB，加载 Qwen3-ASR-1.7B")
+            return [("Qwen/Qwen3-ASR-1.7B", "Qwen3-ASR 1.7B"), ("Qwen/Qwen3-ForcedAligner-0.6B", "Qwen3-ForcedAligner")]
         else:
-            print("无 CUDA，跳过 Qwen3-ASR（vLLM 不支持 CPU）")
-            return []  # CPU 模式下不加载 Qwen 模型
+            print(f"ENABLED_MODELS=auto，显存/内存 {vram:.1f}GB < 32GB，加载 Qwen3-ASR-0.6B")
+            return [("Qwen/Qwen3-ASR-0.6B", "Qwen3-ASR 0.6B"), ("Qwen/Qwen3-ForcedAligner-0.6B", "Qwen3-ForcedAligner")]
     except ImportError:
         print("ENABLED_MODELS=auto，默认加载 Qwen3-ASR-1.7B")
         return [("Qwen/Qwen3-ASR-1.7B", "Qwen3-ASR 1.7B"), ("Qwen/Qwen3-ForcedAligner-0.6B", "Qwen3-ForcedAligner")]

@@ -6,7 +6,6 @@ ASR引擎基础模块
 
 import os
 import time
-import torch
 import logging
 from typing import Optional, Dict, List, Any
 from abc import ABC, abstractmethod
@@ -17,7 +16,6 @@ from app.core.config import settings
 from app.core.exceptions import DefaultServerErrorException
 from app.core.logging import log_inference_metrics
 from app.utils.audio import get_audio_duration
-from app.utils.text_processing import apply_itn_to_text
 
 
 logger = logging.getLogger(__name__)
@@ -207,12 +205,14 @@ class BaseASREngine(ABC):
 
                     for seg, result in zip(batch_segments, batch_results):
                         if result and result.text:
+                            start_sec = float(getattr(seg, "start_sec", 0.0))
+                            end_sec = float(getattr(seg, "end_sec", start_sec))
                             results.append(
                                 ASRSegmentResult(
                                     text=result.text,
-                                    start_time=seg.start_sec,
-                                    end_time=seg.end_sec,
-                                    speaker_id=getattr(seg, 'speaker_id', None),
+                                    start_time=start_sec,
+                                    end_time=end_sec,
+                                    speaker_id=getattr(seg, "speaker_id", None),
                                     word_tokens=result.word_tokens if word_timestamps else None,
                                 )
                             )
@@ -414,14 +414,12 @@ class BaseASREngine(ABC):
 
         return results
 
-    def _detect_device(self, device: str = "auto") -> str:
+    @staticmethod
+    def _detect_device(device: str = "auto") -> str:
         """检测可用设备"""
-        if device == "auto":
-            if torch.cuda.is_available():
-                return "cuda:0"
-            else:
-                return "cpu"
-        return device
+        from app.core.device import detect_device
+
+        return detect_device(device)
 
 
 class RealTimeASREngine(BaseASREngine):

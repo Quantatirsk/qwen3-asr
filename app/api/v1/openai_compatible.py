@@ -554,9 +554,6 @@ async def create_transcription(
     normalized_audio_path = None
     response_cleanup_managed = False
 
-    # 性能计时
-    request_start_time = time.time()
-
     logger.info(f"[OpenAI API] 收到转写请求: model={model}, format={response_format}, "
                 f"speaker_diarization={enable_speaker_diarization}, word_level={word_timestamps}, "
                 f"audio_address={'有' if audio_address else '无'}")
