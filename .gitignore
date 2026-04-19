@@ -55,6 +55,8 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+.venv-fastapi-test/
+tests/
 
 # Translations
 *.mo
@@ -169,3 +171,7 @@ modelscope/
 *.gz
 
 *CLAUDE.md
+*AGENTS.md
+
+
+video/

@@ -46,42 +46,9 @@ fi
 echo -e "${GREEN}✓ Python OK${NC}"
 echo ""
 
-# Select models
-echo -e "${BLUE}Select models to export:${NC}"
-echo ""
-echo -e "  ${CYAN}1)${NC} Auto (recommended)"
-echo -e "     Detect GPU VRAM and export appropriate models"
-echo ""
-echo -e "  ${CYAN}2)${NC} All models"
-echo -e "     Qwen3-ASR 1.7B + 0.6B + Paraformer + VAD + CAM++"
-echo ""
-echo -e "  ${CYAN}3)${NC} Paraformer only"
-echo -e "     Lightweight, CPU/GPU compatible (~3GB)"
-echo ""
-echo -e "  ${CYAN}4)${NC} Qwen3-ASR 0.6B + Paraformer"
-echo -e "     Small VRAM option (~6GB)"
-echo ""
-echo -e "  ${CYAN}5)${NC} Qwen3-ASR 1.7B + Paraformer"
-echo -e "     Best quality, requires 16GB+ VRAM (~10GB)"
-echo ""
-
-read -p "Enter choice [1-5]: " choice
-case $choice in
-    1) ENABLED_MODELS="auto"; MODEL_DESC="Auto-detected" ;;
-    2) ENABLED_MODELS="all"; MODEL_DESC="All models" ;;
-    3) ENABLED_MODELS="paraformer-large"; MODEL_DESC="Paraformer only" ;;
-    4) ENABLED_MODELS="qwen3-asr-0.6b,paraformer-large"; MODEL_DESC="Qwen3 0.6B + Paraformer" ;;
-    5) ENABLED_MODELS="qwen3-asr-1.7b,paraformer-large"; MODEL_DESC="Qwen3 1.7B + Paraformer" ;;
-    *) echo -e "${RED}Invalid choice, using auto${NC}"; ENABLED_MODELS="auto"; MODEL_DESC="Auto-detected" ;;
-esac
-
-echo ""
-echo -e "${GREEN}Selected: ${MODEL_DESC}${NC}"
-echo ""
-
 # Confirm
 echo -e "${YELLOW}Export settings:${NC}"
-echo -e "  Models: ${CYAN}${MODEL_DESC}${NC}"
+echo -e "  Models: ${CYAN}Current runtime plan (auto-selected Qwen + realtime stack)${NC}"
 echo -e "  Output: ${CYAN}${OUTPUT_DIR}/${NC}"
 echo ""
 read -p "Start export? [Y/n]: " confirm
@@ -102,14 +69,7 @@ echo ""
 rm -rf "${OUTPUT_DIR}"
 
 # Run Python export
-export ENABLED_MODELS="${ENABLED_MODELS}"
-python3 -c "
-import sys
-sys.path.insert(0, 'app/utils')
-from download_models import download_models
-success = download_models(auto_mode=False, export_dir='${OUTPUT_DIR}')
-sys.exit(0 if success else 1)
-"
+python3 -m app.utils.download_models --export-dir "${OUTPUT_DIR}"
 
 echo ""
 

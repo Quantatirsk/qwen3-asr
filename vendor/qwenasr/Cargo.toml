@@ -1,0 +1,17 @@
+[workspace]
+resolver = "2"
+members = ["crates/qwen-asr", "crates/qwen-asr-cli"]
+exclude = ["flutter/qwen_asr/rust"]  # Cargokit builds independently
+
+[workspace.package]
+version = "0.1.2"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+# x-release-please-version
+qwen-asr = { version = "0.5.0", path = "crates/qwen-asr" }
+
+[profile.release]
+opt-level = 3
+lto = "thin"

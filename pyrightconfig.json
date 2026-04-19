@@ -1,0 +1,14 @@
+{
+  "include": [
+    "app",
+    "start.py"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    "tests",
+    "scripts",
+    "video"
+  ],
+  "venvPath": ".",
+  "venv": ".venv-fastapi-test"
+}

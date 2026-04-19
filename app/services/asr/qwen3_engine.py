@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Qwen3-ASR 引擎 - 支持 vLLM（CUDA）和 transformers（MPS/CPU）后端"""
+"""Qwen3-ASR engine with official vLLM, CPU Rust, and Apple MLX backends."""
 
-import os
 import logging
+import os
 from typing import Optional, List, Any
 from dataclasses import dataclass
 
@@ -10,24 +10,17 @@ import torch
 import numpy as np
 
 from .engines import BaseASREngine, ASRRawResult, ASRSegmentResult, WordToken
-from .engines.global_models import get_main_asr_inference_lock
+from .qwenasr_rust import (
+    QwenASRRustRuntime,
+    is_qwenasr_rust_available,
+    resolve_qwenasr_num_threads,
+)
+from .qwen3_mlx import Qwen3MLXBackend, is_mlx_qwen_available
+from .qwen3_vllm import Qwen3VLLMBackend, is_vllm_available
 from ...core.exceptions import DefaultServerErrorException
+from ...core.config import settings
 
 logger = logging.getLogger(__name__)
-
-# 延迟导入
-_qwen_asr_module = None
-
-def _get_qwen_model():
-    global _qwen_asr_module
-    if _qwen_asr_module is None:
-        try:
-            from qwen_asr import Qwen3ASRModel
-            _qwen_asr_module = Qwen3ASRModel
-        except ImportError:
-            logger.error("qwen-asr 未安装，请运行: pip install qwen-asr[vllm]")
-            raise
-    return _qwen_asr_module
 
 
 def calculate_gpu_memory_utilization(model_path: str) -> float:
@@ -140,6 +133,11 @@ def _get_word_tokens(result, word_level: bool) -> Optional[List[WordToken]]:
 @dataclass
 class Qwen3StreamingState:
     internal_state: Any
+    chunk_size_sec: float = 2.0
+    unfixed_chunk_num: int = 2
+    unfixed_token_num: int = 5
+    max_new_tokens: int = 32
+    language: Optional[str] = None
     chunk_count: int = 0
     last_text: str = ""
     last_language: str = ""
@@ -150,8 +148,7 @@ class Qwen3ASREngine(BaseASREngine):
 
     @property
     def supports_realtime(self) -> bool:
-        # Streaming is only supported by the vLLM backend
-        return getattr(self, "_use_vllm", False)
+        return self._backend in {"vllm", "rust", "mlx"}
 
     def __init__(
         self,
@@ -165,85 +162,123 @@ class Qwen3ASREngine(BaseASREngine):
     ):
         """Initialize Qwen3-ASR engine
 
-        CUDA  → vLLM backend (high throughput)
-        MPS/CPU → transformers backend (compatibility)
+        CUDA -> official vLLM backend
+        CPU  -> QwenASR Rust backend
+        MPS  -> MLX backend
         """
-        from app.core.device import detect_device, is_cuda
+        from app.core.device import detect_device
 
-        Qwen3ASRModel = _get_qwen_model()
         self._device = detect_device(device)
+        self.model_id = model_path
         self.model_path = model_path
-        self._use_vllm = is_cuda()
+        self._backend = self._select_backend()
+        self._forced_aligner_path = forced_aligner_path
 
         try:
-            if self._use_vllm:
+            if self._backend == "vllm":
                 self.model = self._load_vllm(
-                    Qwen3ASRModel, model_path, forced_aligner_path,
+                    model_path, forced_aligner_path,
                     max_inference_batch_size, max_new_tokens, max_model_len,
                 )
-            else:
-                self.model = self._load_transformers(
-                    Qwen3ASRModel, model_path, forced_aligner_path,
-                    max_inference_batch_size, max_new_tokens,
+            elif self._backend == "rust":
+                self.model = self._load_rust_backend(model_path, forced_aligner_path)
+            elif self._backend == "mlx":
+                self.model = self._load_mlx_backend(
+                    model_path=model_path,
+                    forced_aligner_path=forced_aligner_path,
+                    max_new_tokens=max_new_tokens,
                 )
-            logger.info("Qwen3-ASR model loaded successfully")
+            else:
+                raise DefaultServerErrorException(
+                    f"Qwen3-ASR is not available on device '{self._device}'"
+                )
+            self._warmup_forced_aligner()
+            logger.info("Qwen3-ASR model loaded successfully with backend=%s", self._backend)
         except Exception as e:
             logger.error(f"Failed to load Qwen3-ASR model: {e}")
             raise DefaultServerErrorException(f"Failed to load Qwen3-ASR model: {e}")
 
-    def _load_vllm(
-        self, cls: Any, model_path: str, forced_aligner_path: Optional[str],
-        max_inference_batch_size: int, max_new_tokens: int,
-        max_model_len: Optional[int],
-    ) -> Any:
-        """Load model via vLLM backend (CUDA only)"""
-        gpu_memory_utilization = calculate_gpu_memory_utilization(model_path)
-        logger.info(
-            f"Loading Qwen3-ASR (vLLM): {model_path}, "
-            f"device={self._device}, gpu_memory_utilization={gpu_memory_utilization}"
+    def _select_backend(self) -> str:
+        if self._device.startswith("cuda"):
+            if not is_vllm_available():
+                raise DefaultServerErrorException(
+                    "Current Python environment is missing official vLLM nightly. "
+                    "Install it with: pip install --pre 'vllm[audio]'"
+                )
+            return "vllm"
+        if self._device == "mps":
+            if not is_mlx_qwen_available():
+                raise DefaultServerErrorException(
+                    "Current Python environment is missing mlx-qwen3-asr. "
+                    "Apple Silicon Qwen3-ASR now uses the MLX backend. "
+                    "Install it with: pip install 'mlx-qwen3-asr[aligner]'"
+                )
+            return "mlx"
+        if self._device == "cpu" and is_qwenasr_rust_available():
+            return "rust"
+        return "transformers"
+
+    def _load_rust_backend(
+        self,
+        model_path: str,
+        forced_aligner_path: Optional[str],
+    ) -> QwenASRRustRuntime:
+        logger.info("Loading Qwen3-ASR (QwenASR Rust): %s, device=%s", model_path, self._device)
+
+        num_threads = resolve_qwenasr_num_threads(settings.QWEN_RUST_CPU_WORKERS)
+        if not (os.getenv("QWENASR_CPU_NUM_THREADS") or "").strip() and settings.QWEN_RUST_CPU_WORKERS > 1:
+            logger.info(
+                "Using safe QwenASR CPU thread count: num_threads=%s workers=%s",
+                num_threads,
+                settings.QWEN_RUST_CPU_WORKERS,
+            )
+        return QwenASRRustRuntime(
+            model_path=model_path,
+            forced_aligner_path=forced_aligner_path,
+            num_threads=num_threads,
+            verbosity=0,
         )
 
-        vllm_kwargs: dict[str, Any] = {
-            "model": model_path,
-            "gpu_memory_utilization": gpu_memory_utilization,
-        }
-        if max_model_len is not None:
-            vllm_kwargs["max_model_len"] = max_model_len
+    def _load_mlx_backend(
+        self,
+        model_path: str,
+        forced_aligner_path: Optional[str],
+        max_new_tokens: int,
+    ) -> Qwen3MLXBackend:
+        logger.info("Loading Qwen3-ASR (MLX): %s, device=%s", model_path, self._device)
+        return Qwen3MLXBackend(
+            model_path=model_path,
+            forced_aligner_path=forced_aligner_path,
+            max_new_tokens=max_new_tokens,
+        )
 
-        qwen_asr_kwargs: dict[str, Any] = {
-            "max_inference_batch_size": max_inference_batch_size,
-            "max_new_tokens": max_new_tokens,
-        }
-        if forced_aligner_path:
-            qwen_asr_kwargs["forced_aligner"] = forced_aligner_path
-            qwen_asr_kwargs["forced_aligner_kwargs"] = {
-                "dtype": torch.bfloat16,
-                "device_map": self._device.split(":")[0] if ":" in self._device else "cuda",
-            }
+    def _warmup_forced_aligner(self) -> None:
+        if not self._forced_aligner_path:
+            return
+        if self._backend == "vllm":
+            self.model.ensure_forced_aligner_loaded()
+        if self._backend == "mlx":
+            self.model.ensure_forced_aligner_loaded()
 
-        return cls.LLM(**{**vllm_kwargs, **qwen_asr_kwargs})
-
-    def _load_transformers(
-        self, cls: Any, model_path: str, forced_aligner_path: Optional[str],
+    def _load_vllm(
+        self, model_path: str, forced_aligner_path: Optional[str],
         max_inference_batch_size: int, max_new_tokens: int,
-    ) -> Any:
-        """Load model via transformers backend (MPS / CPU)"""
-        logger.info(f"Loading Qwen3-ASR (transformers): {model_path}, device={self._device}")
-
-        pt_kwargs: dict[str, Any] = {
-            "dtype": torch.float16,
-            "device_map": self._device,
-            "max_inference_batch_size": max_inference_batch_size,
-            "max_new_tokens": max_new_tokens,
-        }
-        if forced_aligner_path:
-            pt_kwargs["forced_aligner"] = forced_aligner_path
-            pt_kwargs["forced_aligner_kwargs"] = {
-                "dtype": torch.float16,
-                "device_map": self._device,
-            }
-
-        return cls.from_pretrained(model_path, **pt_kwargs)
+        max_model_len: Optional[int],
+    ) -> Qwen3VLLMBackend:
+        """Load model via official vLLM backend (CUDA only)."""
+        gpu_memory_utilization = calculate_gpu_memory_utilization(model_path)
+        logger.info(
+            f"Loading Qwen3-ASR (official vLLM): {model_path}, "
+            f"device={self._device}, gpu_memory_utilization={gpu_memory_utilization}"
+        )
+        return Qwen3VLLMBackend(
+            model_path=model_path,
+            forced_aligner_path=forced_aligner_path,
+            gpu_memory_utilization=gpu_memory_utilization,
+            max_inference_batch_size=max_inference_batch_size,
+            max_new_tokens=max_new_tokens,
+            max_model_len=max_model_len,
+        )
 
     @_handle_asr_error("转写")
     def transcribe_file(
@@ -255,13 +290,16 @@ class Qwen3ASREngine(BaseASREngine):
         enable_vad: bool = False,
         sample_rate: int = 16000,
     ) -> str:
-        with get_main_asr_inference_lock():
-            results = self.model.transcribe(
-                audio=audio_path,
+        if self._backend == "rust":
+            return self.model.transcribe_file(audio_path)
+        if self._backend == "mlx":
+            return self.model.transcribe_text(audio_path, context=hotwords or "")
+        if self._backend == "vllm":
+            return self.model.transcribe_text(
+                audio_path,
                 context=hotwords or "",
-                return_time_stamps=False,
             )
-        return results[0].text if results else ""
+        raise DefaultServerErrorException(f"Qwen3 backend={self._backend} does not support offline transcription")
 
     @_handle_asr_error("VAD 转写")
     def transcribe_file_with_vad(
@@ -273,20 +311,61 @@ class Qwen3ASREngine(BaseASREngine):
         sample_rate: int = 16000,
         **kwargs,
     ) -> ASRRawResult:
-        word_timestamps = kwargs.get("word_timestamps", True)
-        with get_main_asr_inference_lock():
-            results = self.model.transcribe(
-                audio=audio_path,
-                context=hotwords or "",
-                return_time_stamps=True,
+        if self._backend == "rust":
+            text = self.transcribe_file(
+                audio_path=audio_path,
+                hotwords=hotwords,
+                enable_punctuation=enable_punctuation,
+                enable_itn=enable_itn,
+                sample_rate=sample_rate,
             )
-        if not results:
-            return ASRRawResult(text="", segments=[])
+            if kwargs.get("word_timestamps", False):
+                word_tokens = [
+                    WordToken(
+                        text=str(item["text"]),
+                        start_time=round(float(item["start_ms"]) / 1000.0, 3),
+                        end_time=round(float(item["end_ms"]) / 1000.0, 3),
+                    )
+                    for item in self.model.align_transcript(
+                        audio_path=audio_path,
+                        text=text,
+                        language=kwargs.get("language"),
+                    )
+                ]
+                if word_tokens:
+                    return ASRRawResult(
+                        text=text,
+                        segments=[
+                            ASRSegmentResult(
+                                text=text,
+                                start_time=word_tokens[0].start_time,
+                                end_time=word_tokens[-1].end_time,
+                                word_tokens=word_tokens,
+                            )
+                        ],
+                    )
+            return ASRRawResult(
+                text=text,
+                segments=[ASRSegmentResult(text=text, start_time=0.0, end_time=0.0)] if text else [],
+            )
+        if self._backend == "mlx":
+            word_timestamps = kwargs.get("word_timestamps", False)
+            return self.model.transcribe_raw(
+                audio_path=audio_path,
+                context=hotwords or "",
+                word_timestamps=word_timestamps,
+            )
+        if self._backend == "vllm":
+            return self.model.transcribe_raw(
+                audio_path=audio_path,
+                context=hotwords or "",
+                language=kwargs.get("language"),
+                word_timestamps=kwargs.get("word_timestamps", False),
+            )
 
-        result = results[0]
         return ASRRawResult(
-            text=result.text or "",
-            segments=self._to_segments(result.text, result.time_stamps, word_timestamps)
+            text="",
+            segments=[],
         )
 
     def _to_segments(self, text: str, time_stamps: Any, word_level: bool) -> List[ASRSegmentResult]:
@@ -330,6 +409,16 @@ class Qwen3ASREngine(BaseASREngine):
         sample_rate: int = 16000,
         word_timestamps: bool = False,
     ) -> List[ASRSegmentResult]:
+        if self._backend in {"rust", "mlx"}:
+            return super()._transcribe_batch(
+                segments=segments,
+                hotwords=hotwords,
+                enable_punctuation=enable_punctuation,
+                enable_itn=enable_itn,
+                sample_rate=sample_rate,
+                word_timestamps=word_timestamps,
+            )
+
         output = [ASRSegmentResult(text="", start_time=0.0, end_time=0.0) for _ in segments]
 
         valid: List[tuple[int, Any]] = []
@@ -341,6 +430,22 @@ class Qwen3ASREngine(BaseASREngine):
                 logger.warning(f"Qwen3 批处理片段无效或文件不存在: segment={idx + 1}, file={temp_file}")
 
         if not valid:
+            return output
+
+        if self._backend == "vllm":
+            vllm_results = self.model.transcribe_batch(
+                [seg.temp_file for _, seg in valid],
+                context=hotwords or "",
+                word_timestamps=word_timestamps,
+            )
+            for (idx, seg), result in zip(valid, vllm_results):
+                output[idx] = ASRSegmentResult(
+                    text=result.text,
+                    start_time=round(seg.start_sec, 2),
+                    end_time=round(seg.end_sec, 2),
+                    speaker_id=getattr(seg, "speaker_id", None),
+                    word_tokens=result.word_tokens if word_timestamps else None,
+                )
             return output
 
         def _build_result(seg: Any, result: Any) -> ASRSegmentResult:
@@ -355,12 +460,11 @@ class Qwen3ASREngine(BaseASREngine):
         indices, segs = zip(*valid)
 
         try:
-            with get_main_asr_inference_lock():
-                results = self.model.transcribe(
-                    audio=[seg.temp_file for seg in segs],
-                    context=hotwords or "",
-                    return_time_stamps=word_timestamps,
-                )
+            results = self.model.transcribe(
+                audio=[seg.temp_file for seg in segs],
+                context=hotwords or "",
+                return_time_stamps=word_timestamps,
+            )
             if len(results) != len(segs):
                 raise DefaultServerErrorException(
                     "Qwen3 批量结果数量不匹配: "
@@ -378,12 +482,11 @@ class Qwen3ASREngine(BaseASREngine):
 
         for idx, seg in valid:
             try:
-                with get_main_asr_inference_lock():
-                    single_results = self.model.transcribe(
-                        audio=seg.temp_file,
-                        context=hotwords or "",
-                        return_time_stamps=word_timestamps,
-                    )
+                single_results = self.model.transcribe(
+                    audio=seg.temp_file,
+                    context=hotwords or "",
+                    return_time_stamps=word_timestamps,
+                )
                 if single_results:
                     output[idx] = _build_result(seg, single_results[0])
                 else:
@@ -395,27 +498,148 @@ class Qwen3ASREngine(BaseASREngine):
 
     @_handle_asr_error("初始化流式状态")
     def init_streaming_state(self, context: str = "", language: Optional[str] = None, **kwargs) -> Qwen3StreamingState:
-        return Qwen3StreamingState(
-            internal_state=self.model.init_streaming_state(context=context, language=language, **kwargs),
-            chunk_count=0, last_text="", last_language=""
+        if self._backend not in {"vllm", "rust", "mlx"}:
+            raise DefaultServerErrorException(
+                f"Qwen3 backend={self._backend} does not support realtime streaming"
+            )
+        if self._backend == "rust":
+            if context:
+                logger.debug("QwenASR Rust backend ignores streaming context hints")
+            chunk_size_sec = float(kwargs.get("chunk_size_sec", 2.0))
+            unfixed_chunk_num = int(kwargs.get("unfixed_chunk_num", 2))
+            unfixed_token_num = int(kwargs.get("unfixed_token_num", 5))
+            max_new_tokens = int(kwargs.get("max_new_tokens", 32))
+            stream_handle = self.model.create_stream(
+                chunk_size_sec=chunk_size_sec,
+                unfixed_chunk_num=unfixed_chunk_num,
+                rollback_tokens=unfixed_token_num,
+                max_new_tokens=max_new_tokens,
+                language=language,
+            )
+            return Qwen3StreamingState(
+                internal_state=stream_handle,
+                chunk_size_sec=chunk_size_sec,
+                unfixed_chunk_num=unfixed_chunk_num,
+                unfixed_token_num=unfixed_token_num,
+                max_new_tokens=max_new_tokens,
+                language=language,
+                chunk_count=0,
+                last_text="",
+                last_language=language or "",
+            )
+        if self._backend == "mlx":
+            chunk_size_sec = float(kwargs.get("chunk_size_sec", 2.0))
+            unfixed_chunk_num = int(kwargs.get("unfixed_chunk_num", 2))
+            unfixed_token_num = int(kwargs.get("unfixed_token_num", 5))
+            max_new_tokens = int(kwargs.get("max_new_tokens", 32))
+            streaming_state = self.model.init_streaming_state(
+                context=context,
+                language=language,
+                chunk_size_sec=chunk_size_sec,
+                unfixed_chunk_num=unfixed_chunk_num,
+                unfixed_token_num=unfixed_token_num,
+                max_new_tokens=max_new_tokens,
+                max_context_sec=float(kwargs.get("max_context_sec", 30.0)),
+                finalization_mode=str(kwargs.get("finalization_mode", "accuracy")),
+                endpointing_mode=str(kwargs.get("endpointing_mode", "fixed")),
+            )
+            return Qwen3StreamingState(
+                internal_state=streaming_state,
+                chunk_size_sec=chunk_size_sec,
+                unfixed_chunk_num=unfixed_chunk_num,
+                unfixed_token_num=unfixed_token_num,
+                max_new_tokens=max_new_tokens,
+                language=language,
+                chunk_count=int(getattr(streaming_state, "chunk_id", 0)),
+                last_text=str(getattr(streaming_state, "text", "") or ""),
+                last_language=str(getattr(streaming_state, "language", "") or ""),
+            )
+
+        if self._backend == "vllm":
+            streaming_state = self.model.init_streaming_state(context=context, language=language, **kwargs)
+            return Qwen3StreamingState(
+                internal_state=streaming_state,
+                chunk_size_sec=float(kwargs.get("chunk_size_sec", 2.0)),
+                unfixed_chunk_num=int(kwargs.get("unfixed_chunk_num", 2)),
+                unfixed_token_num=int(kwargs.get("unfixed_token_num", 5)),
+                max_new_tokens=int(kwargs.get("max_new_tokens", 32)),
+                language=language,
+                chunk_count=int(getattr(streaming_state, "chunk_id", 0)),
+                last_text=str(getattr(streaming_state, "text", "") or ""),
+                last_language=str(getattr(streaming_state, "language", "") or ""),
+            )
+
+        raise DefaultServerErrorException(
+            f"Qwen3 backend={self._backend} does not support realtime streaming"
         )
 
     @_handle_asr_error("流式识别")
     def streaming_transcribe(self, pcm16k: np.ndarray, state: Qwen3StreamingState) -> Qwen3StreamingState:
+        if self._backend not in {"vllm", "rust", "mlx"}:
+            raise DefaultServerErrorException(
+                f"Qwen3 backend={self._backend} does not support realtime streaming"
+            )
         pcm = pcm16k.astype(np.float32) / (32768.0 if pcm16k.dtype == np.int16 else 1.0)
-        with get_main_asr_inference_lock():
-            self.model.streaming_transcribe(pcm, state.internal_state)
-        state.chunk_count += 1
-        state.last_text = state.internal_state.text
-        state.last_language = state.internal_state.language
+        if self._backend == "rust":
+            text = self.model.push_stream(
+                stream=state.internal_state,
+                samples=pcm,
+                chunk_size_sec=state.chunk_size_sec,
+                unfixed_chunk_num=state.unfixed_chunk_num,
+                rollback_tokens=state.unfixed_token_num,
+                max_new_tokens=state.max_new_tokens,
+                language=state.language,
+            )
+            state.chunk_count += 1
+            state.last_text = text
+            state.last_language = state.language or ""
+            return state
+        if self._backend == "mlx":
+            streaming_state = self.model.feed_stream(pcm, state.internal_state)
+            state.internal_state = streaming_state
+            state.chunk_count = int(getattr(streaming_state, "chunk_id", state.chunk_count))
+            state.last_text = str(getattr(streaming_state, "text", "") or "")
+            state.last_language = str(getattr(streaming_state, "language", "") or "")
+            return state
+
+        streaming_state = self.model.feed_stream(pcm, state.internal_state)
+        state.internal_state = streaming_state
+        state.chunk_count = int(getattr(streaming_state, "chunk_id", state.chunk_count))
+        state.last_text = str(getattr(streaming_state, "text", "") or "")
+        state.last_language = str(getattr(streaming_state, "language", "") or "")
         return state
 
     @_handle_asr_error("结束流式识别")
     def finish_streaming_transcribe(self, state: Qwen3StreamingState) -> Qwen3StreamingState:
-        with get_main_asr_inference_lock():
-            self.model.finish_streaming_transcribe(state.internal_state)
-        state.last_text = state.internal_state.text
-        state.last_language = state.internal_state.language
+        if self._backend not in {"vllm", "rust", "mlx"}:
+            raise DefaultServerErrorException(
+                f"Qwen3 backend={self._backend} does not support realtime streaming"
+            )
+        if self._backend == "rust":
+            text = self.model.finish_stream(
+                stream=state.internal_state,
+                chunk_size_sec=state.chunk_size_sec,
+                unfixed_chunk_num=state.unfixed_chunk_num,
+                rollback_tokens=state.unfixed_token_num,
+                max_new_tokens=state.max_new_tokens,
+                language=state.language,
+            )
+            state.last_text = text
+            state.last_language = state.language or ""
+            return state
+        if self._backend == "mlx":
+            streaming_state = self.model.finish_stream(state.internal_state)
+            state.internal_state = streaming_state
+            state.chunk_count = int(getattr(streaming_state, "chunk_id", state.chunk_count))
+            state.last_text = str(getattr(streaming_state, "text", "") or "")
+            state.last_language = str(getattr(streaming_state, "language", "") or "")
+            return state
+
+        streaming_state = self.model.finish_stream(state.internal_state)
+        state.internal_state = streaming_state
+        state.chunk_count = int(getattr(streaming_state, "chunk_id", state.chunk_count))
+        state.last_text = str(getattr(streaming_state, "text", "") or "")
+        state.last_language = str(getattr(streaming_state, "language", "") or "")
         return state
 
     def is_model_loaded(self) -> bool:
@@ -426,7 +650,7 @@ class Qwen3ASREngine(BaseASREngine):
         return self._device
 
 
-def _register_qwen3_engine(register_func, _model_config_cls):
+def _register_qwen3_engine(register_func, _declared_entry_cls):
     from app.core.config import settings
 
     def _create(config):

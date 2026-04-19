@@ -2,22 +2,23 @@
     "models": {
         "paraformer-large": {
             "name": "Paraformer Large",
+            "kind": "capability",
             "engine": "funasr",
-            "description": "高精度中文语音识别模型（内置VAD+标点+时间戳）",
+            "description": "中文 WebSocket 实时识别能力（Paraformer realtime stack）",
             "languages": [
                 "zh"
             ],
             "default": false,
             "supports_realtime": true,
             "models": {
-                "offline": "iic/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
                 "realtime": "iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online"
             }
         },
         "qwen3-asr-1.7b": {
             "name": "Qwen3-ASR-1.7B",
+            "kind": "model",
             "engine": "qwen3",
-            "description": "Qwen3-ASR 1.7B，支持52种语言和方言，vLLM后端高性能推理，字级时间戳",
+            "description": "Qwen3-ASR 1.7B，支持52种语言和方言；CUDA 使用 vLLM，Apple Silicon 使用 MLX，CPU 使用 QwenASR Rust backend",
             "languages": [
                 "zh",
                 "en",
@@ -48,8 +49,9 @@
         },
         "qwen3-asr-0.6b": {
             "name": "Qwen3-ASR-0.6B",
+            "kind": "model",
             "engine": "qwen3",
-            "description": "Qwen3-ASR 0.6B，轻量版支持52种语言和方言，vLLM后端高性能推理，字级时间戳，适合小显存环境",
+            "description": "Qwen3-ASR 0.6B，轻量版支持52种语言和方言；CUDA 使用 vLLM，Apple Silicon 使用 MLX，CPU 使用 QwenASR Rust backend",
             "languages": [
                 "zh",
                 "en",

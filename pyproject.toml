@@ -1,0 +1,86 @@
+[project]
+name = "funasr-api"
+version = "1.0.0"
+description = "ASR API service powered by FunASR and Qwen3-ASR"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "fastapi==0.128.0",
+  "fastapi-offline==1.7.6",
+  "uvicorn[standard]==0.40.0",
+  "pydantic==2.12.0",
+  "python-multipart==0.0.22",
+  "funasr==1.3.1",
+  "requests==2.32.5",
+  "modelscope[framework]==1.34.0",
+  "soundfile==0.13.1",
+  "librosa==0.11.0",
+  "pydub==0.25.1",
+  "websockets==16.0",
+  "addict==2.4.0",
+  "datasets==3.6.0",
+  "scipy==1.15.3",
+  "httpx==0.28.1",
+  "wetext==0.1.2",
+  "python-dotenv==1.2.1",
+  "transformers==4.57.6",
+  "huggingface_hub==0.34.0",
+  "hdbscan==0.8.41",
+  "loguru==0.7.2",
+  "setuptools>=70.0.0,<81",
+]
+
+[dependency-groups]
+cpu = [
+  "torch==2.3.1 ; sys_platform == 'linux'",
+  "torchaudio==2.3.1 ; sys_platform == 'linux'",
+]
+gpu = [
+  "vllm[audio] ; sys_platform == 'linux'",
+]
+apple-silicon = [
+  "torch==2.3.1 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+  "torchaudio==2.3.1 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+  "mlx-qwen3-asr[aligner]==0.3.2 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = []
+
+[tool.uv]
+package = false
+default-groups = []
+conflicts = [
+  [
+    { group = "cpu" },
+    { group = "gpu" },
+  ],
+  [
+    { group = "gpu" },
+    { group = "apple-silicon" },
+  ],
+]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu", marker = "platform_system == 'Linux'" },
+]
+torchaudio = [
+  { index = "pytorch-cpu", marker = "platform_system == 'Linux'" },
+]
+vllm = [
+  { index = "vllm-nightly", marker = "platform_system == 'Linux'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "vllm-nightly"
+url = "https://wheels.vllm.ai/nightly"
+explicit = true

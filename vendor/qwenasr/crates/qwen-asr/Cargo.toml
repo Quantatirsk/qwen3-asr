@@ -1,0 +1,29 @@
+[package]
+name = "qwen-asr"
+version = "0.5.0"
+edition.workspace = true
+license.workspace = true
+description = "CPU-only Qwen3-ASR speech recognition (pure Rust)"
+keywords = ["asr", "speech-recognition", "qwen", "inference"]
+categories = ["multimedia::audio"]
+repository = "https://github.com/huanglizhuo/QwenASR"
+documentation = "https://docs.rs/qwen-asr"
+readme = "README.md"
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]
+name = "qwen_asr"
+
+[dependencies]
+libc = "0.2"
+
+[package.metadata.docs.rs]
+no-default-features = true
+
+[features]
+default = ["blas", "vdsp"]
+blas = []
+vdsp = []
+ios = []
+android = []
+macos-ffi = []

@@ -144,198 +144,59 @@ def print_model_statistics(result: dict[str, Any], use_logger: bool = True) -> N
     output("=" * 50)
 
 
-def _detect_qwen_model_by_vram() -> str | None:
-    """根据显存检测应该使用哪个 Qwen 模型
-
-    CUDA/MPS: < 32GB 用 0.6b, >= 32GB 用 1.7b
-    CPU: 返回 None（不支持 Qwen）
-    """
-    from ..core.device import has_gpu, get_vram_gb
-
-    if not has_gpu():
-        return None
-
-    vram = get_vram_gb()
-    return "qwen3-asr-1.7b" if vram >= 32 else "qwen3-asr-0.6b"
-
-
-def _resolve_models_to_load(all_available_models: list[str], config: str) -> list[str]:
-    """解析配置，返回应加载的模型列表
-
-    纯 CPU 环境下自动过滤 Qwen 模型
-
-    Args:
-        all_available_models: 所有可用模型ID
-        config: ENABLED_MODELS 配置值
-
-    Returns:
-        应加载的模型ID列表
-    """
-    from ..core.device import has_gpu
-
-    cfg = config.strip()
-    cfg_lower = cfg.lower()
-    gpu_available = has_gpu()
-
-    # all: 加载所有（纯 CPU 下过滤 Qwen）
-    if cfg_lower == "all":
-        if gpu_available:
-            logger.info("📝 ENABLED_MODELS=all，加载所有模型")
-            return all_available_models
-        filtered = [m for m in all_available_models if not m.startswith("qwen3-asr-")]
-        logger.info(f"📝 ENABLED_MODELS=all，CPU环境过滤Qwen，加载: {filtered}")
-        return filtered
-
-    # auto: 自动检测显存 + paraformer-large
-    if cfg_lower == "auto":
-        qwen_model = _detect_qwen_model_by_vram()
-        models = []
-        if qwen_model and qwen_model in all_available_models:
-            models.append(qwen_model)
-            logger.info(f"📝 ENABLED_MODELS=auto，根据显存选择: {qwen_model}")
-        if "paraformer-large" in all_available_models:
-            models.append("paraformer-large")
-        return models
-
-    # 其他: 精确匹配，过滤掉不存在的（纯 CPU 下额外过滤 Qwen）
-    requested = [m.strip() for m in config.split(",") if m.strip()]
-    result = [m for m in requested if m in all_available_models]
-    if not gpu_available:
-        result = [m for m in result if not m.startswith("qwen3-asr-")]
-    logger.info(f"📝 ENABLED_MODELS={config}，加载指定模型: {result}")
-    return result
+def _should_check_qwen_forced_aligner(
+    resolved_device: str,
+    using_cpu_qwen_rust: bool,
+) -> bool:
+    """Return True when startup integrity should require Qwen forced aligner files."""
+    _ = (resolved_device, using_cpu_qwen_rust)
+    return True
 
 def _build_required_model_integrity_specs() -> list[ModelIntegritySpec]:
     from ..core.config import settings
+    from ..core.device import detect_device
     from ..services.asr.manager import get_model_manager
+    from ..services.asr.model_capabilities import (
+        get_enabled_qwen_huggingface_assets,
+        get_runtime_required_modelscope_assets,
+    )
+    from ..services.asr.model_plan import get_runtime_model_ids
+    from ..services.asr.qwenasr_rust import is_qwenasr_rust_available
     manager = get_model_manager()
-    model_ids = [item["id"] for item in manager.list_models()]
-    enabled_models = _resolve_models_to_load(model_ids, settings.ENABLED_MODELS)
+    model_ids = [item["id"] for item in manager.list_declared_entries()]
+    runtime_models = get_runtime_model_ids(model_ids)
+    resolved_device = detect_device(settings.DEVICE)
+    using_cpu_qwen_rust = (
+        resolved_device == "cpu" and is_qwenasr_rust_available()
+    )
     specs: list[ModelIntegritySpec] = []
 
-    specs.append(
-        _build_modelscope_spec(
-            settings.VAD_MODEL,
-            "VAD",
-            ("configuration.json", "config.yaml", "model.pb"),
-            min_total_size_bytes=1_000_000,
-        )
-    )
-    specs.append(
-        _build_modelscope_spec(
-            "iic/speech_campplus_speaker-diarization_common",
-            "CAM++ Diarization",
-            (
-                "configuration.json",
-                "config.yaml",
-                "onnx/asd.onnx",
-                "onnx/face_recog_ir101.onnx",
-                "onnx/fqa.onnx",
-                "onnx/version-RFB-320.onnx",
-            ),
-            min_total_size_bytes=50_000_000,
-        )
-    )
-    specs.append(
-        _build_modelscope_spec(
-            "damo/speech_campplus_sv_zh-cn_16k-common",
-            "CAM++ Speaker Verification",
-            ("configuration.json", "config.yaml", "campplus_cn_common.bin"),
-            min_total_size_bytes=10_000_000,
-        )
-    )
-    specs.append(
-        _build_modelscope_spec(
-            "damo/speech_campplus-transformer_scl_zh-cn_16k-common",
-            "CAM++ Transformer",
-            ("configuration.json", "campplus_cn_encoder.pt", "transformer_backend.pt"),
-            min_total_size_bytes=10_000_000,
-        )
-    )
-
-    if "paraformer-large" in enabled_models:
-        model_config = manager.get_model_config("paraformer-large")
-        if model_config.offline_model_path:
-            specs.append(
-                _build_modelscope_spec(
-                    model_config.offline_model_path,
-                    "Paraformer Large Offline",
-                    (
-                        "configuration.json",
-                        "config.yaml",
-                        "model.pt",
-                        "tokens.json",
-                        "seg_dict",
-                    ),
-                    min_total_size_bytes=100_000_000,
-                )
-            )
-        if model_config.realtime_model_path:
-            specs.append(
-                _build_modelscope_spec(
-                    model_config.realtime_model_path,
-                    "Paraformer Large Realtime",
-                    (
-                        "configuration.json",
-                        "config.yaml",
-                        "model.pt",
-                        "tokens.json",
-                        "seg_dict",
-                    ),
-                    min_total_size_bytes=100_000_000,
-                )
-            )
+    for asset in get_runtime_required_modelscope_assets(
+        include_realtime_punc=settings.ASR_ENABLE_REALTIME_PUNC,
+    ):
         specs.append(
             _build_modelscope_spec(
-                settings.PUNC_MODEL,
-                "Punctuation Offline",
-                ("configuration.json", "config.yaml", "model.pt", "tokens.json"),
-                min_total_size_bytes=50_000_000,
+                asset.model_id,
+                asset.description,
+                asset.required_patterns,
+                min_total_size_bytes=asset.min_total_size_bytes,
             )
         )
-        if settings.ASR_ENABLE_REALTIME_PUNC:
-            specs.append(
-                _build_modelscope_spec(
-                    settings.PUNC_REALTIME_MODEL,
-                    "Punctuation Realtime",
-                    ("configuration.json", "config.yaml", "model.pt", "tokens.json"),
-                    min_total_size_bytes=50_000_000,
-                )
-            )
-        if settings.ASR_ENABLE_LM and settings.LM_MODEL:
-            specs.append(
-                _build_modelscope_spec(
-                    settings.LM_MODEL,
-                    "N-gram LM",
-                    ("configuration.json", "config.yaml", "TLG.fst"),
-                    min_total_size_bytes=100_000_000,
-                )
-            )
 
-    for model_id in enabled_models:
-        if not model_id.startswith("qwen3-asr-"):
-            continue
-        model_config = manager.get_model_config(model_id)
-        offline_model = model_config.offline_model_path
-        if offline_model:
-            specs.append(
-                _build_huggingface_spec(
-                    offline_model,
-                    f"{model_config.name} Offline",
-                    ("snapshots/*/config.json", "snapshots/*/model.safetensors"),
-                    min_total_size_bytes=500_000_000,
-                )
+    for asset in get_enabled_qwen_huggingface_assets(
+        include_forced_aligner=_should_check_qwen_forced_aligner(
+            resolved_device=resolved_device,
+            using_cpu_qwen_rust=using_cpu_qwen_rust,
+        ),
+    ):
+        specs.append(
+            _build_huggingface_spec(
+                asset.model_id,
+                asset.description,
+                asset.required_patterns,
+                min_total_size_bytes=asset.min_total_size_bytes,
             )
-        forced_aligner = str(model_config.extra_kwargs.get("forced_aligner_path") or "").strip()
-        if forced_aligner:
-            specs.append(
-                _build_huggingface_spec(
-                    forced_aligner,
-                    f"{model_config.name} Forced Aligner",
-                    ("snapshots/*/config.json", "snapshots/*/model.safetensors"),
-                    min_total_size_bytes=500_000_000,
-                )
-            )
+        )
 
     return specs
 
@@ -408,33 +269,33 @@ def preload_models() -> dict[str, Any]:
     }
 
     from ..core.config import settings
-    from ..services.asr.registry import register_loaded_model
+    from ..core.device import detect_device
 
     # 初始化变量，避免未绑定错误
-    asr_engine = None
+    asr_device = detect_device(settings.DEVICE)
     model_manager = None
 
     logger.info("=" * 60)
     logger.info("🔄 开始预加载模型...")
-    logger.info(f"   配置: ENABLED_MODELS={settings.ENABLED_MODELS}")
     logger.info("=" * 60)
 
     # 1. 预加载所有配置的ASR模型（根据 ENABLE_* 配置过滤）
     try:
         from ..services.asr.manager import get_model_manager
+        from ..services.asr.model_plan import get_runtime_model_ids
+        from ..services.asr.runtime import get_runtime_router
 
         model_manager = get_model_manager()
+        runtime_router = get_runtime_router()
 
         # 获取所有模型配置
-        all_models = model_manager.list_models()
+        all_models = model_manager.list_declared_entries()
         model_ids = [m["id"] for m in all_models]
 
-        # 根据配置解析应加载的模型
-        models_to_load = _resolve_models_to_load(model_ids, settings.ENABLED_MODELS)
+        models_to_load = get_runtime_model_ids(model_ids)
 
-        # 如果没有启用任何模型，发出警告
         if not models_to_load:
-            logger.warning(f"⚠️  没有启用任何 ASR 模型！请检查 ENABLED_MODELS 配置: {settings.ENABLED_MODELS}")
+            logger.warning("⚠️  当前环境未解析出可运行的 ASR 模型")
 
         logger.info(f"📋 发现 {len(model_ids)} 个模型配置，将加载 {len(models_to_load)} 个: {', '.join(models_to_load) if models_to_load else '（无）'}")
 
@@ -442,31 +303,8 @@ def preload_models() -> dict[str, Any]:
             result["asr_models"][model_id] = {"loaded": False, "error": None}
 
             try:
-                engine = model_manager.get_asr_engine(model_id)
-
-                if engine.is_model_loaded():
-                    result["asr_models"][model_id]["loaded"] = True
-                    register_loaded_model(model_id)  # 注册到全局注册表
-
-                    # 保存第一个成功加载的引擎引用（用于后续获取device）
-                    if asr_engine is None:
-                        asr_engine = engine
-                else:
-                    result["asr_models"][model_id]["error"] = "模型加载后未正确初始化"
-
-                # 为 Qwen3-ASR 加载流式专用实例（完全隔离状态）
-                # 仅在 ENABLE_STREAMING_VLLM=true 时加载流式实例（默认 false，节省显存）
-                if settings.ENABLE_STREAMING_VLLM and model_id.startswith("qwen3-asr-"):
-                    streaming_key = f"{model_id}-streaming"
-                    result["asr_models"][streaming_key] = {"loaded": False, "error": None}
-                    try:
-                        streaming_engine = model_manager.get_asr_engine(model_id, streaming=True)
-                        if streaming_engine.is_model_loaded():
-                            result["asr_models"][streaming_key]["loaded"] = True
-                        else:
-                            result["asr_models"][streaming_key]["error"] = "模型加载后未正确初始化"
-                    except Exception as e:
-                        result["asr_models"][streaming_key]["error"] = str(e)
+                runtime_router.warmup_model(model_id)
+                result["asr_models"][model_id]["loaded"] = True
 
             except Exception as e:
                 result["asr_models"][model_id]["error"] = str(e)
@@ -483,8 +321,7 @@ def preload_models() -> dict[str, Any]:
     try:
         from ..services.asr.engines import get_global_vad_model
 
-        device = asr_engine.device if asr_engine else settings.DEVICE
-        vad_model = get_global_vad_model(device)
+        vad_model = get_global_vad_model(asr_device)
 
         if vad_model:
             result["vad_model"]["loaded"] = True
@@ -501,8 +338,7 @@ def preload_models() -> dict[str, Any]:
         try:
             from ..services.asr.engines import get_global_punc_model
 
-            device = asr_engine.device if asr_engine else settings.DEVICE
-            punc_model = get_global_punc_model(device)
+            punc_model = get_global_punc_model(asr_device)
 
             if punc_model:
                 result["punc_model"]["loaded"] = True
@@ -519,8 +355,7 @@ def preload_models() -> dict[str, Any]:
         try:
             from ..services.asr.engines import get_global_punc_realtime_model
 
-            device = asr_engine.device if asr_engine else settings.DEVICE
-            punc_realtime_model = get_global_punc_realtime_model(device)
+            punc_realtime_model = get_global_punc_realtime_model(asr_device)
 
             if punc_realtime_model:
                 result["punc_realtime_model"]["loaded"] = True

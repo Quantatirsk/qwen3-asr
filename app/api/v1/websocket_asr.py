@@ -3,7 +3,6 @@
 
 import json
 import logging
-import os
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -12,13 +11,13 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
 
 from ...core.executor import run_sync
 from ...core.exceptions import create_error_response
-from ...services.asr.manager import get_model_manager
+from ...services.asr.runtime import RuntimeEngineLease, get_runtime_router
+from ...services.asr.model_selection import validate_realtime_model_id
 from ...services.asr.qwen3_engine import Qwen3ASREngine, Qwen3StreamingState
-from ...services.websocket_asr import get_aliyun_websocket_asr_service
+from ...services.websocket_asr import AliyunWebSocketASRService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ws/v1/asr", tags=["WebSocket ASR"])
@@ -27,19 +26,6 @@ router = APIRouter(prefix="/ws/v1/asr", tags=["WebSocket ASR"])
 # =============================================================================
 # 工具函数
 # =============================================================================
-
-async def _close_ws(websocket: WebSocket):
-    try:
-        await websocket.close()
-    except Exception:
-        pass
-
-
-def _load_template(filename: str) -> str:
-    path = os.path.join(os.path.dirname(__file__), "..", "..", "templates", filename)
-    with open(path, "r", encoding="utf-8") as f:
-        return f.read()
-
 
 def _convert_audio(audio_bytes: bytes, fmt: str, sample_rate: int) -> Optional[np.ndarray]:
     """转换音频字节为 numpy 数组 (16kHz float32)"""
@@ -63,30 +49,22 @@ def _convert_audio(audio_bytes: bytes, fmt: str, sample_rate: int) -> Optional[n
         return None
 
 
-# =============================================================================
-# FunASR 端点（阿里云协议兼容）
-# =============================================================================
-
-async def _funasr_handler(websocket: WebSocket):
+@router.websocket("")
+@router.websocket("/funasr")
+async def funasr_websocket(websocket: WebSocket):
+    """FunASR WebSocket 端点（向后兼容）"""
     await websocket.accept()
-    service = get_aliyun_websocket_asr_service()
+    service = AliyunWebSocketASRService()
     task_id = f"funasr_ws_{int(time.time())}_{id(websocket)}"
 
     try:
-        await service._process_websocket_connection(websocket, task_id)
+        await service.handle_connection(websocket, task_id)
     except WebSocketDisconnect:
         logger.info(f"[{task_id}] 客户端断开")
     except Exception as e:
         logger.error(f"[{task_id}] 连接异常: {e}")
     finally:
-        await _close_ws(websocket)
-
-
-@router.websocket("")
-@router.websocket("/funasr")
-async def funasr_websocket(websocket: WebSocket):
-    """FunASR WebSocket 端点（向后兼容）"""
-    await _funasr_handler(websocket)
+        await service.cleanup()
 
 
 # =============================================================================
@@ -97,13 +75,14 @@ class ConnectionState(IntEnum):
     READY = 1
     STARTED = 2
     STREAMING = 3
-    COMPLETED = 4
 
 
 @dataclass
 class ConnectionContext:
     state: ConnectionState = ConnectionState.READY
     params: Dict[str, Any] = field(default_factory=dict)
+    engine_lease: Optional[RuntimeEngineLease] = None
+    engine: Optional[Qwen3ASREngine] = None
     audio_buffer: np.ndarray = field(default_factory=lambda: np.array([], dtype=np.float32))
     streaming_state: Optional[Qwen3StreamingState] = None
     silence_samples: int = 0
@@ -114,25 +93,27 @@ class ConnectionContext:
     # 常量
     SILENCE_THRESHOLD = 32000  # 2秒 @ 16kHz
     MAX_BUFFER = 960000        # 60秒 @ 16kHz
-    VAD_THRESHOLD = 0.015      # RMS 能量阈值
-
-
 class Qwen3ASRService:
-    def __init__(self):
-        self.engine: Optional[Qwen3ASREngine] = None
+    async def _ensure_engine(self, ctx: ConnectionContext) -> Qwen3ASREngine:
+        if ctx.engine is not None:
+            return ctx.engine
 
-    def _ensure_engine(self) -> Qwen3ASREngine:
-        if self.engine is None:
-            manager = get_model_manager()
-            default = manager._default_model_id
-            model = default if default in ["qwen3-asr-0.6b", "qwen3-asr-1.7b"] else "qwen3-asr-1.7b"
-            logger.info(f"使用 Qwen3-ASR 模型: {model}")
+        runtime_router = get_runtime_router()
+        model = validate_realtime_model_id("qwen3-asr")
+        logger.info(f"使用 Qwen3-ASR 模型: {model}")
 
-            engine = manager.get_asr_engine(model, streaming=True)
-            if not isinstance(engine, Qwen3ASREngine):
-                raise Exception("当前模型不是 Qwen3-ASR")
-            self.engine = engine
-        return self.engine
+        ctx.engine_lease = await runtime_router.acquire_engine(model)
+        engine = ctx.engine_lease.engine
+        if not isinstance(engine, Qwen3ASREngine):
+            raise Exception("当前模型不是 Qwen3-ASR")
+        if not engine.supports_realtime:
+            raise Exception(
+                f"当前设备 {engine.device} 不支持 Qwen3-ASR 实时流式识别；"
+                "Apple Silicon 上的 Qwen3-ASR 现已改为 MLX 离线路径"
+            )
+
+        ctx.engine = engine
+        return engine
 
     def _has_voice(self, audio: np.ndarray) -> bool:
         return np.sqrt(np.mean(audio ** 2)) >= 0.015
@@ -143,7 +124,7 @@ class Qwen3ASRService:
     async def _truncate(self, websocket: WebSocket, ctx: ConnectionContext, task_id: str, reason: str):
         """执行截断并重置状态"""
         try:
-            engine = self._ensure_engine()
+            engine = await self._ensure_engine(ctx)
 
             # 处理剩余音频
             if len(ctx.audio_buffer) > 0:
@@ -248,7 +229,7 @@ class Qwen3ASRService:
                             "unfixed_token_num": payload.get("unfixed_token_num", 5),
                         }
 
-                        engine = self._ensure_engine()
+                        engine = await self._ensure_engine(ctx)
                         ctx.streaming_state = engine.init_streaming_state(
                             context=ctx.params["context"],
                             language=ctx.params["language"],
@@ -302,7 +283,7 @@ class Qwen3ASRService:
                         chunk = ctx.audio_buffer[:chunk_size]
                         ctx.audio_buffer = ctx.audio_buffer[chunk_size:]
 
-                        engine = self._ensure_engine()
+                        engine = await self._ensure_engine(ctx)
                         ctx.streaming_state = await run_sync(
                             engine.streaming_transcribe, chunk, ctx.streaming_state
                         )
@@ -336,11 +317,18 @@ class Qwen3ASRService:
             logger.error(f"[{task_id}] 连接错误: {e}")
             await self._send_error(websocket, str(e), task_id)
         finally:
+            stream_handle = getattr(getattr(ctx, "streaming_state", None), "internal_state", None)
+            close_stream = getattr(stream_handle, "close", None)
+            if callable(close_stream):
+                close_stream()
+
+            if ctx.engine_lease is not None:
+                await ctx.engine_lease.close()
             logger.info(f"[{task_id}] 连接已关闭")
 
     async def _stop(self, websocket: WebSocket, ctx: ConnectionContext, task_id: str):
         try:
-            engine = self._ensure_engine()
+            engine = await self._ensure_engine(ctx)
 
             if len(ctx.audio_buffer) > 0:
                 ctx.streaming_state = await run_sync(
@@ -393,14 +381,3 @@ async def qwen_asr_websocket(websocket: WebSocket, task_id: Optional[str] = None
     if task_id is None:
         task_id = str(uuid.uuid4())[:8]
     await _qwen3_service.handle_connection(websocket, task_id)
-
-
-# =============================================================================
-# 测试页面
-# =============================================================================
-
-
-@router.get("/test", response_class=HTMLResponse)
-async def websocket_asr_test_page():
-    """WebSocket ASR 测试页面"""
-    return HTMLResponse(content=_load_template("asr_test.html"))

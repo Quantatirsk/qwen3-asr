@@ -7,7 +7,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     HF_HUB_DISABLE_PROGRESS_BARS=1 \
     PIP_BREAK_SYSTEM_PACKAGES=1 \
     PATH=/opt/venv/bin:$PATH \
-    VIRTUAL_ENV=/opt/venv
+    VIRTUAL_ENV=/opt/venv \
+    UV_PROJECT_ENVIRONMENT=/opt/venv
 
 # Add NVIDIA apt repository for CUDA packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -31,12 +32,12 @@ RUN apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install uv and create virtual environment
+# Install uv and sync GPU dependencies from pyproject.toml
 # Ubuntu 24.04 的 Python 是 externally managed，必须使用 venv
 RUN pip install --no-cache-dir uv
-COPY requirements.txt /tmp/requirements.txt
+COPY pyproject.toml uv.lock* /app/
 RUN uv venv /opt/venv && \
-    uv pip install --no-cache -r /tmp/requirements.txt --python /opt/venv/bin/python
+    uv sync --group gpu --no-dev --no-install-project --frozen
 
 # Clean apt cache but keep build-essential and cuda-nvcc-12-6 for FlashInfer JIT compilation
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*

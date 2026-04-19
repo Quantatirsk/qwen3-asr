@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""FunASR-API Server 启动脚本"""
+"""FunASR-API Server CLI entrypoint."""
 
 import sys
 import os
@@ -15,38 +15,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def check_and_download_models() -> bool:
-    """检查并下载缺失的模型"""
-    try:
-        from app.utils.download_models import check_all_models, download_models
-
-        missing = check_all_models()
-        if not missing:
-            return True
-
-        print(f"\n⚠️  检测到 {len(missing)} 个模型未下载")
-        for mid in missing:
-            print(f"  - {mid}")
-
-        # 检测是否为交互式终端（Docker 环境跳过询问）
-        if not sys.stdin.isatty():
-            print("\n非交互式终端，自动下载模型...")
-            return download_models(auto_mode=True)
-
-        response = input("\n自动下载? [Y/n] ").strip().lower()
-        if response in ("", "y", "yes"):
-            success = download_models(auto_mode=True)
-            print("✅ 下载完成" if success else "❌ 下载失败")
-            return success
-        else:
-            print("⚠️  跳过下载，将在使用时下载")
-            return False
-
-    except Exception as e:
-        print(f"⚠️  模型检查失败: {e}")
-        return False
-
-
 def main() -> None:
     """主入口"""
     from app.core.config import settings
@@ -57,28 +25,12 @@ def main() -> None:
     print(f"🚀 FunASR-API | http://{settings.HOST}:{settings.PORT} | {settings.DEVICE}")
 
     if workers == 1:
-        check_and_download_models()
+        from app.bootstrap import run_cli_preflight
 
-        try:
-            from app.utils.model_loader import (
-                preload_models,
-                print_model_statistics,
-                verify_required_models_integrity,
-            )
-
-            integrity_result = verify_required_models_integrity(use_logger=False)
-            invalid_models = integrity_result["invalid_models"]
-            if invalid_models:
-                print("❌ 检测到残缺模型，已阻止服务启动。")
-                print("请修复模型缓存后重试。")
-                sys.exit(1)
-
-            result = preload_models()
-            print_model_statistics(result, use_logger=False)
-        except Exception as e:
-            print(f"⚠️  预加载失败: {e}")
+        if not run_cli_preflight():
+            sys.exit(1)
     else:
-        print(f"多Worker模式({workers})，模型延迟加载")
+        print(f"多Worker模式({workers})，启动前仅进行最小 preflight")
 
     try:
         uvicorn.run(

@@ -75,7 +75,18 @@ async def lifespan(app: FastAPI):
 
     # 所有 Worker 都需要预加载模型
     try:
-        from .utils.model_loader import preload_models
+        from .bootstrap import validate_apple_silicon_runtime
+        from .utils.model_loader import (
+            preload_models,
+            verify_required_models_integrity,
+        )
+
+        if not validate_apple_silicon_runtime():
+            raise RuntimeError("Apple Silicon runtime validation failed")
+
+        integrity_result = verify_required_models_integrity()
+        if integrity_result["invalid_models"]:
+            raise RuntimeError("required model integrity check failed")
 
         logger.info(f"Worker [{worker_id}] 正在加载模型...")
         preload_result = preload_models()

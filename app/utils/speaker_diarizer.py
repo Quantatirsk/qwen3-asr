@@ -11,7 +11,7 @@ import soundfile as sf
 import tempfile
 import os
 import threading
-from typing import Any, List, Mapping, Optional, Sequence
+from typing import Any, List, Mapping, Optional, Sequence, cast
 from dataclasses import dataclass
 
 import torch
@@ -22,6 +22,7 @@ from ..core.exceptions import DefaultServerErrorException
 # 全局 CAM++ pipeline 缓存（单例）
 _global_diarization_pipeline: Any | None = None
 _diarization_pipeline_lock = threading.Lock()
+_diarization_inference_semaphore = threading.BoundedSemaphore(1)
 
 
 @dataclass
@@ -184,7 +185,7 @@ def _enable_batched_sv(
 
             with torch.no_grad():
                 embeddings = sv_model_instance(
-                    torch.from_numpy(batch).to(modelscope_device)
+                    cast(Any, torch).as_tensor(batch).to(modelscope_device)
                 )
 
             if isinstance(embeddings, torch.Tensor):
@@ -280,7 +281,8 @@ class SpeakerDiarizer:
             pipeline = get_global_diarization_pipeline()
 
             logger.info(f"开始说话人分离: {audio_path}")
-            result = pipeline(audio_path)
+            with _diarization_inference_semaphore:
+                result = pipeline(audio_path)
 
             # 解析结果: {'text': [[start, end, speaker_id], ...]}
             # pipeline 返回类型不确定，需要安全地获取 'text' 字段

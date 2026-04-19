@@ -5,8 +5,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     HF_HUB_DISABLE_SYMLINKS_WARNING=1 \
     HF_HUB_DISABLE_PROGRESS_BARS=1 \
+    QWENASR_LIBRARY_PATH=/opt/qwenasr/lib/libqwen_asr.so \
     PATH=/opt/venv/bin:$PATH \
-    VIRTUAL_ENV=/opt/venv
+    VIRTUAL_ENV=/opt/venv \
+    UV_PROJECT_ENVIRONMENT=/opt/venv
 
 # Install system packages required for audio processing
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -14,11 +16,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         sox \
         libsox-dev \
         libsndfile1 \
+        libopenblas-dev \
         nginx \
         build-essential \
         curl
 
 WORKDIR /app
+
+COPY vendor/qwenasr /tmp/qwenasr
 
 # Install uv
 RUN pip install --no-cache-dir uv
@@ -26,23 +31,22 @@ RUN pip install --no-cache-dir uv
 # Create virtual environment
 RUN uv venv /opt/venv
 
-# Pre-install PyTorch CPU wheels to avoid pulling CUDA runtimes
-RUN uv pip install --no-cache \
-        --index-url https://download.pytorch.org/whl/cpu \
-        torch==2.3.1 \
-        torchaudio==2.3.1 \
-        --python /opt/venv/bin/python
-
 # Install Rust compiler (required for sudachipy on ARM64)
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-# Install Python dependencies (CPU version, without vLLM)
-COPY requirements-cpu.txt /tmp/requirements-cpu.txt
-RUN uv pip install --no-cache -r /tmp/requirements-cpu.txt --python /opt/venv/bin/python
+# Build QwenASR Rust shared library for CPU Qwen3-ASR inference
+RUN cargo build --release -p qwen-asr --features macos-ffi --manifest-path /tmp/qwenasr/Cargo.toml \
+    && mkdir -p /opt/qwenasr/lib \
+    && cp /tmp/qwenasr/target/release/libqwen_asr.so /opt/qwenasr/lib/libqwen_asr.so
+
+# Install Python dependencies (CPU mode)
+COPY pyproject.toml uv.lock* /app/
+RUN uv sync --group cpu --no-dev --no-install-project --frozen
 
 # Clean build tools and cache to reduce image size
 RUN apt remove -y build-essential curl && apt autoremove -y \
+    && rm -rf /tmp/qwenasr \
     && rm -rf /root/.cargo /root/.rustup \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 

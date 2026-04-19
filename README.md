@@ -24,7 +24,7 @@ Speech recognition API service powered by [FunASR](https://github.com/alibaba-da
 
 ## Features
 
-- **Multi-Model Support** - Integrates [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR) 1.7B/0.6B and Paraformer Large ASR models
+- **Hybrid Runtime Stack** - Uses auto-selected Qwen3-ASR for offline inference and Paraformer realtime for websocket streaming
 - **Speaker Diarization** - Automatic multi-speaker identification using CAM++ model
 - **OpenAI API Compatible** - Supports `/v1/audio/transcriptions` endpoint, works with OpenAI SDK
 - **Alibaba Cloud API Compatible** - Supports Alibaba Cloud Speech RESTful API and WebSocket streaming protocol
@@ -32,7 +32,13 @@ Speech recognition API service powered by [FunASR](https://github.com/alibaba-da
 - **Smart Far-Field Filtering** - Automatically filters far-field sounds and ambient noise in streaming ASR
 - **Intelligent Audio Segmentation** - VAD-based greedy merge algorithm for automatic long audio splitting
 - **GPU Batch Processing** - Batch inference support, 2-3x faster than sequential processing
-- **Flexible Configuration** - Environment variable based configuration, load models on demand
+- **Resource-Aware Runtime** - Auto-selects the appropriate Qwen3-ASR model for the current machine
+
+## Acknowledgements
+
+- [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR) provides the official model family and multimodal/vLLM usage guidance
+- [mlx-qwen3-asr](https://github.com/moona3k/mlx-qwen3-asr) provides the Apple Silicon backend used in this project
+- [QwenASR](https://github.com/huanglizhuo/QwenASR) provides the CPU Rust backend vendored by this project
 
 ## Quick Deployment
 
@@ -41,7 +47,7 @@ Speech recognition API service powered by [FunASR](https://github.com/alibaba-da
 ```bash
 # Copy and edit configuration
 cp .env.example .env
-# Edit .env to set ENABLED_MODELS and API_KEY (optional)
+# Edit .env to set API_KEY (optional)
 
 # Start service (GPU version)
 docker-compose up -d
@@ -68,7 +74,6 @@ Optional built-in rate limit settings:
 docker run -d --name funasr-api \
   --gpus all \
   -p 17003:8000 \
-  -e ENABLED_MODELS=auto \
   -e CUDA_VISIBLE_DEVICES=0,1,2,3 \
   -e API_KEY=your_api_key \
   -v ./models/modelscope:/root/.cache/modelscope \
@@ -78,16 +83,17 @@ docker run -d --name funasr-api \
 # CPU version
 docker run -d --name funasr-api \
   -p 17003:8000 \
-  -e ENABLED_MODELS=paraformer-large \
   quantatrisk/funasr-api:cpu-latest
 ```
 
-> **Note**: CPU environment automatically filters Qwen3 models (vLLM requires GPU)
+> **Note**: CPU images now support `qwen3-asr-0.6b` via the bundled QwenASR Rust backend.
+> On CUDA vLLM, CPU Rust, and Apple MLX, `word_timestamps=true` now triggers the forced aligner automatically.
+> On Apple Silicon, Qwen3-ASR now uses the MLX backend for offline inference.
 
-**Offline Deployment**: Use the helper script to prepare models, then copy to the offline machine:
+**Offline Deployment**: Use the helper script to prepare the current runtime model package, then copy to the offline machine:
 
 ```bash
-# 1. Prepare models (interactive selection)
+# 1. Prepare models
 ./scripts/prepare-models.sh
 
 # 2. Copy the package to offline server
@@ -112,15 +118,30 @@ See [MODEL_SETUP.md](./docs/MODEL_SETUP.md) for more details.
 
 **Installation:**
 
+Dependency modes are now unified in [pyproject.toml](/Users/quant/Documents/funasr-api/pyproject.toml) and installed with `uv`:
+
+| Mode | Command | Notes |
+|------|---------|-------|
+| CPU | `uv sync --group cpu` | Linux/CPU runtime, includes CPU PyTorch |
+| GPU | `uv sync --group gpu` | Linux/NVIDIA runtime, installs official vLLM nightly |
+| Apple Silicon | `uv sync --group apple-silicon` | macOS/Apple Silicon runtime, installs MLX backend |
+
 ```bash
 # Clone project
 cd FunASR-API
 
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (Linux/CUDA)
+uv sync --group gpu
 
 # Start service
-python start.py
+uv run python start.py
+```
+
+Apple Silicon local development:
+
+```bash
+uv sync --group apple-silicon
+uv run python start.py
 ```
 
 ## API Endpoints
@@ -130,7 +151,7 @@ python start.py
 | Endpoint | Method | Function |
 |----------|--------|----------|
 | `/v1/audio/transcriptions` | POST | Audio transcription (OpenAI compatible) |
-| `/v1/models` | GET | Model list |
+| `/v1/models` | GET | Offline model list |
 
 **Request Parameters:**
 
@@ -138,10 +159,10 @@ python start.py
 |-----------|------|---------|-------------|
 | `file` | file | Mutually exclusive with `audio_address` | Audio file |
 | `audio_address` | string | Mutually exclusive with `file` | Audio file URL (HTTP/HTTPS) |
-| `model` | string | auto-detect | Model selection (qwen3-asr-1.7b, qwen3-asr-0.6b, paraformer-large) |
+| `model` | string | ignored | Compatibility parameter; ignored for offline requests |
 | `language` | string | Auto-detect | Language code (zh/en/ja) |
 | `enable_speaker_diarization` | bool | `true` | Enable speaker diarization |
-| `word_timestamps` | bool | `true` | Return word-level timestamps (Qwen3-ASR only) |
+| `word_timestamps` | bool | `false` | Return word-level timestamps when the backend supports them. Qwen CUDA vLLM, CPU Rust, and Apple MLX automatically use the forced aligner when enabled. |
 | `response_format` | string | `verbose_json` | Output format |
 | `prompt` | string | - | Prompt text (reserved) |
 | `temperature` | float | `0` | Sampling temperature (reserved) |
@@ -160,7 +181,7 @@ client = OpenAI(base_url="http://localhost:8000/v1", api_key="your_api_key")
 
 with open("audio.wav", "rb") as f:
     transcript = client.audio.transcriptions.create(
-        model="whisper-1",  # Maps to default model
+        model="whisper-1",  # Compatibility field; ignored by offline routing
         file=f,
         response_format="verbose_json"  # Get segments and speaker info
     )
@@ -172,7 +193,7 @@ print(transcript.text)
 curl -X POST "http://localhost:8000/v1/audio/transcriptions" \
   -H "Authorization: Bearer your_api_key" \
   -F "file=@audio.wav" \
-  -F "model=paraformer-large" \
+  -F "model=qwen3-asr-0.6b" \
   -F "response_format=verbose_json" \
   -F "enable_speaker_diarization=true"
 ```
@@ -184,22 +205,21 @@ curl -X POST "http://localhost:8000/v1/audio/transcriptions" \
 | Endpoint | Method | Function |
 |----------|--------|----------|
 | `/stream/v1/asr` | POST | Speech recognition (long audio support) |
-| `/stream/v1/asr/models` | GET | Model list |
+| `/stream/v1/asr/models` | GET | Declared model/capability entries |
 | `/stream/v1/asr/health` | GET | Health check |
 | `/ws/v1/asr` | WebSocket | Streaming ASR (Alibaba Cloud protocol compatible) |
 | `/ws/v1/asr/funasr` | WebSocket | FunASR streaming (backward compatible) |
 | `/ws/v1/asr/qwen` | WebSocket | Qwen3-ASR streaming |
-| `/ws/v1/asr/test` | GET | WebSocket test page |
 
 **Request Parameters:**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `model_id` | string | auto-detect | Model ID |
+| `model_id` | string | ignored | Compatibility parameter; ignored for offline requests |
 | `audio_address` | string | - | Audio URL (optional) |
 | `sample_rate` | int | `16000` | Sample rate |
 | `enable_speaker_diarization` | bool | `true` | Enable speaker diarization |
-| `word_timestamps` | bool | `true` | Return word-level timestamps (Qwen3-ASR only) |
+| `word_timestamps` | bool | `false` | Return word-level timestamps when the backend supports them. Qwen CUDA vLLM, CPU Rust, and Apple MLX automatically use the forced aligner when enabled. |
 | `vocabulary_id` | string | - | Hotwords (format: `word1 weight1 word2 weight2`) |
 
 **Usage Examples:**
@@ -242,8 +262,6 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 }
 ```
 
-**WebSocket Streaming Test:** Visit `http://localhost:8000/ws/v1/asr/test`
-
 ## Speaker Diarization
 
 Multi-speaker automatic identification based on CAM++ model:
@@ -282,56 +300,64 @@ Automatic long audio segmentation:
 **FunASR Model Limitations** (using `/ws/v1/asr` or `/ws/v1/asr/funasr`):
 - ✅ Real-time speech recognition, low latency
 - ✅ Sentence-level timestamps
-- ❌ **Word-level timestamps** (not implemented)
+- ❌ **Word-level timestamps** (not implemented on the FunASR realtime path)
 - ❌ **Confidence scores** (not implemented)
 
 **Qwen3-ASR Streaming** (using `/ws/v1/asr/qwen`):
-- ✅ Word-level timestamps
 - ✅ Multi-language real-time recognition
+- ⚠️ Apple Silicon uses the MLX streaming path
+- ❌ Word-level timestamps are not available in the current streaming path
 
-## Supported Models
+### Qwen3 Runtime Matrix
+
+| Runtime | Backend | Offline | WebSocket Streaming | Word Timestamps Offline | Word Timestamps Streaming | Maturity |
+|---------|---------|---------|---------------------|-------------------------|---------------------------|----------|
+| Linux + NVIDIA GPU | Official vLLM nightly | ✅ | ✅ | ✅ | ❌ | Production-oriented |
+| Apple Silicon | MLX | ✅ | ✅ | ✅ | ❌ | Experimental streaming |
+| CPU | QwenASR Rust | ✅ | ✅ | ✅ (forced aligner) | ❌ | Functional baseline |
+
+## Offline-Capable Models
 
 | Model ID | Name | Description | Features |
 |----------|------|-------------|----------|
-| `qwen3-asr-1.7b` | Qwen3-ASR 1.7B | High-performance multilingual ASR, 52 languages + dialects, vLLM backend | Offline/Realtime |
-| `qwen3-asr-0.6b` | Qwen3-ASR 0.6B | Lightweight multilingual ASR, suitable for low VRAM environments | Offline/Realtime |
-| `paraformer-large` | Paraformer Large | High-precision Chinese speech recognition | Offline/Realtime |
+| `qwen3-asr-1.7b` | Qwen3-ASR 1.7B | High-performance multilingual ASR, 52 languages + dialects; CUDA uses vLLM, Apple Silicon uses MLX | Offline/Realtime |
+| `qwen3-asr-0.6b` | Qwen3-ASR 0.6B | Lightweight multilingual ASR; CUDA uses vLLM, Apple Silicon uses MLX, CPU uses Rust backend | Offline/Realtime |
 
-**Model Selection:**
+## Realtime-Only Capability
 
-Use `ENABLED_MODELS` environment variable to control which models to load:
+| Capability ID | Runtime | Description |
+|---------------|---------|-------------|
+| `paraformer-large` | FunASR realtime | Chinese websocket realtime stack with realtime punctuation |
 
-```bash
-# Options: auto, all, or comma-separated list
-ENABLED_MODELS=auto                    # Auto-detect GPU and load appropriate models
-ENABLED_MODELS=all                     # Load all available models
-ENABLED_MODELS=paraformer-large        # Only Paraformer
-ENABLED_MODELS=qwen3-asr-0.6b          # Only Qwen3 0.6B
-ENABLED_MODELS=paraformer-large,qwen3-asr-0.6b  # Both
-```
-
-**Auto mode behavior:**
-- **VRAM >= 32GB**: Auto-load `qwen3-asr-1.7b` + `paraformer-large`
-- **VRAM < 32GB**: Auto-load `qwen3-asr-0.6b` + `paraformer-large`
-- **No CUDA**: Only `paraformer-large` (Qwen3 requires vLLM/GPU)
+**Runtime selection:**
+- **VRAM >= 32GB**: Select `qwen3-asr-1.7b`
+- **VRAM < 32GB**: Select `qwen3-asr-0.6b`
+- **Apple Silicon**: Select MLX-backed Qwen3
+- **CPU**: Select the vendored Rust-backed `qwen3-asr-0.6b`
+- `paraformer-large` realtime capability is always prepared for websocket streaming
 
 ## Environment Variables
 
+Recommended public settings:
+
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ENABLED_MODELS` | `auto` | Models to load: `auto`, `all`, or comma-separated list |
 | `API_KEY` | - | API authentication key (optional, unauthenticated if not set) |
 | `LOG_LEVEL` | `INFO` | Log level (DEBUG/INFO/WARNING/ERROR) |
 | `MAX_AUDIO_SIZE` | `2048` | Max audio file size (MB, supports units like 2GB) |
 | `ASR_BATCH_SIZE` | `4` | ASR batch size (GPU: 4, CPU: 2) |
-| `MAX_SEGMENT_SEC` | `90` | Max audio segment duration (seconds) |
-| `ENABLE_STREAMING_VLLM` | `false` | Load streaming VLLM instance (saves VRAM) |
-| `MODELSCOPE_PATH` | `~/.cache/modelscope/hub/models` | ModelScope cache path |
-| `HF_HOME` | `~/.cache/huggingface` | HuggingFace cache path (GPU mode) |
-| `ASR_ENABLE_LM` | `true` | Enable language model (Paraformer) |
+| `MAX_SEGMENT_SEC` | `30` | Max audio segment duration (seconds) |
 | `ASR_ENABLE_NEARFIELD_FILTER` | `true` | Enable far-field sound filtering |
 
 > Detailed configuration: [Near-Field Filter Docs](./docs/nearfield_filter.md)
+
+Advanced backend-specific settings:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `QWEN_RUST_CPU_WORKERS` | `2` | CPU Rust backend worker count |
+| `QWENASR_LIBRARY_PATH` | auto-detect | Override vendored Rust dylib/so path |
+| `QWENASR_CPU_NUM_THREADS` | auto / safe `1` | Override per-runtime Rust CPU threads |
 
 ## Resource Requirements
 

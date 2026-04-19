@@ -9,7 +9,7 @@ FunASR-API 使用以下模型仓库：
 | 平台 | 路径 | 用途 |
 |------|------|------|
 | ModelScope | `~/.cache/modelscope/hub/models` | FunASR 模型（Paraformer、VAD、CAM++ 等） |
-| HuggingFace | `~/.cache/huggingface` | Qwen3-ASR 模型（需要 GPU） |
+| HuggingFace | `~/.cache/huggingface` | Qwen3-ASR 模型（CUDA 和 Apple Silicon 共用） |
 
 ## 自动下载（推荐）
 
@@ -26,12 +26,10 @@ FunASR-API 使用以下模型仓库：
 ./scripts/prepare-models.sh
 ```
 
-脚本会显示交互式菜单，让你选择需要下载的模型组合：
-- 仅 Paraformer（CPU/GPU 通用，最小体积）
-- Paraformer + Qwen3-ASR-0.6B（推荐，平衡性能与体积）
-- Paraformer + Qwen3-ASR-1.7B（最佳性能）
-- 仅 Qwen3-ASR-0.6B
-- 仅 Qwen3-ASR-1.7B
+脚本会直接按当前机器的运行计划准备模型包：
+- 自动选择当前应使用的 Qwen3-ASR 版本
+- 始终包含 WebSocket realtime 所需的 Paraformer 栈
+- 始终包含 VAD 与 CAM++ 依赖
 
 下载完成后，脚本会自动打包为 `funasr-models-<timestamp>.tar.gz`，可直接复制到内网服务器使用。
 
@@ -44,12 +42,11 @@ FunASR-API 使用以下模型仓库：
 ```python
 from modelscope import snapshot_download
 
-snapshot_download("iic/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch")
 snapshot_download("damo/speech_fsmn_vad_zh-cn-16k-common-pytorch")
 snapshot_download("iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch")
 snapshot_download("iic/punc_ct-transformer_zh-cn-common-vad_realtime-vocab272727")
 snapshot_download("iic/speech_campplus_speaker-diarization_common")
-snapshot_download("iic/speech_ngram_lm_zh-cn-ai-wesp-fst")
+snapshot_download("iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online")
 ```
 
 **HuggingFace 模型（Qwen3-ASR）：**
@@ -125,7 +122,6 @@ services:
     environment:
       - LOG_LEVEL=INFO
       - DEVICE=auto
-      - ENABLED_MODELS=auto
     restart: unless-stopped
     deploy:
       resources:

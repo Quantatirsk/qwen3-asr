@@ -45,6 +45,11 @@ def create_error_response(
     }
 
 
+def get_http_status_code(status_code: int) -> int:
+    """Map internal API status code to HTTP status code."""
+    return 500 if status_code >= 50000000 else 400
+
+
 class APIException(Exception):
     """API基础异常类"""
 
@@ -142,7 +147,7 @@ async def api_exception_handler(request: Request, exc: Exception) -> JSONRespons
     response_data = api_exc.to_dict()
 
     # 确定HTTP状态码
-    http_status_code = 400 if api_exc.status_code >= 40000000 else 500
+    http_status_code = get_http_status_code(api_exc.status_code)
 
     return JSONResponse(
         content=response_data,

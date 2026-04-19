@@ -5,7 +5,7 @@
 ## 依赖
 
 ```bash
-pip install websockets matplotlib numpy soundfile tqdm
+uv sync --group cpu
 ```
 
 ## 快速开始
@@ -14,7 +14,7 @@ pip install websockets matplotlib numpy soundfile tqdm
 
 ```bash
 # 在项目根目录
-python start.py
+uv run python start.py
 ```
 
 ### 2. 运行测试

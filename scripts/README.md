@@ -1,4 +1,6 @@
-# RMS 音频分析工具
+# 脚本说明
+
+## RMS 音频分析工具
 
 用于分析音频文件的 RMS 能量时序，帮助确定远场声音过滤的最佳阈值。
 
@@ -13,7 +15,7 @@
 ## 安装依赖
 
 ```bash
-pip install numpy matplotlib soundfile
+uv sync --group cpu
 ```
 
 ## 使用方法
@@ -235,10 +237,10 @@ RMS 统计分析
 
 ```bash
 # 安装必要的库
-pip install soundfile
+uv sync --group cpu
 
 # 对于 MP3 文件，可能还需要
-pip install librosa
+uv sync --group cpu
 ```
 
 ### 问题：中文显示乱码

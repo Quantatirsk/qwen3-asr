@@ -23,9 +23,8 @@ from .global_models import (
     get_global_vad_model,
     get_global_punc_model,
     get_global_punc_realtime_model,
-    clear_global_vad_model,
-    clear_global_punc_model,
-    clear_global_punc_realtime_model,
+    get_punc_inference_lock,
+    get_punc_realtime_inference_lock,
 )
 
 __all__ = [
@@ -44,7 +43,6 @@ __all__ = [
     "get_global_vad_model",
     "get_global_punc_model",
     "get_global_punc_realtime_model",
-    "clear_global_vad_model",
-    "clear_global_punc_model",
-    "clear_global_punc_realtime_model",
+    "get_punc_inference_lock",
+    "get_punc_realtime_inference_lock",
 ]

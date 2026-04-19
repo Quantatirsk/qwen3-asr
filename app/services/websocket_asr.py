@@ -52,7 +52,13 @@ from ..models.websocket_asr import (
     AliyunASRMessageName,
     AliyunASRStatus,
 )
-from .asr.engines.global_models import get_main_asr_inference_lock
+from .asr.runtime import RuntimeEngineLease, get_runtime_router
+from .asr.engines import (
+    get_global_punc_model,
+    get_global_punc_realtime_model,
+    get_punc_inference_lock,
+    get_punc_realtime_inference_lock,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -70,51 +76,31 @@ class AliyunWebSocketASRService:
 
     def __init__(self):
         self.asr_engine = None
+        self.engine_lease: Optional[RuntimeEngineLease] = None
 
-    def cleanup(self):
+    async def cleanup(self):
         """清理资源"""
         try:
-            if self.asr_engine:
+            if self.engine_lease is not None:
+                await self.engine_lease.close()
+                self.engine_lease = None
+            if self.asr_engine is not None:
+                self.asr_engine = None
                 logger.info("WebSocket ASR引擎资源已清理")
         except Exception as e:
             logger.warning(f"清理WebSocket ASR资源异常: {e}")
 
     def _ensure_asr_engine(self) -> "BaseASREngine":
         """确保ASR引擎已加载"""
-        if self.asr_engine is None:
-            self._initialize_engine()
         assert self.asr_engine is not None, "ASR引擎初始化失败"
         return self.asr_engine
 
-    def _initialize_engine(self):
-        """初始化ASR引擎（FunASR协议强制使用FunASR引擎）"""
-        try:
-            from .asr.manager import get_model_manager
-
-            model_manager = get_model_manager()
-
-            # 优先尝试 paraformer-large（支持实时）
-            try:
-                self.asr_engine = model_manager.get_asr_engine("paraformer-large")
-                logger.info("WebSocket ASR引擎: 使用 paraformer-large")
-            except Exception as e2:
-                raise Exception(f"无法加载FunASR引擎: {e2}")
-
-            if not self.asr_engine.supports_realtime:
-                raise Exception("当前ASR引擎不支持实时识别")
-
-            logger.info("WebSocket ASR引擎加载完成")
-        except Exception as e:
-            logger.error(f"WebSocket ASR引擎加载失败: {e}")
-            raise e
-
-    async def _process_websocket_connection(self, websocket, task_id: str):
+    async def handle_connection(self, websocket, task_id: str):
         """处理WebSocket连接"""
         state = ConnectionState.READY
         session_id = f"session_{task_id}"
         transcription_params = None
         audio_cache = {}
-        punc_cache = {}
         sentence_index = 0
         audio_time = 0
         sentence_active = False
@@ -133,6 +119,12 @@ class AliyunWebSocketASRService:
             if not result:
                 await self._send_task_failed(websocket, task_id, message)
                 return
+
+            self.engine_lease = await get_runtime_router().acquire_engine("paraformer-large")
+            self.asr_engine = self.engine_lease.engine
+            if not self.asr_engine.supports_realtime:
+                raise Exception("当前ASR引擎不支持实时识别")
+            logger.info("WebSocket ASR引擎: 使用 paraformer-large")
 
             while True:
                 message = await websocket.receive()
@@ -346,7 +338,7 @@ class AliyunWebSocketASRService:
                                 # 判断是否需要送入ASR处理
                                 if not is_nearfield:
                                     # 远场声音：跳过ASR，但如果当前有活跃句子，需要继续计数以触发句子结束
-                                    if settings.ASR_NEARFIELD_FILTER_LOG_ENABLED:
+                                    if logger.isEnabledFor(logging.DEBUG):
                                         logger.debug(
                                             f"[{task_id}] 远场声音已过滤 - "
                                             f"RMS: {filter_metrics['rms_energy']:.6f} (阈值: {effective_rms_threshold:.6f})"
@@ -369,7 +361,7 @@ class AliyunWebSocketASRService:
 
                                 else:
                                     # 近场声音，正常送入ASR处理
-                                    if settings.ASR_NEARFIELD_FILTER_LOG_ENABLED and filter_metrics.get('enabled', True):
+                                    if logger.isEnabledFor(logging.DEBUG) and filter_metrics.get('enabled', True):
                                         logger.debug(
                                             f"[{task_id}] 近场声音检测通过 - "
                                             f"RMS: {filter_metrics['rms_energy']:.6f} (阈值: {effective_rms_threshold:.6f})"
@@ -389,7 +381,6 @@ class AliyunWebSocketASRService:
                                     ) = await self._process_audio_chunk(
                                         audio_bytes_chunk,
                                         audio_cache,
-                                        punc_cache,
                                         transcription_params,
                                         audio_time,
                                         task_id,
@@ -441,7 +432,6 @@ class AliyunWebSocketASRService:
                                     ) = await self._process_audio_chunk(
                                         b"",
                                         audio_cache,
-                                        punc_cache,
                                         transcription_params,
                                         audio_time,
                                         task_id,
@@ -491,7 +481,6 @@ class AliyunWebSocketASRService:
                                     sentence_texts_raw = []
                                     empty_result_count = 0
                                     audio_cache = {}
-                                    punc_cache = {}
                                 elif result_text:
                                     if result_text != last_sentence_text:
                                         last_sentence_text = result_text
@@ -616,11 +605,15 @@ class AliyunWebSocketASRService:
         # 如果最大振幅都很低，直接判定为静音，无需进一步计算
         return max_amplitude < threshold * 2
 
+    @staticmethod
+    def _should_apply_realtime_punc(text: str) -> bool:
+        """Realtime PUNC currently uses a Chinese punctuation model."""
+        return any("\u4e00" <= char <= "\u9fff" for char in text)
+
     async def _process_audio_chunk(
         self,
         audio_bytes: bytes,
         cache: Dict,
-        punc_cache: Dict,
         params: dict,
         current_audio_time: int,
         task_id: str,
@@ -709,18 +702,15 @@ class AliyunWebSocketASRService:
             if realtime_model is None:
                 raise Exception("实时模型未加载")
             # 主ASR推理加全局锁，避免并发连接串音
-            def _realtime_generate_with_lock():
-                with get_main_asr_inference_lock():
-                    return realtime_model.generate(
-                        input=audio_array,
-                        cache=cache,
-                        is_final=is_final,
-                        chunk_size=chunk_size,
-                        encoder_chunk_look_back=encoder_chunk_look_back,
-                        decoder_chunk_look_back=decoder_chunk_look_back,
-                    )
-
-            result = await run_sync(_realtime_generate_with_lock)
+            result = await run_sync(
+                realtime_model.generate,
+                input=audio_array,
+                cache=cache,
+                is_final=is_final,
+                chunk_size=chunk_size,
+                encoder_chunk_look_back=encoder_chunk_look_back,
+                decoder_chunk_look_back=decoder_chunk_look_back,
+            )
 
             logger.debug(f"[{task_id}] ASR模型返回结果: {result}")
 
@@ -737,26 +727,28 @@ class AliyunWebSocketASRService:
                     result_text_raw
                     and settings.ASR_ENABLE_REALTIME_PUNC
                     and params.get("enable_punctuation_prediction", True)
+                    and not params.get("_disable_realtime_punc", False)
+                    and self._should_apply_realtime_punc(result_text_raw)
                 ):
                     try:
-                        from .asr.engines import get_global_punc_realtime_model
-
-                        # 使用全局实时PUNC模型
                         punc_realtime_model = get_global_punc_realtime_model(
                             asr_engine.device
                         )
                         if punc_realtime_model:
-                            # 使用线程池执行标点模型推理
-                            punc_result = await run_sync(
-                                punc_realtime_model.generate,
-                                input=result_text_raw,
-                                cache=punc_cache,
-                            )
+                            def _apply_realtime_punc():
+                                with get_punc_realtime_inference_lock():
+                                    return punc_realtime_model.generate(
+                                        input=result_text_raw,
+                                        cache={},
+                                    )
+
+                            punc_result = await run_sync(_apply_realtime_punc)
                             if punc_result and len(punc_result) > 0:
                                 result_text_with_punc = (
                                     punc_result[0].get("text", result_text_raw).strip()
                                 )
                     except Exception as e:
+                        params["_disable_realtime_punc"] = True
                         logger.warning(f"[{task_id}] 实时标点恢复失败: {e}")
 
                 # 注释掉句末标点符号触发句子结束的逻辑，避免与静音帧检测冲突
@@ -789,11 +781,7 @@ class AliyunWebSocketASRService:
             return text
 
         try:
-            from .asr.engines import get_global_punc_model
-
             asr_engine = self._ensure_asr_engine()
-
-            # 使用全局PUNC模型
             punc_model = get_global_punc_model(asr_engine.device)
 
             if punc_model is None:
@@ -801,8 +789,11 @@ class AliyunWebSocketASRService:
                 return text
 
             logger.debug(f"[{task_id}] 应用标点恢复: '{text}'")
-            # 使用线程池执行标点模型推理
-            result = await run_sync(punc_model.generate, input=text)
+            def _apply_final_punc():
+                with get_punc_inference_lock():
+                    return punc_model.generate(input=text, cache={})
+
+            result = await run_sync(_apply_final_punc)
 
             if result and len(result) > 0:
                 punctuated_text = result[0].get("text", text).strip()
@@ -996,15 +987,3 @@ class AliyunWebSocketASRService:
             logger.error(f"[{task_id}] 发送TaskFailed: {reason}")
         except:
             pass
-
-
-# 全局服务实例
-_aliyun_websocket_asr_service = None
-
-
-def get_aliyun_websocket_asr_service() -> AliyunWebSocketASRService:
-    """获取阿里云WebSocket ASR服务实例"""
-    global _aliyun_websocket_asr_service
-    if _aliyun_websocket_asr_service is None:
-        _aliyun_websocket_asr_service = AliyunWebSocketASRService()
-    return _aliyun_websocket_asr_service

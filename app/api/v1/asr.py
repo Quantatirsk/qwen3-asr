@@ -10,18 +10,18 @@ from fastapi import (
     Depends
 )
 from fastapi.responses import JSONResponse
-from typing import Annotated
+from typing import Annotated, Optional
 import time
 import logging
 
 from ...core.config import settings
-from ...core.executor import run_sync
 from ...core.exceptions import (
     AuthenticationException,
     InvalidParameterException,
     InvalidMessageException,
     UnsupportedSampleRateException,
     DefaultServerErrorException,
+    get_http_status_code,
 )
 from ...core.security import validate_token
 from ...models.common import SampleRate
@@ -35,7 +35,9 @@ from ...models.asr import (
 )
 from ...utils.common import generate_task_id
 from ...services.asr.manager import get_model_manager
-from ...services.asr.validators import AudioParamsValidator
+from ...services.asr.runtime import OfflineASRRequest, get_runtime_router
+from ...services.asr.audio_validation import validate_sample_rate
+from ...services.asr.model_selection import resolve_offline_model_id
 from ...services.audio import get_audio_service
 
 # 配置日志
@@ -45,84 +47,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/stream/v1", tags=["ASR"])
 
 
-def _get_model_schema() -> dict:
-    """获取动态的模型 schema（根据显存配置）"""
-    from ...services.asr.validators import _get_dynamic_model_list, _get_default_model
-
-    try:
-        model_ids = _get_dynamic_model_list()
-        default_model = _get_default_model()
-
-        return {
-            "type": "string",
-            "maxLength": 64,
-            "default": default_model,
-            "enum": model_ids,
-            "example": default_model,
-        }
-    except Exception as e:
-        logger.warning(f"Failed to load dynamic model schema: {e}")
-
-    # Fallback: 使用硬编码的默认值
-    return {
-        "type": "string",
-        "maxLength": 64,
-        "default": "qwen3-asr-1.7b",
-        "enum": ["qwen3-asr-1.7b", "paraformer-large"],
-        "example": "qwen3-asr-1.7b",
-    }
-
-
-def update_openapi_schema():
-    """在应用启动时更新 OpenAPI schema，使其包含正确的模型列表"""
-    from fastapi.routing import APIRoute
-    from ...services.asr.validators import _get_dynamic_model_list, _get_default_model
-
-    model_schema = _get_model_schema()
-    default_model = _get_default_model()
-    available_models = _get_dynamic_model_list()
-
-    # 构建模型描述
-    model_descriptions = {
-        "qwen3-asr-1.7b": "Qwen3-ASR 1.7B，52种语言+方言，vLLM高性能（离线）",
-        "qwen3-asr-0.6b": "Qwen3-ASR 0.6B，轻量版多语言，适合小显存（离线）",
-        "paraformer-large": "高精度中文语音识别，内置VAD+标点（离线/实时）",
-    }
-
-    # 找到 asr_transcribe 路由并更新其 openapi_extra
-    for route in router.routes:
-        if isinstance(route, APIRoute) and route.endpoint.__name__ == "asr_transcribe":
-            if route.openapi_extra:
-                params = route.openapi_extra.get("parameters", [])
-                for param in params:
-                    if param.get("name") == "model_id":
-                        param["schema"] = model_schema
-                        # 构建动态描述
-                        model_list_desc = ", ".join(
-                            f"{m}（{model_descriptions.get(m, '')}）" for m in available_models
-                        )
-                        param["description"] = f"ASR 模型 ID。可选值：{model_list_desc}。默认：{default_model}"
-
-                # 更新 description 中的可用模型说明
-                # 重新构建模型列表部分
-                models_section = "## 可用模型\n"
-                for m in available_models:
-                    desc = model_descriptions.get(m, "")
-                    if m == default_model:
-                        models_section += f"- **{m}**（默认）：{desc}\n"
-                    else:
-                        models_section += f"- **{m}**：{desc}\n"
-
-                # 替换原有的模型说明部分
-                import re
-                route.description = re.sub(
-                    r"## 可用模型\n(- \*\*.+\*\*.+\n)+",
-                    models_section,
-                    route.description
-                )
-            break
-
-
 async def get_asr_params(request: Request) -> ASRQueryParams:
     """从请求中提取并验证ASR参数"""
     # 从URL查询参数中获取
@@ -130,17 +54,11 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
 
     # 使用统一的验证器验证参数
     try:
-        # 验证模型ID
-        if "model_id" in query_params:
-            query_params["model_id"] = AudioParamsValidator.validate_model_id(
-                query_params.get("model_id")
-            )
-
         # 验证采样率（转换为整数）
         if "sample_rate" in query_params and query_params["sample_rate"]:
             try:
                 sample_rate = int(query_params["sample_rate"])  # type: ignore
-                validated_rate = AudioParamsValidator.validate_sample_rate(sample_rate)
+                validated_rate = validate_sample_rate(sample_rate)
                 query_params["sample_rate"] = str(validated_rate)  # type: ignore
             except ValueError:
                 raise InvalidParameterException(
@@ -180,23 +98,18 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
 - 支持长音频自动分段识别（返回带时间戳的分段结果）
 - 最大文件大小：{settings.MAX_AUDIO_SIZE // (1024 * 1024)}MB（可通过环境变量 MAX_AUDIO_SIZE 配置）
 
-## 可用模型
-- **qwen3-asr-1.7b**（默认）：Qwen3-ASR 1.7B，52种语言+方言，vLLM高性能（离线）
-- **qwen3-asr-0.6b**：Qwen3-ASR 0.6B，轻量版多语言，适合小显存（离线）
-- **qwen3-asr**：自动路由到当前已启动的 Qwen3-ASR 版本（根据显存或配置自动选择）
-- **paraformer-large**：高精度中文语音识别，内置VAD+标点（离线/实时）
-
 ## 音频输入方式
 1. **请求体上传**：将音频二进制数据作为请求体发送
 2. **URL 下载**：通过 `audio_address` 参数指定音频文件 URL
 
 ## 注意事项
+- 离线路径固定使用服务当前启用的 Qwen3-ASR 模型；`model_id` 仅为兼容参数，传入后会被忽略
 - `vocabulary_id` 参数用于传递热词，格式：`热词1 权重1 热词2 权重2`（如：`阿里巴巴 20 腾讯 15`）
 - 音频会自动转换为 16kHz 采样率进行识别
 """,
     openapi_extra={
         "parameters": [
-            # 1. 核心参数
+            # 1. 兼容参数
             {
                 "name": "model_id",
                 "in": "query",
@@ -204,11 +117,10 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
                 "schema": {
                     "type": "string",
                     "maxLength": 64,
-                    "default": "qwen3-asr-1.7b",
-                    "enum": ["qwen3-asr-1.7b", "qwen3-asr-0.6b", "paraformer-large"],
-                    "example": "qwen3-asr-1.7b",
+                    "example": "qwen3-asr-0.6b",
                 },
-                "description": "ASR 模型 ID。可选值：qwen3-asr-1.7b（默认，高性能52语言）、qwen3-asr-0.6b（轻量版）、paraformer-large（高精度中文、支持实时）",
+                "description": "兼容参数，将被忽略。离线路径固定使用服务当前启用的唯一 Qwen3-ASR 模型",
+                "deprecated": True,
             },
             # 2. 输入源
             {
@@ -253,10 +165,10 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
                 "required": False,
                 "schema": {
                     "type": "boolean",
-                    "default": True,
-                    "example": True,
+                    "default": False,
+                    "example": False,
                 },
-                "description": "是否返回字词级时间戳（仅 Qwen3-ASR 模型支持）",
+                "description": "是否返回字词级时间戳（默认关闭；Qwen CUDA vLLM / CPU Rust / Apple MLX 在启用时会自动调用 forced aligner）",
             },
             # 5. 增强选项
             {
@@ -308,7 +220,10 @@ async def asr_transcribe(
 
     # 记录请求开始（此时文件已上传完成）
     content_length = request.headers.get("content-length", "unknown")
-    logger.info(f"[{task_id}] 收到ASR请求, model_id={params.model_id}, content_length={content_length}")
+    ignored_model_id = request.query_params.get("model_id")
+    logger.info(f"[{task_id}] 收到ASR请求, content_length={content_length}")
+    if ignored_model_id:
+        logger.info(f"[{task_id}] 忽略客户端传入的离线 model_id={ignored_model_id}")
 
     # 获取音频处理服务
     audio_service = get_audio_service()
@@ -329,14 +244,10 @@ async def asr_transcribe(
         )
 
         # 执行语音识别
-        logger.info(f"[{task_id}] 正在加载ASR模型: {params.model_id or '默认'}...")
-        import sys
-        sys.stdout.flush()
-
-        model_manager = get_model_manager()
-        asr_engine = model_manager.get_asr_engine(params.model_id)  # 使用指定模型或默认模型
-        logger.info(f"[{task_id}] ASR模型加载完成: {params.model_id or '默认'}")
-        sys.stdout.flush()
+        logger.info(f"[{task_id}] 正在加载离线ASR模型...")
+        runtime_router = get_runtime_router()
+        resolved_model_id = resolve_offline_model_id(ignored_model_id)
+        logger.info(f"[{task_id}] ASR模型加载完成: {resolved_model_id}")
 
         # 准备热词（vocabulary_id 参数直接传递热词字符串）
         hotwords = params.vocabulary_id or ""
@@ -345,17 +256,27 @@ async def asr_transcribe(
         # 使用长音频识别方法，自动处理超过60秒的音频
         # 默认开启：标点预测、ITN（数字转换）
         logger.info(f"[{task_id}] 开始调用 transcribe_long_audio (enable_speaker_diarization={params.enable_speaker_diarization})...")
-        sys.stdout.flush()
 
-        asr_result = await run_sync(
-            asr_engine.transcribe_long_audio,
-            audio_path=normalized_audio_path,
-            hotwords=hotwords,
-            enable_punctuation=True,  # 默认开启标点预测
-            enable_itn=True,  # 默认开启数字转换
-            sample_rate=params.sample_rate,
-            enable_speaker_diarization=params.enable_speaker_diarization if params.enable_speaker_diarization is not None else True,
-            word_timestamps=params.word_timestamps if params.word_timestamps is not None else False,
+        asr_result = await runtime_router.run_offline(
+            OfflineASRRequest(
+                model_id=resolved_model_id,
+                audio_path=normalized_audio_path,
+                hotwords=hotwords,
+                enable_punctuation=True,
+                enable_itn=True,
+                sample_rate=int(params.sample_rate or SampleRate.RATE_16000),
+                enable_speaker_diarization=(
+                    params.enable_speaker_diarization
+                    if params.enable_speaker_diarization is not None
+                    else True
+                ),
+                word_timestamps=(
+                    params.word_timestamps
+                    if params.word_timestamps is not None
+                    else False
+                ),
+                task_id=task_id,
+            )
         )
 
         logger.info(f"[{task_id}] 识别完成，共 {len(asr_result.segments)} 个分段，总字符: {len(asr_result.text)}")
@@ -410,7 +331,11 @@ async def asr_transcribe(
 
         # 使用标准错误格式
         response_data = e.to_dict()
-        return JSONResponse(content=response_data, headers={"task_id": task_id})
+        return JSONResponse(
+            content=response_data,
+            headers={"task_id": task_id},
+            status_code=get_http_status_code(e.status_code),
+        )
 
     except Exception as e:
         logger.error(f"[{task_id}] 未知异常: {str(e)}")
@@ -442,7 +367,6 @@ async def asr_transcribe(
 - **device**: 当前推理设备（cuda:0/cpu）
 - **loaded_models**: 已加载的模型列表
 - **memory_usage**: GPU 显存使用情况（仅 GPU 模式）
-- **asr_model_mode**: 当前模型加载模式（offline/realtime/all）
 """,
 )
 async def health_check(request: Request):
@@ -453,18 +377,20 @@ async def health_check(request: Request):
         raise AuthenticationException(content, "health_check")
 
     try:
-        model_manager = get_model_manager()
-
         # 尝试获取默认模型的引擎
         try:
-            asr_engine = model_manager.get_asr_engine()
-            model_loaded = asr_engine.is_model_loaded()
-            device = asr_engine.device
+            runtime_router = get_runtime_router()
+            default_model = runtime_router.resolve_model_id(None)
+            async with await runtime_router.acquire_engine(default_model) as engine:
+                model_loaded = True
+                device = engine.device
         except Exception:
             model_loaded = False
             device = "unknown"
 
-        memory_info = model_manager.get_memory_usage()
+        runtime_router = get_runtime_router()
+        memory_info = runtime_router.get_memory_usage()
+        loaded_models = runtime_router.get_loaded_model_ids()
 
         return {
             "status": "healthy" if model_loaded else "unhealthy",
@@ -476,7 +402,7 @@ async def health_check(request: Request):
                 if model_loaded
                 else "ASR model not loaded"
             ),
-            "loaded_models": memory_info["model_list"],
+            "loaded_models": loaded_models,
             "memory_usage": memory_info.get("gpu_memory"),
         }
     except Exception as e:
@@ -488,31 +414,29 @@ async def health_check(request: Request):
             "message": str(e),
         }
 
-
 @router.get(
     "/asr/models",
     response_model=ASRModelsResponse,
-    summary="获取可用模型列表",
+    summary="获取声明条目列表",
     description="""
-返回系统中所有可用的 ASR 模型信息。
+返回系统声明的离线模型与 realtime capability 信息。
 
-## 可用模型
+## 条目说明
 
-| 模型 ID | 名称 | 说明 | 支持实时 |
-|---------|------|------|----------|
-| qwen3-asr-1.7b | Qwen3-ASR 1.7B | 高性能多语言语音识别，vLLM后端，52种语言+方言 | ❌ |
-| qwen3-asr-0.6b | Qwen3-ASR 0.6B | 轻量版多语言ASR，适合小显存环境 | ❌ |
-| paraformer-large | Paraformer Large | 高精度中文语音识别 | ✅ |
+| ID | 类型 | 说明 |
+|----|------|------|
+| qwen3-asr-1.7b | model | 离线/实时共用的 Qwen3-ASR 模型条目 |
+| qwen3-asr-0.6b | model | 轻量版 Qwen3-ASR 模型条目 |
+| paraformer-large | capability | WebSocket realtime capability |
 
 ## 返回信息
-- **models**: 模型详细信息列表
-- **total**: 可用模型总数
-- **loaded_count**: 已加载到内存的模型数量
-- **asr_model_mode**: 当前模型加载模式
+- **declared_entries**: 声明的模型与 capability 列表
+- **declared_count**: 声明项总数
+- **runtime**: 运行时加载状态
 """,
 )
 async def list_models(request: Request):
-    """获取可用模型列表端点"""
+    """获取声明条目列表端点"""
     # 鉴权
     result, content = validate_token(request)
     if not result:
@@ -521,19 +445,18 @@ async def list_models(request: Request):
     try:
 
         model_manager = get_model_manager()
-        models = model_manager.list_models()
-
-        loaded_count = sum(1 for model in models if model["loaded"])
-
-        # 获取默认模型的加载模式作为系统模式
-        default_model = next((m for m in models if m.get("default")), None)
-        asr_model_mode = default_model.get("asr_model_mode", "all") if default_model else "all"
+        runtime_router = get_runtime_router()
+        loaded_model_ids = runtime_router.get_loaded_model_ids()
+        entries = model_manager.list_declared_entries()
 
         return {
-            "models": models,
-            "total": len(models),
-            "loaded_count": loaded_count,
-            "asr_model_mode": asr_model_mode,
+            "declared_entries": entries,
+            "declared_count": len(entries),
+            "runtime": {
+                "loaded_model_ids": loaded_model_ids,
+                "loaded_count": len(loaded_model_ids),
+                "default_offline_model_id": runtime_router.resolve_model_id(None),
+            },
         }
     except Exception as e:
         logger.error(f"获取模型列表时发生错误: {str(e)}")

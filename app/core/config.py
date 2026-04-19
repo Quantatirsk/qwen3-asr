@@ -52,26 +52,15 @@ class Settings:
     }
     ASR_MODELS_CONFIG: str = str(BASE_DIR / "app/services/asr/models.json")
     ASR_ENABLE_REALTIME_PUNC: bool = True  # 是否启用实时标点模型（用于中间结果展示）
-    AUTO_LOAD_CUSTOM_ASR_MODELS: str = (
-        ""  # 启动时自动加载的自定义ASR模型列表（逗号分隔，如: paraformer-large）
-    )
     VAD_MODEL: str = "damo/speech_fsmn_vad_zh-cn-16k-common-pytorch"
     PUNC_MODEL: str = "iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch"
     PUNC_REALTIME_MODEL: str = (
         "iic/punc_ct-transformer_zh-cn-common-vad_realtime-vocab272727"
     )
 
-    # 语言模型配置
-    LM_MODEL: str = "iic/speech_ngram_lm_zh-cn-ai-wesp-fst"
-    LM_WEIGHT: float = 0.15  # 语言模型权重，建议范围 0.1-0.3
-    LM_BEAM_SIZE: int = 10  # 语言模型解码 beam size
-    ASR_ENABLE_LM: bool = True  # 是否启用语言模型（默认启用）
-
     # 流式ASR远场过滤配置
     ASR_ENABLE_NEARFIELD_FILTER: bool = True  # 是否启用远场声音过滤
     ASR_NEARFIELD_RMS_THRESHOLD: float = 0.01  # RMS能量阈值（宽松模式，适合大多数场景）
-    ASR_NEARFIELD_FILTER_LOG_ENABLED: bool = True  # 是否记录过滤日志（默认启用）
-
     # 音频处理配置
     MAX_AUDIO_SIZE: int = 2048 * 1024 * 1024  # 2GB
 
@@ -81,16 +70,9 @@ class Settings:
     # 音频分段配置
     MAX_SEGMENT_SEC: float = 30.0  # 长音频触发 VAD 分割阈值（秒）
 
-    # 流式 VLLM 实例控制（默认不启用，节省显存）
-    # false = 只加载非流式实例（默认）
-    # true = 同时加载流式和非流式实例
-    ENABLE_STREAMING_VLLM: bool = False
-
-    # 模型启动配置
-    #   "all"  = 加载所有可用模型
-    #   "auto" = 自动检测显存，加载 paraformer-large + 合适 Qwen（<32GB 用 0.6b，>=32GB 用 1.7b）
-    #   其他   = 逗号分隔精确指定，如 "paraformer-large" 或 "qwen3-asr-0.6b,qwen3-asr-1.7b"
-    ENABLED_MODELS: str = "auto"
+    # Runtime 并发配置（按 backend 独立控制）
+    QWEN_RUST_CPU_WORKERS: int = 2
+    FUNASR_WORKERS: int = 1
 
     def __init__(self):
         """从环境变量读取配置"""
@@ -122,21 +104,11 @@ class Settings:
         self.ASR_ENABLE_REALTIME_PUNC = (
             os.getenv("ASR_ENABLE_REALTIME_PUNC", "true").lower() == "true"
         )
-        self.AUTO_LOAD_CUSTOM_ASR_MODELS = os.getenv(
-            "AUTO_LOAD_CUSTOM_ASR_MODELS", self.AUTO_LOAD_CUSTOM_ASR_MODELS
-        )
 
         # WebSocket缓冲区配置
         self.WS_MAX_BUFFER_SIZE = int(
             os.getenv("WS_MAX_BUFFER_SIZE", str(self.WS_MAX_BUFFER_SIZE))
         )
-
-        # 语言模型配置
-        self.ASR_ENABLE_LM = (
-            os.getenv("ASR_ENABLE_LM", "true").lower() == "true"
-        )
-        self.LM_WEIGHT = float(os.getenv("LM_WEIGHT", str(self.LM_WEIGHT)))
-        self.LM_BEAM_SIZE = int(os.getenv("LM_BEAM_SIZE", str(self.LM_BEAM_SIZE)))
 
         # 远场过滤配置
         self.ASR_ENABLE_NEARFIELD_FILTER = (
@@ -146,9 +118,6 @@ class Settings:
             os.getenv(
                 "ASR_NEARFIELD_RMS_THRESHOLD", str(self.ASR_NEARFIELD_RMS_THRESHOLD)
             )
-        )
-        self.ASR_NEARFIELD_FILTER_LOG_ENABLED = (
-            os.getenv("ASR_NEARFIELD_FILTER_LOG_ENABLED", "true").lower() == "true"
         )
 
         # 音频处理配置
@@ -165,13 +134,12 @@ class Settings:
             os.getenv("MAX_SEGMENT_SEC", str(self.MAX_SEGMENT_SEC))
         )
 
-        # 流式 VLLM 实例控制
-        self.ENABLE_STREAMING_VLLM = (
-            os.getenv("ENABLE_STREAMING_VLLM", "false").lower() == "true"
+        self.QWEN_RUST_CPU_WORKERS = int(
+            os.getenv("QWEN_RUST_CPU_WORKERS", str(self.QWEN_RUST_CPU_WORKERS))
         )
-
-        # 模型启动配置
-        self.ENABLED_MODELS = os.getenv("ENABLED_MODELS", self.ENABLED_MODELS)
+        self.FUNASR_WORKERS = int(
+            os.getenv("FUNASR_WORKERS", str(self.FUNASR_WORKERS))
+        )
 
     def _parse_size(self, size_str: str) -> int:
         """解析带单位的大小字符串

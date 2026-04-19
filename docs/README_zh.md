@@ -22,7 +22,7 @@
 
 ## 主要特性
 
-- **多模型支持** - 集成 [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR) 1.7B/0.6B 和 Paraformer Large 高质量 ASR 模型
+- **混合运行时栈** - 离线推理由自动选择的 Qwen3-ASR 提供，WebSocket 流式由 Paraformer realtime 能力提供
 - **说话人分离** - 基于 CAM++ 模型自动识别多说话人，返回说话人标记
 - **OpenAI API 兼容** - 支持 `/v1/audio/transcriptions` 端点，可直接使用 OpenAI SDK
 - **阿里云 API 兼容** - 支持阿里云语音识别 RESTful API 和 WebSocket 流式协议
@@ -30,7 +30,13 @@
 - **智能远场过滤** - 流式 ASR 自动过滤远场声音和环境音，减少误触发
 - **智能音频分段** - 基于 VAD 的贪婪合并算法，自动切分长音频，避免包含过长静音
 - **GPU 批处理加速** - 支持批量推理，比逐个处理快 2-3 倍
-- **灵活配置** - 支持环境变量配置，按需加载模型
+- **资源感知运行时** - 根据当前机器资源自动选择合适的 Qwen3-ASR 模型
+
+## 致谢
+
+- [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR) 提供官方模型与多模态 / vLLM 使用方式
+- [mlx-qwen3-asr](https://github.com/moona3k/mlx-qwen3-asr) 提供本项目使用的 Apple Silicon backend
+- [QwenASR](https://github.com/huanglizhuo/QwenASR) 提供本项目 vendored 的 CPU Rust backend
 
 ## 快速部署
 
@@ -39,7 +45,7 @@
 ```bash
 # 复制并编辑配置
 cp .env.example .env
-# 编辑 .env 设置 ENABLED_MODELS 和 API_KEY（可选）
+# 编辑 .env 设置 API_KEY（可选）
 
 # 启动服务（GPU 版本）
 docker-compose up -d
@@ -66,7 +72,6 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 docker-compose up -d
 docker run -d --name funasr-api \
   --gpus all \
   -p 17003:8000 \
-  -e ENABLED_MODELS=auto \
   -e CUDA_VISIBLE_DEVICES=0,1,2,3 \
   -e API_KEY=your_api_key \
   -v ./models/modelscope:/root/.cache/modelscope \
@@ -76,16 +81,17 @@ docker run -d --name funasr-api \
 # CPU 版本
 docker run -d --name funasr-api \
   -p 17003:8000 \
-  -e ENABLED_MODELS=paraformer-large \
   quantatrisk/funasr-api:cpu-latest
 ```
 
-> **注意**: CPU 环境自动过滤 Qwen3 模型（vLLM 需要 GPU）
+> **注意**: 当前 CPU 镜像已通过内置 QwenASR Rust backend 支持 `qwen3-asr-0.6b`。
+> CUDA vLLM、CPU Rust 和 Apple MLX 路径下，`word_timestamps=true` 都会自动调用 forced aligner；当前实际后端为 `CUDA -> vLLM`、`MPS -> MLX`、`CPU -> vendored QwenASR Rust`。
+> Apple Silicon 上的 Qwen3-ASR 现已切换为基于 MLX 的离线路径。
 
-**内网部署**：使用辅助脚本准备模型，然后复制到内网机器：
+**内网部署**：使用辅助脚本准备当前运行计划所需模型，然后复制到内网机器：
 
 ```bash
-# 1. 准备模型（交互式选择）
+# 1. 准备模型
 ./scripts/prepare-models.sh
 
 # 2. 复制到内网服务器
@@ -110,15 +116,30 @@ docker-compose up -d
 
 **安装步骤:**
 
+依赖现在统一收敛在 [pyproject.toml](/Users/quant/Documents/funasr-api/pyproject.toml) 中，并通过 `uv` 的三种模式安装：
+
+| 模式 | 命令 | 说明 |
+|------|------|------|
+| CPU | `uv sync --group cpu` | Linux/CPU 运行时，包含 CPU 版 PyTorch |
+| GPU | `uv sync --group gpu` | Linux/NVIDIA 运行时，安装官方 vLLM nightly |
+| Apple Silicon | `uv sync --group apple-silicon` | macOS/Apple Silicon 运行时，安装 MLX backend |
+
 ```bash
 # 克隆项目
 cd FunASR-API
 
-# 安装依赖
-pip install -r requirements.txt
+# 安装依赖（Linux/CUDA）
+uv sync --group gpu
 
 # 启动服务
-python start.py
+uv run python start.py
+```
+
+Apple Silicon 本地开发：
+
+```bash
+uv sync --group apple-silicon
+uv run python start.py
 ```
 
 ## API 接口
@@ -128,7 +149,7 @@ python start.py
 | 端点                         | 方法 | 功能                    |
 | ---------------------------- | ---- | ----------------------- |
 | `/v1/audio/transcriptions` | POST | 音频转写（OpenAI 兼容） |
-| `/v1/models`               | GET  | 模型列表                |
+| `/v1/models`               | GET  | 离线模型列表                |
 
 **请求参数:**
 
@@ -136,10 +157,10 @@ python start.py
 | ------------------------------ | ------ | --------------------- | ------------------------------------- |
 | `file`                       | file   | 与 `audio_address` 二选一 | 音频文件                              |
 | `audio_address`              | string | 与 `file` 二选一      | 音频文件 URL（HTTP/HTTPS）            |
-| `model`                      | string | 自动检测              | 模型选择 (qwen3-asr-1.7b, qwen3-asr-0.6b, paraformer-large) |
+| `model`                      | string | 忽略                  | 兼容参数；离线路径会直接忽略          |
 | `language`                   | string | 自动检测              | 语言代码 (zh/en/ja)                   |
 | `enable_speaker_diarization` | bool   | `true`              | 启用说话人分离                        |
-| `word_timestamps`            | bool   | `true`              | 返回字词级时间戳（仅Qwen3-ASR支持）  |
+| `word_timestamps`            | bool   | `false`             | 返回后端支持的字词级时间戳；Qwen CUDA vLLM、CPU Rust 和 Apple MLX 在启用时会自动调用 forced aligner |
 | `response_format`            | string | `verbose_json`      | 输出格式                              |
 | `prompt`                     | string | -                     | 提示文本（保留兼容）                  |
 | `temperature`                | float  | `0`                   | 采样温度（保留兼容）                  |
@@ -158,7 +179,7 @@ client = OpenAI(base_url="http://localhost:8000/v1", api_key="your_api_key")
 
 with open("audio.wav", "rb") as f:
     transcript = client.audio.transcriptions.create(
-        model="whisper-1",  # 会映射到默认模型
+        model="whisper-1",  # 兼容字段；离线路径会忽略
         file=f,
         response_format="verbose_json"  # 获取分段和说话人信息
     )
@@ -170,7 +191,7 @@ print(transcript.text)
 curl -X POST "http://localhost:8000/v1/audio/transcriptions" \
   -H "Authorization: Bearer your_api_key" \
   -F "file=@audio.wav" \
-  -F "model=paraformer-large" \
+  -F "model=qwen3-asr-0.6b" \
   -F "response_format=verbose_json" \
   -F "enable_speaker_diarization=true"
 ```
@@ -182,22 +203,21 @@ curl -X POST "http://localhost:8000/v1/audio/transcriptions" \
 | 端点                      | 方法      | 功能                   |
 | ------------------------- | --------- | ---------------------- |
 | `/stream/v1/asr`        | POST      | 语音识别（支持长音频） |
-| `/stream/v1/asr/models` | GET       | 模型列表               |
+| `/stream/v1/asr/models` | GET       | 声明条目列表               |
 | `/stream/v1/asr/health` | GET       | 健康检查               |
 | `/ws/v1/asr`            | WebSocket | 流式语音识别（阿里云协议兼容） |
 | `/ws/v1/asr/funasr`     | WebSocket | FunASR 流式识别（向后兼容）   |
-| `/ws/v1/asr/qwen`       | WebSocket | Qwen3-ASR 流式识别           |
-| `/ws/v1/asr/test`       | GET       | WebSocket 测试页面           |
+| `/ws/v1/asr/qwen`       | WebSocket | Qwen3-ASR 流式识别 |
 
 **请求参数:**
 
 | 参数                           | 类型   | 默认值             | 说明                                  |
 | ------------------------------ | ------ | ------------------ | ------------------------------------- |
-| `model_id`                   | string | 自动检测         | 模型 ID                               |
+| `model_id`                   | string | 忽略             | 兼容参数；离线路径会直接忽略          |
 | `audio_address`              | string | -                  | 音频 URL（可选）                      |
 | `sample_rate`                | int    | `16000`          | 采样率                                |
 | `enable_speaker_diarization` | bool   | `true`           | 启用说话人分离                        |
-| `word_timestamps`            | bool   | `true`           | 返回字词级时间戳（仅Qwen3-ASR支持）  |
+| `word_timestamps`            | bool   | `false`          | 返回后端支持的字词级时间戳；Qwen CUDA vLLM、CPU Rust 和 Apple MLX 在启用时会自动调用 forced aligner |
 | `vocabulary_id`              | string | -                  | 热词（格式：`词1 权重1 词2 权重2`） |
 
 **使用示例:**
@@ -240,8 +260,6 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 }
 ```
 
-**WebSocket 流式识别测试:** 访问 `http://localhost:8000/ws/v1/asr/test`
-
 ## 说话人分离
 
 基于 CAM++ 模型实现多说话人自动识别：
@@ -280,56 +298,64 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 **FunASR 模型限制**（使用 `/ws/v1/asr` 或 `/ws/v1/asr/funasr`）：
 - ✅ 实时语音识别、低延迟
 - ✅ 字句级时间戳
-- ❌ **词级时间戳**（未实现）
+- ❌ **词级时间戳**（FunASR realtime 路径未实现）
 - ❌ **置信度分数**（未实现）
 
 **Qwen3-ASR 流式**（使用 `/ws/v1/asr/qwen`）：
-- ✅ 支持词级时间戳
 - ✅ 支持多语言实时识别
+- ⚠️ Apple Silicon 使用 MLX 流式路径
+- ❌ 当前流式路径不返回词级时间戳
 
-## 支持的模型
+### Qwen3 运行时矩阵
+
+| 运行环境 | 后端 | 离线转写 | WebSocket 流式 | 离线词级时间戳 | 流式词级时间戳 | 成熟度 |
+|---------|------|---------|----------------|----------------|----------------|--------|
+| Linux + NVIDIA GPU | 官方 vLLM nightly | ✅ | ✅ | ✅ | ❌ | 面向生产 |
+| Apple Silicon | MLX | ✅ | ✅ | ✅ | ❌ | 流式为实验性质 |
+| CPU | QwenASR Rust | ✅ | ✅ | ✅（forced aligner） | ❌ | 可用基线 |
+
+## 支持离线的模型
 
 | 模型 ID              | 名称              | 说明                                     | 特性      |
 | -------------------- | ----------------- | ---------------------------------------- | --------- |
-| `qwen3-asr-1.7b`   | Qwen3-ASR 1.7B    | 高性能多语言ASR，52种语言+方言，vLLM后端 | 离线/实时 |
-| `qwen3-asr-0.6b`   | Qwen3-ASR 0.6B    | 轻量版多语言ASR，适合小显存环境          | 离线/实时 |
-| `paraformer-large` | Paraformer Large  | 高精度中文语音识别                       | 离线/实时 |
+| `qwen3-asr-1.7b`   | Qwen3-ASR 1.7B    | 高性能多语言 ASR；CUDA 使用 vLLM，Apple Silicon 使用 MLX | 离线/实时 |
+| `qwen3-asr-0.6b`   | Qwen3-ASR 0.6B    | 轻量版多语言 ASR；CUDA 使用 vLLM，Apple Silicon 使用 MLX，CPU 使用 Rust backend | 离线/实时 |
 
-**模型选择:**
+## 仅实时能力
 
-使用 `ENABLED_MODELS` 环境变量控制加载哪些模型：
+| 能力 ID | 运行时 | 说明 |
+| ------- | ------ | ---- |
+| `paraformer-large` | FunASR realtime | 中文 WebSocket 实时识别栈，包含实时标点链路 |
 
-```bash
-# 选项: auto, all, 或逗号分隔列表
-ENABLED_MODELS=auto                    # 自动检测 GPU 加载合适模型
-ENABLED_MODELS=all                     # 加载所有可用模型
-ENABLED_MODELS=paraformer-large        # 仅 Paraformer
-ENABLED_MODELS=qwen3-asr-0.6b          # 仅 Qwen3 0.6B
-ENABLED_MODELS=paraformer-large,qwen3-asr-0.6b  # 两者都加载
-```
-
-**Auto 模式行为:**
-- **显存 >= 32GB**: 自动加载 `qwen3-asr-1.7b` + `paraformer-large`
-- **显存 < 32GB**: 自动加载 `qwen3-asr-0.6b` + `paraformer-large`
-- **无 CUDA**: 仅 `paraformer-large`（Qwen3 需要 vLLM/GPU）
+**运行时选择:**
+- **显存 >= 32GB**: 选择 `qwen3-asr-1.7b`
+- **显存 < 32GB**: 选择 `qwen3-asr-0.6b`
+- **Apple Silicon**: 选择基于 MLX 的 Qwen3
+- **CPU**: 选择基于 vendored Rust 的 `qwen3-asr-0.6b`
+- `paraformer-large` 实时能力始终为 WebSocket 流式准备
 
 ## 环境变量
 
+推荐直接关心的公开配置：
+
 | 变量                               | 默认值       | 说明                                            |
 | ---------------------------------- | ------------ | ----------------------------------------------- |
-| `ENABLED_MODELS`                 | `auto`       | 加载模型: `auto`, `all`, 或逗号分隔列表       |
 | `API_KEY`                        | -            | API 认证密钥（可选，未配置时无需认证）        |
 | `LOG_LEVEL`                      | `INFO`       | 日志级别（DEBUG/INFO/WARNING/ERROR）          |
 | `MAX_AUDIO_SIZE`                 | `2048`       | 最大音频文件大小（MB，支持单位如 2GB）        |
 | `ASR_BATCH_SIZE`                 | `4`          | ASR 批处理大小（GPU 建议 4，CPU 建议 2）      |
-| `MAX_SEGMENT_SEC`                | `90`         | 音频分段最大时长（秒）                        |
-| `ENABLE_STREAMING_VLLM`          | `false`      | 是否加载流式 VLLM 实例（节省显存）            |
-| `MODELSCOPE_PATH`                | `~/.cache/modelscope/hub/models` | ModelScope 缓存路径 |
-| `HF_HOME`                        | `~/.cache/huggingface` | HuggingFace 缓存路径（GPU 模式）     |
-| `ASR_ENABLE_LM`                  | `true`       | 是否启用语言模型（Paraformer）                |
+| `MAX_SEGMENT_SEC`                | `30`         | 音频分段最大时长（秒）                        |
 | `ASR_ENABLE_NEARFIELD_FILTER`    | `true`       | 启用远场声音过滤                              |
 
 > 详细配置说明请查看 [远场过滤文档](./nearfield_filter.md)
+
+后端专项高级配置：
+
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `QWEN_RUST_CPU_WORKERS` | `2` | CPU Rust backend worker 数 |
+| `QWENASR_LIBRARY_PATH` | 自动探测 | 覆盖 vendored Rust 动态库路径 |
+| `QWENASR_CPU_NUM_THREADS` | 自动 / 安全 `1` | 覆盖单个 Rust runtime 的 CPU 线程数 |
 
 ## 资源需求
 
@@ -358,6 +384,7 @@ ENABLED_MODELS=paraformer-large,qwen3-asr-0.6b  # 两者都加载
 - **部署指南**: [详细文档](./deployment.md)
 - **远场过滤配置**: [配置指南](./nearfield_filter.md)
 - **FunASR**: [FunASR GitHub](https://github.com/alibaba-damo-academy/FunASR)
+- **QwenASR**: [QwenASR GitHub](https://github.com/huanglizhuo/QwenASR)
 
 ## 许可证
 

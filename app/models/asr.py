@@ -21,10 +21,10 @@ from .common import (
 class ASRQueryParams(BaseModel):
     """ASR接口查询参数模型"""
 
-    # 1. 核心参数
+    # 1. 兼容参数
     model_id: Optional[str] = Field(
         default=None,
-        description="ASR模型ID，不指定则使用默认模型(paraformer-large)",
+        description="兼容参数，将被忽略。离线路径固定使用服务当前启用的唯一 Qwen3-ASR 模型",
         max_length=64,
     )
 
@@ -48,8 +48,8 @@ class ASRQueryParams(BaseModel):
     )
 
     word_timestamps: Optional[bool] = Field(
-        default=True,
-        description="是否返回字词级时间戳（仅 Qwen3-ASR 模型支持）",
+        default=False,
+        description="是否返回字词级时间戳（默认关闭；Qwen CPU Rust / Apple MLX 会在启用时自动调用 forced aligner）",
     )
 
     # 5. 增强选项
@@ -195,12 +195,11 @@ class ASRHealthCheckResponse(HealthCheckResponse):
                 "device": "cuda:0",
                 "version": "1.0.0",
                 "message": "ASR service is running normally",
-                "loaded_models": ["paraformer-large"],
+                "loaded_models": ["qwen3-asr-1.7b"],
                 "memory_usage": {
                     "gpu_memory_used": "2.1GB",
                     "gpu_memory_total": "8.0GB",
                 },
-                "asr_model_mode": "realtime",
             },
         },
     }
@@ -209,87 +208,112 @@ class ASRHealthCheckResponse(HealthCheckResponse):
     device: str = Field(..., description="推理设备")
     loaded_models: Optional[List[str]] = Field(default=[], description="已加载的模型列表")
     memory_usage: Optional[dict] = Field(default=None, description="内存使用情况")
-    asr_model_mode: Optional[str] = Field(default=None, description="当前ASR模型加载模式")
 
 
 # ============= 模型相关 =============
 
 
-class ASRModelInfo(BaseModel):
-    """新的ASR模型信息模型，支持离线和实时模型分离"""
+class ASRDeclaredEntryInfo(BaseModel):
+    """声明式 ASR 条目信息，可表示离线模型或 realtime capability。"""
 
     id: str = Field(..., description="模型id")
+    kind: str = Field(..., description="条目类型：model 或 capability")
     name: str = Field(..., description="模型名称")
     engine: str = Field(..., description="引擎类型")
     description: str = Field(..., description="模型描述")
     languages: List[str] = Field(..., description="支持的语言列表")
     default: bool = Field(default=False, description="是否为默认模型")
-    loaded: bool = Field(default=False, description="是否已加载")
     supports_realtime: bool = Field(default=False, description="是否支持实时识别")
     offline_model: Optional[dict] = Field(default=None, description="离线模型信息")
     realtime_model: Optional[dict] = Field(default=None, description="实时模型信息")
-    asr_model_mode: str = Field(..., description="当前ASR模型加载模式")
 
     model_config = {
         "json_schema_extra": {
             "example": {
-                "id": "paraformer-large",
-                "name": "Paraformer Large",
-                "engine": "funasr",
-                "description": "高精度中文语音识别模型",
-                "languages": ["zh"],
+                "id": "qwen3-asr-1.7b",
+                "kind": "model",
+                "name": "Qwen3-ASR-1.7B",
+                "engine": "qwen3",
+                "description": "多语言离线语音识别模型",
+                "languages": ["zh", "en"],
                 "default": True,
-                "loaded": True,
                 "supports_realtime": True,
                 "offline_model": {
-                    "path": "iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
+                    "path": "Qwen/Qwen3-ASR-1.7B",
                     "exists": True,
                 },
-                "realtime_model": {
-                    "path": "iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online",
-                    "exists": True,
-                },
-                "asr_model_mode": "realtime",
+                "realtime_model": None,
+            }
+        }
+    }
+
+
+class ASRRuntimeInfo(BaseModel):
+    """运行时视角的模型加载状态。"""
+
+    loaded_model_ids: List[str] = Field(default_factory=list, description="当前已加载模型 ID 列表")
+    loaded_count: int = Field(..., description="已加载模型数量")
+    default_offline_model_id: Optional[str] = Field(default=None, description="当前默认离线模型 ID")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "loaded_model_ids": ["qwen3-asr-1.7b"],
+                "loaded_count": 1,
+                "default_offline_model_id": "qwen3-asr-1.7b",
             }
         }
     }
 
 
 class ASRModelsResponse(BaseModel):
-    """ASR模型列表响应模型"""
+    """ASR 模型列表响应，分离声明视角与运行时视角。"""
 
-    models: List[ASRModelInfo] = Field(..., description="模型列表")
-    total: int = Field(..., description="模型总数")
-    loaded_count: int = Field(..., description="已加载模型数量")
-    asr_model_mode: str = Field(..., description="当前ASR模型加载模式")
+    declared_entries: List[ASRDeclaredEntryInfo] = Field(..., description="声明的模型与 capability 列表")
+    declared_count: int = Field(..., description="声明条目总数")
+    runtime: ASRRuntimeInfo = Field(..., description="运行时加载状态")
 
     model_config = {
         "json_schema_extra": {
             "example": {
-                "models": [
+                "declared_entries": [
                     {
-                        "id": "paraformer-large",
-                        "name": "Paraformer Large",
-                        "engine": "funasr",
-                        "description": "高精度中文语音识别模型",
-                        "languages": ["zh"],
+                        "id": "qwen3-asr-1.7b",
+                        "kind": "model",
+                        "name": "Qwen3-ASR-1.7B",
+                        "engine": "qwen3",
+                        "description": "多语言离线语音识别模型",
+                        "languages": ["zh", "en"],
                         "default": True,
-                        "loaded": True,
                         "supports_realtime": True,
                         "offline_model": {
-                            "path": "iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
+                            "path": "Qwen/Qwen3-ASR-1.7B",
                             "exists": True,
                         },
+                        "realtime_model": None,
+                    },
+                    {
+                        "id": "paraformer-large",
+                        "kind": "capability",
+                        "name": "Paraformer Large",
+                        "engine": "funasr",
+                        "description": "中文 WebSocket 实时识别能力",
+                        "languages": ["zh"],
+                        "default": False,
+                        "supports_realtime": True,
+                        "offline_model": None,
                         "realtime_model": {
                             "path": "iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online",
                             "exists": True,
                         },
-                        "asr_model_mode": "realtime",
                     }
                 ],
-                "total": 3,
-                "loaded_count": 1,
-                "asr_model_mode": "realtime",
+                "declared_count": 3,
+                "runtime": {
+                    "loaded_model_ids": ["qwen3-asr-1.7b"],
+                    "loaded_count": 1,
+                    "default_offline_model_id": "qwen3-asr-1.7b",
+                },
             }
         }
     }

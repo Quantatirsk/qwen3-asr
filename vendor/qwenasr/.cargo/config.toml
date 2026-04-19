@@ -1,0 +1,14 @@
+# iOS targets
+[target.aarch64-apple-ios]
+rustflags = ["-C", "target-cpu=apple-a14"]
+
+[target.aarch64-apple-ios-sim]
+rustflags = ["-C", "target-cpu=apple-a14"]
+
+# Android targets
+[target.aarch64-linux-android]
+# Set linker via environment: CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=aarch64-linux-android28-clang
+rustflags = ["-C", "target-cpu=cortex-a76"]
+
+[target.armv7-linux-androideabi]
+rustflags = ["-C", "target-cpu=cortex-a53"]

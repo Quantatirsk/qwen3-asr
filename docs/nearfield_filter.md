@@ -51,7 +51,7 @@
 | ------------------------------------ | ----- | -------- | ---------------------------------- |
 | `ASR_ENABLE_NEARFIELD_FILTER`      | bool  | `true` | 总开关，设为false完全禁用功能      |
 | `ASR_NEARFIELD_RMS_THRESHOLD`      | float | `0.01` | RMS能量阈值（宽松模式，推荐）      |
-| `ASR_NEARFIELD_FILTER_LOG_ENABLED` | bool  | `true` | 调试日志开关，默认启用便于初期调优 |
+| `LOG_LEVEL=DEBUG`                  | string | -      | 需要观察过滤细节时启用调试日志     |
 
 ### 阈值范围
 
@@ -81,7 +81,7 @@ services:
       # 远场声音过滤（默认已启用，以下为自定义配置示例）
       - ASR_ENABLE_NEARFIELD_FILTER=true              # 总开关（默认启用）
       - ASR_NEARFIELD_RMS_THRESHOLD=0.01              # RMS能量阈值（默认宽松模式）
-      - ASR_NEARFIELD_FILTER_LOG_ENABLED=true         # 调试日志（默认启用，调优后可关闭）
+      - LOG_LEVEL=DEBUG                               # 需要观察过滤细节时临时开启
 ```
 
 **方式二：.env 文件**
@@ -92,7 +92,7 @@ services:
 # 远场声音过滤配置
 ASR_ENABLE_NEARFIELD_FILTER=true
 ASR_NEARFIELD_RMS_THRESHOLD=0.01
-ASR_NEARFIELD_FILTER_LOG_ENABLED=true
+LOG_LEVEL=DEBUG
 ```
 
 然后在 `docker-compose.yml` 中引用：
@@ -114,10 +114,10 @@ export ASR_ENABLE_NEARFIELD_FILTER=true
 export ASR_NEARFIELD_RMS_THRESHOLD=0.01
 
 # 启用调试日志
-export ASR_NEARFIELD_FILTER_LOG_ENABLED=true
+export LOG_LEVEL=DEBUG
 
 # 启动服务
-python start.py
+uv run python start.py
 ```
 
 ---
@@ -129,7 +129,7 @@ python start.py
 1. **启用调试日志**
 
    ```bash
-   ASR_NEARFIELD_FILTER_LOG_ENABLED=true
+   LOG_LEVEL=DEBUG
    ```
 2. **观察日志输出**
 
@@ -150,7 +150,7 @@ python start.py
 6. **关闭日志**
 
    ```bash
-   ASR_NEARFIELD_FILTER_LOG_ENABLED=false
+   LOG_LEVEL=INFO
    ```
 
 ### 典型场景配置

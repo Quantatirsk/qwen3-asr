@@ -14,7 +14,7 @@ import torch
 import numpy as np
 import subprocess
 import logging
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Any, cast
 from io import BytesIO
 
 from ..core.config import settings
@@ -353,7 +353,7 @@ def save_audio_array(
         # 根据格式选择保存方法
         if format.lower() == "wav":
             # 使用torchaudio保存WAV格式
-            audio_tensor = torch.from_numpy(audio_array)
+            audio_tensor = cast(Any, torch).as_tensor(audio_array)
             torchaudio.save(output_path, audio_tensor, sample_rate)
         else:
             # 使用soundfile保存其他格式

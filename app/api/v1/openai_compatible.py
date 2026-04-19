@@ -16,14 +16,16 @@ from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from ...core.config import settings
-from ...core.executor import run_sync
 from ...core.security import validate_openai_token
 from ...core.exceptions import (
     InvalidParameterException,
     create_error_response,
 )
-from ...services.asr.manager import get_model_manager
-from ...services.asr.validators import _get_default_model, _get_dynamic_model_list
+from ...services.asr.runtime import OfflineASRRequest, get_runtime_router
+from ...services.asr.model_selection import (
+    get_default_offline_model_id,
+    get_offline_model_ids,
+)
 from ...services.audio import get_audio_service
 
 logger = logging.getLogger(__name__)
@@ -144,33 +146,6 @@ def generate_vtt(segments: List[TranscriptionSegment]) -> str:
         lines.append(text)
         lines.append("")
     return "\n".join(lines)
-
-
-def map_model_id(model: str) -> Optional[str]:
-    """将 OpenAI 模型 ID 映射到 FunASR-API 模型 ID"""
-    from ...services.asr.validators import _get_active_qwen_model
-
-    # 处理 Swagger UI 的默认值 "string" 或空值
-    if not model or model.lower() == "string":
-        return None  # 使用默认模型
-
-    # whisper-* 映射到默认模型（兼容 OpenAI SDK）
-    if model.lower().startswith("whisper"):
-        return None  # 使用默认模型
-
-    # qwen3-asr 模糊匹配：自动路由到已启动的模型版本
-    if model.lower() == "qwen3-asr":
-        return _get_active_qwen_model()
-
-    # 验证模型ID是否受支持
-    supported_models = _get_dynamic_model_list()
-    if model not in supported_models:
-        raise InvalidParameterException(
-            f"不支持的模型ID: {model}。支持的模型: {', '.join(supported_models)}"
-        )
-
-    # 其他情况直接使用原模型 ID
-    return model
 
 
 def detect_language(text: str, language: Optional[str]) -> str:
@@ -332,14 +307,13 @@ def create_heartbeat_streaming_response(
 
 def _get_openai_model_description() -> str:
     """获取动态的模型描述"""
-    available_models = _get_dynamic_model_list()
-    default_model = _get_default_model()
+    available_models = get_offline_model_ids()
+    default_model = get_default_offline_model_id()
 
     model_descriptions = {
         "qwen3-asr-1.7b": "Qwen3-ASR 1.7B，52 种语言，vLLM 高性能",
         "qwen3-asr-0.6b": "Qwen3-ASR 0.6B，轻量版，适合小显存环境",
         "qwen3-asr": "自动路由到当前已启动的 Qwen3-ASR 版本",
-        "paraformer-large": "高精度中文 ASR，内置 VAD+标点",
     }
 
     # 构建表格行
@@ -350,9 +324,9 @@ def _get_openai_model_description() -> str:
             desc += "（默认）"
         table_rows.append(f"| `{m}` | {desc} |")
 
-    return f"""返回当前可用的 ASR 模型列表（OpenAI `/v1/models` 兼容）。
+    return f"""返回当前可用的离线 Qwen3-ASR 模型列表（OpenAI `/v1/models` 兼容）。
 
-**可用模型：**
+**可用离线模型：**
 
 | 模型 ID | 说明 |
 |---------|------|
@@ -368,11 +342,11 @@ def _get_openai_model_description() -> str:
 @router.get(
     "/models",
     response_model=ModelsResponse,
-    summary="列出可用模型",
+    summary="列出可用离线模型",
     description=_get_openai_model_description(),
 )
 async def list_models(request: Request):
-    """列出可用模型 (OpenAI 兼容)"""
+    """列出可用离线模型 (OpenAI 兼容)"""
     result, _ = validate_openai_token(request)
     if not result:
         response_data = create_error_response(
@@ -383,7 +357,7 @@ async def list_models(request: Request):
 
     try:
         # 使用动态模型列表
-        model_ids = _get_dynamic_model_list()
+        model_ids = get_offline_model_ids()
 
         model_objects = []
         for model_id in model_ids:
@@ -398,30 +372,8 @@ async def list_models(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def update_openapi_schema():
-    """在应用启动时更新 OpenAPI schema，使 model 参数显示为下拉框"""
-    # 注意：model 参数由函数签名中的 Form() 定义，不要在这里的 openapi_extra 中重复添加
-    # FastAPI 会自动从函数签名生成正确的 OpenAPI schema
-    pass
-
-
 def _get_transcription_description() -> str:
     """获取动态的转写端点描述"""
-    available_models = _get_dynamic_model_list()
-    default_model = _get_default_model()
-
-    model_descriptions = {
-        "qwen3-asr-1.7b": "Qwen3-ASR 1.7B，52种语言，vLLM高性能",
-        "qwen3-asr-0.6b": "Qwen3-ASR 0.6B，轻量版，适合小显存",
-        "paraformer-large": "高精度中文 ASR",
-    }
-
-    # 构建模型映射部分
-    model_mapping_lines = [f"- `whisper-1` → 使用默认模型 ({default_model})"]
-    for m in available_models:
-        desc = model_descriptions.get(m, "")
-        model_mapping_lines.append(f"- `{m}` → {desc}")
-
     return f"""将音频文件转写为文本（完全兼容 OpenAI Audio API）。
 
 **支持的音频格式：**
@@ -449,8 +401,10 @@ def _get_transcription_description() -> str:
 | `srt` | text/plain | SRT 字幕格式 |
 | `vtt` | text/vtt | WebVTT 字幕格式 |
 
-**模型映射：**
-{chr(10).join(model_mapping_lines)}
+**模型选择：**
+- 离线路径固定使用当前服务启用的唯一 Qwen3-ASR 模型
+- 客户端兼容性字段 `model` 若继续上传，将被忽略
+- `/v1/models` 仍可用于查看当前服务端实际在线模型
 
 **暂不支持的参数：**
 `prompt`、`temperature`、`timestamp_granularities` 参数已保留但暂不生效
@@ -514,11 +468,11 @@ async def create_transcription(
         default=None,
         description="音频文件 URL（HTTP/HTTPS）。指定此参数时，将从 URL 下载音频而非读取 file 参数"
     ),
-    # 2. 核心参数 - 使用显式默认值，Swagger UI 才能正确显示
-    model: str = Form(
-        default=_get_default_model(),
-        description="ASR 模型选择",
-        json_schema_extra={"enum": _get_dynamic_model_list()},
+    # 2. 兼容参数
+    model: Optional[str] = Form(
+        default=None,
+        description="兼容参数，将被忽略。离线路径固定使用服务当前启用的唯一 Qwen3-ASR 模型",
+        json_schema_extra={"deprecated": True},
     ),
     # 3. 音频属性
     language: Optional[str] = Form(
@@ -532,8 +486,8 @@ async def create_transcription(
         description="是否启用说话人分离（默认开启）。启用后响应 segments 会包含 speaker 字段"
     ),
     word_timestamps: bool = Form(
-        True,
-        description="是否返回字词级时间戳（默认开启，仅 Qwen3-ASR 模型支持）"
+        False,
+        description="是否返回字词级时间戳（默认关闭；Qwen CPU Rust / Apple MLX 会在启用时自动调用 forced aligner）"
     ),
     # 5. 输出选项
     response_format: ResponseFormat = Form(
@@ -558,9 +512,11 @@ async def create_transcription(
     normalized_audio_path = None
     response_cleanup_managed = False
 
-    logger.info(f"[OpenAI API] 收到转写请求: model={model}, format={response_format}, "
+    logger.info(f"[OpenAI API] 收到转写请求: format={response_format}, "
                 f"speaker_diarization={enable_speaker_diarization}, word_level={word_timestamps}, "
                 f"audio_address={'有' if audio_address else '无'}")
+    if model:
+        logger.info(f"[OpenAI API] 忽略客户端传入的离线 model={model}")
 
     # 验证输入：file 和 audio_address 必须二选一
     if not file and not audio_address:
@@ -610,22 +566,21 @@ async def create_transcription(
                 sample_rate=16000,
             )
 
-        # 映射模型 ID
-        mapped_model_id = map_model_id(model)
+        resolved_model_id = get_default_offline_model_id()
 
-        # 获取 ASR 引擎
-        model_manager = get_model_manager()
-        asr_engine = model_manager.get_asr_engine(mapped_model_id)
+        runtime_router = get_runtime_router()
 
-        inference_coro = run_sync(
-            asr_engine.transcribe_long_audio,
-            audio_path=normalized_audio_path,
-            hotwords="",
-            enable_punctuation=True,
-            enable_itn=True,
-            sample_rate=16000,
-            enable_speaker_diarization=enable_speaker_diarization,
-            word_timestamps=word_timestamps,
+        inference_coro = runtime_router.run_offline(
+            OfflineASRRequest(
+                model_id=resolved_model_id,
+                audio_path=normalized_audio_path,
+                hotwords="",
+                enable_punctuation=True,
+                enable_itn=True,
+                sample_rate=16000,
+                enable_speaker_diarization=enable_speaker_diarization,
+                word_timestamps=word_timestamps,
+            )
         )
 
         # 根据 response_format 返回不同格式
