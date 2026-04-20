@@ -157,8 +157,8 @@ uv run python start.py
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `file` | file | Mutually exclusive with `audio_address` | Audio file |
-| `audio_address` | string | Mutually exclusive with `file` | Audio file URL (HTTP/HTTPS) |
+| `file` | file | Preferred when provided | Audio/video file |
+| `audio_address` | string | Optional | Audio/video URL (HTTP/HTTPS). Ignored when `file` is also provided |
 | `model` | string | ignored | Compatibility parameter; ignored for offline requests |
 | `language` | string | Auto-detect | Language code (zh/en/ja) |
 | `enable_speaker_diarization` | bool | `true` | Enable speaker diarization |
@@ -167,9 +167,10 @@ uv run python start.py
 | `prompt` | string | - | Prompt text (reserved) |
 | `temperature` | float | `0` | Sampling temperature (reserved) |
 
-**Audio Input Methods:**
-- **File Upload**: Use `file` parameter to upload audio file (standard OpenAI way)
-- **URL Download**: Use `audio_address` parameter to provide audio URL, service will download automatically
+**Audio / Video Input Methods:**
+- **File Upload**: Use `file` parameter to upload an audio file or a video container with an audio track
+- **URL Download**: Use `audio_address` parameter to provide an audio/video URL, service will download automatically
+- **Precedence**: If both `file` and `audio_address` are provided, the service uses `file` and ignores `audio_address`
 
 **Usage Examples:**
 
@@ -216,7 +217,7 @@ curl -X POST "http://localhost:8000/v1/audio/transcriptions" \
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `model_id` | string | ignored | Compatibility parameter; ignored for offline requests |
-| `audio_address` | string | - | Audio URL (optional) |
+| `audio_address` | string | `https://media.cdn.vect.one/podcast_demo.mp4` (docs example) | Audio/video URL (optional; ignored when body content is uploaded) |
 | `sample_rate` | int | `16000` | Sample rate |
 | `enable_speaker_diarization` | bool | `true` | Enable speaker diarization |
 | `word_timestamps` | bool | `false` | Return word-level timestamps when the backend supports them. Qwen CUDA vLLM, CPU Rust, and Apple MLX automatically use the forced aligner when enabled. |

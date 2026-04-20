@@ -376,12 +376,14 @@ def _get_transcription_description() -> str:
     """获取动态的转写端点描述"""
     return f"""将音频文件转写为文本（完全兼容 OpenAI Audio API）。
 
-**支持的音频格式：**
-`mp3`, `mp4`, `mpeg`, `mpga`, `m4a`, `wav`, `webm`, `flac`, `ogg`, `amr`, `pcm`
+**支持的音频格式与常见含音轨视频容器：**
+`mp3`, `mp4`, `mpeg`, `mpga`, `m4a`, `wav`, `webm`, `flac`, `ogg`, `amr`, `pcm`, `mov`, `mkv`, `avi`
 
-**音频输入方式（二选一）：**
-1. **文件上传**：通过 `file` 参数上传音频文件（标准 OpenAI 方式）
-2. **URL 下载**：通过 `audio_address` 参数提供音频文件 URL（HTTP/HTTPS）
+**音频输入方式：**
+1. **文件上传**：通过 `file` 参数上传音频/视频文件（标准 OpenAI 方式）
+2. **URL 下载**：通过 `audio_address` 参数提供音频/视频文件 URL（HTTP/HTTPS）
+
+如果同时提供 `file` 和 `audio_address`，服务会优先使用 `file`，并忽略 `audio_address`。
 
 **文件大小限制：**
 - 最大支持 {settings.MAX_AUDIO_SIZE // (1024 * 1024)}MB（可通过 `MAX_AUDIO_SIZE` 环境变量配置）
@@ -462,11 +464,12 @@ async def create_transcription(
     # 1. 音频输入（二选一）
     file: Optional[UploadFile] = File(
         default=None,
-        description="要转写的音频文件，支持 mp3/wav/flac/ogg/m4a/amr/pcm 等格式（与 audio_address 二选一）"
+        description="要转写的音频/视频文件。若同时提供 audio_address，服务会优先使用这里上传的文件"
     ),
     audio_address: Optional[str] = Form(
         default=None,
-        description="音频文件 URL（HTTP/HTTPS）。指定此参数时，将从 URL 下载音频而非读取 file 参数"
+        description="音频/视频文件 URL（HTTP/HTTPS）。仅当 file 为空时使用；若同时上传 file，服务会忽略此参数",
+        json_schema_extra={"example": "https://media.cdn.vect.one/podcast_demo.mp4"},
     ),
     # 2. 兼容参数
     model: Optional[str] = Form(
@@ -518,7 +521,7 @@ async def create_transcription(
     if model:
         logger.info(f"[OpenAI API] 忽略客户端传入的离线 model={model}")
 
-    # 验证输入：file 和 audio_address 必须二选一
+    # 验证输入：至少提供一种输入源；若二者同时存在，优先 file
     if not file and not audio_address:
         response_data = create_error_response(
             error_code="INVALID_PARAMETER",
@@ -538,31 +541,25 @@ async def create_transcription(
             )
             return JSONResponse(content=response_data, status_code=401)
 
-        # 处理音频输入（URL 下载 或 文件上传）
-        if audio_address:
-            # 方式1: 从 URL 下载音频
+        # 处理音频输入：优先 file，其次 audio_address
+        if file is not None:
+            if audio_address:
+                logger.info("[OpenAI API] 检测到同时提供 file 和 audio_address，已忽略 audio_address")
+
+            logger.info(f"[OpenAI API] 从上传文件读取音频: {file.filename}")
+            audio_data = await file.read()
+
+            normalized_audio_path, audio_duration, audio_path = await audio_service.process_upload_file(
+                audio_data=audio_data,
+                filename=file.filename if file else None,
+                sample_rate=16000,
+            )
+        else:
             logger.info(f"[OpenAI API] 从 URL 下载音频: {audio_address}")
             normalized_audio_path, audio_duration, audio_path = await audio_service.process_from_request(
                 request=request,
                 audio_address=audio_address,
                 task_id=f"openai-{int(time.time() * 1000)}",
-                sample_rate=16000,
-            )
-        else:
-            # 方式2: 从上传文件读取音频
-            if file is None:
-                response_data = create_error_response(
-                    error_code="INVALID_PARAMETER",
-                    message="未提供音频文件",
-                )
-                return JSONResponse(content=response_data, status_code=400)
-            logger.info(f"[OpenAI API] 从上传文件读取音频: {file.filename}")
-            audio_data = await file.read()
-
-            # 使用音频服务处理上传的音频文件
-            normalized_audio_path, audio_duration, audio_path = await audio_service.process_upload_file(
-                audio_data=audio_data,
-                filename=file.filename if file else None,
                 sample_rate=16000,
             )
 

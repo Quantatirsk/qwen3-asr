@@ -45,8 +45,11 @@ class AudioProcessingService:
         """从请求中处理音频
 
         支持两种方式：
-        1. URL下载：通过 audio_address 参数指定音频URL
-        2. 请求体上传：从请求体读取二进制音频数据
+        1. 请求体上传：从请求体读取二进制音频/视频数据
+        2. URL下载：通过 audio_address 参数指定音频/视频 URL
+
+        当请求体和 audio_address 同时存在时，优先使用请求体，
+        并忽略 audio_address。
 
         Args:
             request: FastAPI请求对象
@@ -67,9 +70,31 @@ class AudioProcessingService:
         normalized_audio_path = None
 
         try:
-            # 获取音频数据
-            if audio_address:
-                # 方式1: 从URL下载音频
+            # 优先读取请求体；若请求体为空，再回退到 audio_address。
+            uploaded_data = await request.body()
+
+            if uploaded_data:
+                if audio_address:
+                    logger.info(f"[{task_id}] 检测到同时提供上传内容和 audio_address，已忽略 audio_address")
+
+                logger.info(f"[{task_id}] 开始接收上传音频...")
+
+                if len(uploaded_data) > settings.MAX_AUDIO_SIZE:
+                    max_size_mb = settings.MAX_AUDIO_SIZE // 1024 // 1024
+                    raise InvalidMessageException(
+                        f"音频文件太大，最大支持{max_size_mb}MB", task_id
+                    )
+
+                logger.info(
+                    f"[{task_id}] 音频接收完成，大小: {len(uploaded_data) / 1024 / 1024:.2f}MB"
+                )
+
+                file_suffix = get_audio_file_suffix(audio_data=uploaded_data)
+                logger.info(f"[{task_id}] 识别文件格式: {file_suffix}")
+                audio_path = save_audio_to_temp_file(uploaded_data, file_suffix)
+
+            elif audio_address:
+                # 方式2: 从URL下载音频
                 logger.info(f"[{task_id}] 开始从URL下载音频: {audio_address}")
                 audio_data = download_audio_from_url(audio_address)
                 logger.info(
@@ -82,29 +107,7 @@ class AudioProcessingService:
                 audio_path = save_audio_to_temp_file(audio_data, file_suffix)
 
             else:
-                # 方式2: 从请求体读取二进制音频数据
-                logger.info(f"[{task_id}] 开始接收上传音频...")
-
-                # 读取请求体
-                audio_data = await request.body()
-                if not audio_data:
-                    raise InvalidMessageException("音频数据为空", task_id)
-
-                logger.info(
-                    f"[{task_id}] 音频接收完成，大小: {len(audio_data) / 1024 / 1024:.2f}MB"
-                )
-
-                # 检查文件大小
-                if len(audio_data) > settings.MAX_AUDIO_SIZE:
-                    max_size_mb = settings.MAX_AUDIO_SIZE // 1024 // 1024
-                    raise InvalidMessageException(
-                        f"音频文件太大，最大支持{max_size_mb}MB", task_id
-                    )
-
-                # 通过文件头自动检测音频格式
-                file_suffix = get_audio_file_suffix(audio_data=audio_data)
-                logger.info(f"[{task_id}] 识别文件格式: {file_suffix}")
-                audio_path = save_audio_to_temp_file(audio_data, file_suffix)
+                raise InvalidMessageException("音频数据为空", task_id)
 
             logger.info(f"[{task_id}] 临时文件已保存: {audio_path}")
 

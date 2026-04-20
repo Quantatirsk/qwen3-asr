@@ -155,8 +155,8 @@ uv run python start.py
 
 | 参数                           | 类型   | 默认值                | 说明                                  |
 | ------------------------------ | ------ | --------------------- | ------------------------------------- |
-| `file`                       | file   | 与 `audio_address` 二选一 | 音频文件                              |
-| `audio_address`              | string | 与 `file` 二选一      | 音频文件 URL（HTTP/HTTPS）            |
+| `file`                       | file   | 提供时优先使用         | 音频/视频文件                          |
+| `audio_address`              | string | 可选                  | 音频/视频文件 URL（HTTP/HTTPS）；若同时提供 `file`，则忽略 |
 | `model`                      | string | 忽略                  | 兼容参数；离线路径会直接忽略          |
 | `language`                   | string | 自动检测              | 语言代码 (zh/en/ja)                   |
 | `enable_speaker_diarization` | bool   | `true`              | 启用说话人分离                        |
@@ -165,9 +165,10 @@ uv run python start.py
 | `prompt`                     | string | -                     | 提示文本（保留兼容）                  |
 | `temperature`                | float  | `0`                   | 采样温度（保留兼容）                  |
 
-**音频输入方式:**
-- **文件上传**: 使用 `file` 参数上传音频文件（标准 OpenAI 方式）
-- **URL 下载**: 使用 `audio_address` 参数提供音频 URL，服务将自动下载
+**音频/视频输入方式:**
+- **文件上传**: 使用 `file` 参数上传音频文件或带音轨的视频容器
+- **URL 下载**: 使用 `audio_address` 参数提供音频/视频 URL，服务将自动下载
+- **优先级**: 如果同时提供 `file` 和 `audio_address`，服务会优先使用 `file`，并忽略 `audio_address`
 
 **使用示例:**
 
@@ -214,7 +215,7 @@ curl -X POST "http://localhost:8000/v1/audio/transcriptions" \
 | 参数                           | 类型   | 默认值             | 说明                                  |
 | ------------------------------ | ------ | ------------------ | ------------------------------------- |
 | `model_id`                   | string | 忽略             | 兼容参数；离线路径会直接忽略          |
-| `audio_address`              | string | -                  | 音频 URL（可选）                      |
+| `audio_address`              | string | `https://media.cdn.vect.one/podcast_demo.mp4`（文档示例） | 音频/视频 URL（可选；若同时上传内容则忽略） |
 | `sample_rate`                | int    | `16000`          | 采样率                                |
 | `enable_speaker_diarization` | bool   | `true`           | 启用说话人分离                        |
 | `word_timestamps`            | bool   | `false`          | 返回后端支持的字词级时间戳；Qwen CUDA vLLM、CPU Rust 和 Apple MLX 在启用时会自动调用 forced aligner |

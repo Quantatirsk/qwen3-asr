@@ -44,7 +44,7 @@
             "extra_kwargs": {
                 "max_model_len": 16384,
                 "forced_aligner_path": "Qwen/Qwen3-ForcedAligner-0.6B",
-                "max_inference_batch_size": 32
+                "max_inference_batch_size": 16
             }
         },
         "qwen3-asr-0.6b": {
@@ -77,7 +77,7 @@
             "extra_kwargs": {
                 "max_model_len": 16384,
                 "forced_aligner_path": "Qwen/Qwen3-ForcedAligner-0.6B",
-                "max_inference_batch_size": 32
+                "max_inference_batch_size": 16
             }
         }
     }

@@ -93,14 +93,16 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
 将音频文件转写为文本，兼容阿里云语音识别 RESTful API。
 
 ## 功能特性
-- 支持多种音频格式：WAV, MP3, M4A, FLAC, OGG, AAC, AMR 等
+- 支持多种音频格式与常见含音轨视频容器：WAV, MP3, M4A, FLAC, OGG, AAC, AMR, PCM, WEBM, MP4, MOV, MKV, AVI 等
 - 自动音频格式检测和转换
 - 支持长音频自动分段识别（返回带时间戳的分段结果）
 - 最大文件大小：{settings.MAX_AUDIO_SIZE // (1024 * 1024)}MB（可通过环境变量 MAX_AUDIO_SIZE 配置）
 
 ## 音频输入方式
-1. **请求体上传**：将音频二进制数据作为请求体发送
-2. **URL 下载**：通过 `audio_address` 参数指定音频文件 URL
+1. **请求体上传**：将音频/视频二进制数据作为请求体发送
+2. **URL 下载**：通过 `audio_address` 参数指定音频/视频文件 URL
+
+如果请求体和 `audio_address` 同时存在，服务会优先使用请求体，并忽略 `audio_address`。
 
 ## 注意事项
 - 离线路径固定使用服务当前启用的 Qwen3-ASR 模型；`model_id` 仅为兼容参数，传入后会被忽略
@@ -130,9 +132,9 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
                 "schema": {
                     "type": "string",
                     "maxLength": 512,
-                    "example": "",
+                    "example": "https://media.cdn.vect.one/podcast_demo.mp4",
                 },
-                "description": "音频文件 URL（HTTP/HTTPS）。指定此参数时，将从 URL 下载音频而非读取请求体",
+                "description": "音频/视频文件 URL（HTTP/HTTPS）。仅当请求体为空时使用；若同时上传请求体，服务会忽略此参数",
             },
             # 3. 音频属性
             {
@@ -197,7 +199,7 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
             },
         ],
         "requestBody": {
-            "description": "音频文件二进制数据。支持格式：WAV, MP3, M4A, FLAC, OGG, AAC, AMR 等。不使用 audio_address 参数时必需",
+            "description": "音频/视频文件二进制数据。支持格式：WAV, MP3, M4A, FLAC, OGG, AAC, AMR, PCM, WEBM, MP4, MOV, MKV, AVI 等。若同时提供 audio_address，服务会优先使用这里上传的内容",
             "content": {
                 "application/octet-stream": {
                     "schema": {"type": "string", "format": "binary"}

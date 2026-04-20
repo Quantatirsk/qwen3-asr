@@ -499,8 +499,8 @@ def detect_audio_format_from_bytes(data: bytes) -> str:
     elif data[:4] == b"OggS":
         return ".ogg"
     elif data[4:8] == b"ftyp":
-        # M4A/AAC/MP4 容器
-        return ".m4a"
+        # M4A/AAC/MP4/MOV 容器
+        return ".mp4"
     elif data[:4] == b"\x1aE\xdf\xa3":
         # WebM/MKV
         return ".webm"
@@ -530,7 +530,10 @@ def get_audio_file_suffix(
 
         # 获取扩展名
         ext = os.path.splitext(path)[1].lower()
-        if ext and ext in [".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aac", ".pcm", ".webm"]:
+        if ext and ext in [
+            ".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aac", ".pcm", ".webm",
+            ".mp4", ".mpeg", ".mpga", ".mov", ".mkv", ".avi",
+        ]:
             return ext
 
         # 无法识别扩展名，默认为 .wav

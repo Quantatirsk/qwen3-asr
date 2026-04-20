@@ -118,11 +118,7 @@ def _resolve_forced_aligner_gpu_memory_utilization(primary_utilization: float) -
                 override,
             )
 
-    # The forced aligner runs as a second vLLM engine on the same GPU.
-    # Using vLLM's default 0.9 often over-reserves memory and blocks startup.
-    # A conservative fallback is still better than the default when runtime
-    # free-memory probing is unavailable.
-    return round(min(0.70, max(0.20, 0.92 - primary_utilization)), 2)
+    return primary_utilization
 
 
 @dataclass
@@ -195,27 +191,8 @@ class Qwen3VLLMBackend:
 
     def _get_forced_aligner_gpu_memory_utilization(self) -> float:
         configured = _resolve_forced_aligner_gpu_memory_utilization(self._gpu_memory_utilization)
-
-        try:
-            import torch
-
-            if torch.cuda.is_available():
-                free_bytes, total_bytes = torch.cuda.mem_get_info()
-                free_ratio = float(free_bytes) / float(total_bytes)
-                dynamic = max(0.08, min(0.75, free_ratio - 0.03))
-                selected = round(min(configured, dynamic), 2)
-                logger.info(
-                    "Resolved forced aligner gpu_memory_utilization=%s (free_ratio=%.2f configured=%s)",
-                    selected,
-                    free_ratio,
-                    configured,
-                )
-                return selected
-        except Exception as exc:
-            logger.debug("Failed to probe CUDA free memory for forced aligner sizing: %s", exc)
-
         logger.info(
-            "Resolved forced aligner gpu_memory_utilization=%s (fallback from primary=%s)",
+            "Resolved forced aligner gpu_memory_utilization=%s (primary=%s)",
             configured,
             self._gpu_memory_utilization,
         )

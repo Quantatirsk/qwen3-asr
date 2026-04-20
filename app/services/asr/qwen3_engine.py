@@ -27,19 +27,13 @@ def calculate_gpu_memory_utilization(model_path: str) -> float:
     """Calculate optimal gpu_memory_utilization based on model size and available VRAM
 
     Model memory requirements (observed, including KV cache):
-    - 0.6B: ~8GB (model + KV cache)
-    - 1.7B: ~12GB (model + KV cache)
+    - 0.6B: ~7.0GB (model + KV cache)
+    - 1.7B: ~10.0GB (model + KV cache)
 
     Examples:
-    - 8GB VRAM + 0.6B: 8/8 = 1.0 → clamped to 0.95
+    - 8GB VRAM + 0.6B: 8/8 = 1.0 -> clamped to 0.95
     - 24GB VRAM + 1.7B: 12/24 = 0.5
     - 80GB VRAM + 1.7B: 12/80 = 0.15
-
-    Args:
-        model_path: Path to model (used to detect model size)
-
-    Returns:
-        gpu_memory_utilization ratio (0.0 to 1.0)
     """
     # Check environment variable override first
     env_override = os.getenv("QWEN_GPU_MEMORY_UTILIZATION")
@@ -54,46 +48,40 @@ def calculate_gpu_memory_utilization(model_path: str) -> float:
         except ValueError:
             logger.warning(f"Invalid QWEN_GPU_MEMORY_UTILIZATION={env_override}, not a float")
 
-    # Model memory requirements (GB) - includes model + KV cache
-    MODEL_MEMORY_REQUIREMENTS = {
-        "0.6B": 8.0,
-        "1.7B": 12.0,
+    model_memory_requirements = {
+        "0.6B": 7.0,
+        "1.7B": 10.0,
     }
 
-    # Detect model size from path
     if "0.6B" in model_path:
-        required_memory_gb = MODEL_MEMORY_REQUIREMENTS["0.6B"]
+        required_memory_gb = model_memory_requirements["0.6B"]
         model_size = "0.6B"
     else:
-        required_memory_gb = MODEL_MEMORY_REQUIREMENTS["1.7B"]
+        required_memory_gb = model_memory_requirements["1.7B"]
         model_size = "1.7B"
 
-    # Get total VRAM
     try:
         if not torch.cuda.is_available():
             logger.warning("CUDA not available, using fallback gpu_memory_utilization=0.5")
             return 0.5
 
-        # Use first GPU for memory detection
         total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-
-        # Calculate utilization ratio
         utilization = required_memory_gb / total_vram_gb
-
-        # Clamp to safe maximum (0.95)
         utilization = min(utilization, 0.95)
 
         logger.info(
-            f"GPU memory calculation: model={model_size}, "
-            f"requires={required_memory_gb:.1f}GB, total_vram={total_vram_gb:.1f}GB, "
-            f"utilization={utilization:.2f}"
+            "GPU memory calculation: model=%s, requires=%.1fGB, total_vram=%.1fGB, utilization=%.2f",
+            model_size,
+            required_memory_gb,
+            total_vram_gb,
+            utilization,
         )
 
-        # Warn if VRAM is insufficient
         if utilization >= 0.90:
             logger.warning(
-                f"VRAM may be insufficient: {total_vram_gb:.1f}GB available, "
-                f"{required_memory_gb:.1f}GB required. Consider using smaller model."
+                "VRAM may be insufficient: %.1fGB available, %.1fGB required. Consider using smaller model.",
+                total_vram_gb,
+                required_memory_gb,
             )
 
         return round(utilization, 2)
