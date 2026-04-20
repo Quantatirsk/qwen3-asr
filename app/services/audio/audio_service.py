@@ -71,7 +71,16 @@ class AudioProcessingService:
 
         try:
             # 优先读取请求体；若请求体为空，再回退到 audio_address。
-            uploaded_data = await request.body()
+            # 注意：对于 FastAPI 已经解析过 form/multipart 的请求，
+            # 再次读取 body 可能抛出 "Stream consumed"。
+            try:
+                uploaded_data = await request.body()
+            except RuntimeError as exc:
+                if "Stream consumed" in str(exc):
+                    logger.info(f"[{task_id}] 请求体已被上游读取，跳过 request.body() 回退逻辑")
+                    uploaded_data = b""
+                else:
+                    raise
 
             if uploaded_data:
                 if audio_address:

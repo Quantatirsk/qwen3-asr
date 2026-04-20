@@ -96,13 +96,19 @@ def _parse_asr_output(raw_text: str, language: Optional[str]) -> tuple[str, str]
 
 
 def _split_alignment_units(text: str) -> list[str]:
-    compact = "".join(ch for ch in text if not ch.isspace())
-    if not compact:
+    if not text:
         return []
-    has_cjk = any("\u4e00" <= ch <= "\u9fff" for ch in compact)
-    if has_cjk and " " not in text:
-        return [ch for ch in compact]
-    return re.findall(r"\S+", text)
+
+    # Mixed Chinese/English transcripts should not fall back to whitespace-only
+    # tokenization, otherwise a long CJK sentence with a single embedded English
+    # word can collapse into one giant alignment unit.
+    token_pattern = re.compile(
+        r"[\u4e00-\u9fff]"                    # CJK ideographs, align per character
+        r"|[A-Za-z0-9]+(?:['._+-][A-Za-z0-9]+)*"  # Latin / alnum words
+        r"|[^\w\s]",                         # punctuation and symbols
+        re.UNICODE,
+    )
+    return token_pattern.findall(text)
 
 
 def _resolve_forced_aligner_gpu_memory_utilization(primary_utilization: float) -> float:
@@ -374,10 +380,25 @@ class Qwen3VLLMBackend:
             if int(tid) == int(self._timestamp_token_id or -1)
         ]
 
+        expected_timestamps = len(tokens) * 2
+        if len(ts_predictions) < expected_timestamps:
+            raise RuntimeError(
+                "Forced aligner returned fewer timestamp predictions than expected: "
+                f"expected={expected_timestamps}, got={len(ts_predictions)}, tokens={len(tokens)}"
+            )
+
         aligned: list[dict[str, float | str]] = []
         for index, token in enumerate(tokens):
             start_ms = ts_predictions[index * 2]
             end_ms = ts_predictions[index * 2 + 1]
+            if end_ms < start_ms:
+                logger.warning(
+                    "Forced aligner produced reversed timestamps for token=%r: start_ms=%s end_ms=%s",
+                    token,
+                    start_ms,
+                    end_ms,
+                )
+                start_ms, end_ms = end_ms, start_ms
             aligned.append({"text": token, "start_ms": start_ms, "end_ms": end_ms})
         return aligned
 
