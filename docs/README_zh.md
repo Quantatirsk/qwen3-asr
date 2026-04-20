@@ -35,7 +35,6 @@
 ## 致谢
 
 - [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR) 提供官方模型与多模态 / vLLM 使用方式
-- [mlx-qwen3-asr](https://github.com/moona3k/mlx-qwen3-asr) 提供本项目使用的 Apple Silicon backend
 - [QwenASR](https://github.com/huanglizhuo/QwenASR) 提供本项目 vendored 的 CPU Rust backend
 
 ## 快速部署
@@ -85,8 +84,8 @@ docker run -d --name funasr-api \
 ```
 
 > **注意**: 当前 CPU 镜像已通过内置 QwenASR Rust backend 支持 `qwen3-asr-0.6b`。
-> CUDA vLLM、CPU Rust 和 Apple MLX 路径下，`word_timestamps=true` 都会自动调用 forced aligner；当前实际后端为 `CUDA -> vLLM`、`MPS -> MLX`、`CPU -> vendored QwenASR Rust`。
-> Apple Silicon 上的 Qwen3-ASR 现已切换为基于 MLX 的离线路径。
+> CUDA vLLM 与 CPU Rust 路径下，`word_timestamps=true` 都会自动调用 forced aligner；当前实际后端为 `CUDA -> vLLM`、`CPU/macOS -> vendored QwenASR Rust`。
+> Apple Silicon 上的 Qwen3-ASR 现已统一走 Rust CPU backend。
 
 **内网部署**：使用辅助脚本准备当前运行计划所需模型，然后复制到内网机器：
 
@@ -122,7 +121,6 @@ docker-compose up -d
 |------|------|------|
 | CPU | `uv sync --group cpu` | Linux/CPU 运行时，包含 CPU 版 PyTorch |
 | GPU | `uv sync --group gpu` | Linux/NVIDIA 运行时，安装官方 vLLM nightly |
-| Apple Silicon | `uv sync --group apple-silicon` | macOS/Apple Silicon 运行时，安装 MLX backend |
 
 ```bash
 # 克隆项目
@@ -135,10 +133,10 @@ uv sync --group gpu
 uv run python start.py
 ```
 
-Apple Silicon 本地开发：
+macOS / Apple Silicon 本地开发：
 
 ```bash
-uv sync --group apple-silicon
+uv sync --group cpu
 uv run python start.py
 ```
 
@@ -160,7 +158,7 @@ uv run python start.py
 | `model`                      | string | 忽略                  | 兼容参数；离线路径会直接忽略          |
 | `language`                   | string | 自动检测              | 语言代码 (zh/en/ja)                   |
 | `enable_speaker_diarization` | bool   | `true`              | 启用说话人分离                        |
-| `word_timestamps`            | bool   | `false`             | 返回后端支持的字词级时间戳；Qwen CUDA vLLM、CPU Rust 和 Apple MLX 在启用时会自动调用 forced aligner |
+| `word_timestamps`            | bool   | `false`             | 返回后端支持的字词级时间戳；Qwen CUDA vLLM 与 CPU Rust 在启用时会自动调用 forced aligner |
 | `response_format`            | string | `verbose_json`      | 输出格式                              |
 | `prompt`                     | string | -                     | 提示文本（保留兼容）                  |
 | `temperature`                | float  | `0`                   | 采样温度（保留兼容）                  |
@@ -218,7 +216,7 @@ curl -X POST "http://localhost:8000/v1/audio/transcriptions" \
 | `audio_address`              | string | `https://media.cdn.vect.one/podcast_demo.mp4`（文档示例） | 音频/视频 URL（可选；若同时上传内容则忽略） |
 | `sample_rate`                | int    | `16000`          | 采样率                                |
 | `enable_speaker_diarization` | bool   | `true`           | 启用说话人分离                        |
-| `word_timestamps`            | bool   | `false`          | 返回后端支持的字词级时间戳；Qwen CUDA vLLM、CPU Rust 和 Apple MLX 在启用时会自动调用 forced aligner |
+| `word_timestamps`            | bool   | `false`          | 返回后端支持的字词级时间戳；Qwen CUDA vLLM 与 CPU Rust 在启用时会自动调用 forced aligner |
 | `vocabulary_id`              | string | -                  | 热词（格式：`词1 权重1 词2 权重2`） |
 
 **使用示例:**
@@ -304,7 +302,7 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 
 **Qwen3-ASR 流式**（使用 `/ws/v1/asr/qwen`）：
 - ✅ 支持多语言实时识别
-- ⚠️ Apple Silicon 使用 MLX 流式路径
+- ✅ 当前支持 CUDA vLLM 与 CPU Rust 两条流式路径
 - ❌ 当前流式路径不返回词级时间戳
 
 ### Qwen3 运行时矩阵
@@ -312,15 +310,14 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 | 运行环境 | 后端 | 离线转写 | WebSocket 流式 | 离线词级时间戳 | 流式词级时间戳 | 成熟度 |
 |---------|------|---------|----------------|----------------|----------------|--------|
 | Linux + NVIDIA GPU | 官方 vLLM nightly | ✅ | ✅ | ✅ | ❌ | 面向生产 |
-| Apple Silicon | MLX | ✅ | ✅ | ✅ | ❌ | 流式为实验性质 |
-| CPU | QwenASR Rust | ✅ | ✅ | ✅（forced aligner） | ❌ | 可用基线 |
+| CPU / macOS | QwenASR Rust | ✅ | ✅ | ✅（forced aligner） | ❌ | 推荐本地后端 |
 
 ## 支持离线的模型
 
 | 模型 ID              | 名称              | 说明                                     | 特性      |
 | -------------------- | ----------------- | ---------------------------------------- | --------- |
-| `qwen3-asr-1.7b`   | Qwen3-ASR 1.7B    | 高性能多语言 ASR；CUDA 使用 vLLM，Apple Silicon 使用 MLX | 离线/实时 |
-| `qwen3-asr-0.6b`   | Qwen3-ASR 0.6B    | 轻量版多语言 ASR；CUDA 使用 vLLM，Apple Silicon 使用 MLX，CPU 使用 Rust backend | 离线/实时 |
+| `qwen3-asr-1.7b`   | Qwen3-ASR 1.7B    | 高性能多语言 ASR；CUDA 使用 vLLM | 离线/实时 |
+| `qwen3-asr-0.6b`   | Qwen3-ASR 0.6B    | 轻量版多语言 ASR；CUDA 使用 vLLM，CPU/macOS 使用 Rust backend | 离线/实时 |
 
 ## 仅实时能力
 
@@ -331,8 +328,7 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 **运行时选择:**
 - **显存 >= 32GB**: 选择 `qwen3-asr-1.7b`
 - **显存 < 32GB**: 选择 `qwen3-asr-0.6b`
-- **Apple Silicon**: 选择基于 MLX 的 Qwen3
-- **CPU**: 选择基于 vendored Rust 的 `qwen3-asr-0.6b`
+- **无 CUDA（含 macOS / Apple Silicon）**: 选择基于 vendored Rust 的 `qwen3-asr-0.6b`
 - `paraformer-large` 实时能力始终为 WebSocket 流式准备
 
 ## 环境变量
@@ -344,7 +340,7 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 | `API_KEY`                        | -            | API 认证密钥（可选，未配置时无需认证）        |
 | `LOG_LEVEL`                      | `INFO`       | 日志级别（DEBUG/INFO/WARNING/ERROR）          |
 | `MAX_AUDIO_SIZE`                 | `2048`       | 最大音频文件大小（MB，支持单位如 2GB）        |
-| `ASR_BATCH_SIZE`                 | `4`          | ASR 批处理大小（GPU 建议 4，CPU 建议 2）      |
+| `ASR_BATCH_SIZE`                 | `4`          | ASR 批处理大小；CPU Rust 现已支持批内 4 路并行 |
 | `MAX_SEGMENT_SEC`                | `30`         | 音频分段最大时长（秒）                        |
 | `ASR_ENABLE_NEARFIELD_FILTER`    | `true`       | 启用远场声音过滤                              |
 
@@ -354,7 +350,7 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `QWEN_RUST_CPU_WORKERS` | `2` | CPU Rust backend worker 数 |
+| `QWEN_RUST_CPU_WORKERS` | `4` | CPU Rust backend worker 数（Rust ASR / forced align 默认 4 个 runtime） |
 | `QWENASR_LIBRARY_PATH` | 自动探测 | 覆盖 vendored Rust 动态库路径 |
 | `QWENASR_CPU_NUM_THREADS` | 自动 / 安全 `1` | 覆盖单个 Rust runtime 的 CPU 线程数 |
 

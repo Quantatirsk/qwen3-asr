@@ -9,7 +9,7 @@ FunASR-API 使用以下模型仓库：
 | 平台 | 路径 | 用途 |
 |------|------|------|
 | ModelScope | `~/.cache/modelscope/hub/models` | FunASR 模型（Paraformer、VAD、CAM++ 等） |
-| HuggingFace | `~/.cache/huggingface` | Qwen3-ASR 模型（CUDA 和 Apple Silicon 共用） |
+| HuggingFace | `~/.cache/huggingface` | Qwen3-ASR 模型（CUDA 和 CPU/macOS 共用） |
 
 ## 自动下载（推荐）
 

@@ -22,14 +22,11 @@ _ENGINE_REGISTRY: Dict[str, Callable[[Any], BaseASREngine]] = {}
 def _supports_qwen_realtime_on_device(configured_device: str) -> bool:
     """Resolve whether Qwen realtime mode is available on the active device."""
     from app.core.device import detect_device
-    from .qwen3_mlx import is_mlx_qwen_available
     from .qwenasr_rust import is_qwenasr_rust_available
 
     device = detect_device(configured_device)
     if device.startswith("cuda"):
         return True
-    if device == "mps":
-        return is_mlx_qwen_available()
     if device == "cpu":
         return is_qwenasr_rust_available()
     return False

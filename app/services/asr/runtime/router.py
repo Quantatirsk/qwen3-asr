@@ -15,7 +15,6 @@ from app.core.device import detect_device
 from app.core.executor import run_sync
 from app.services.asr.engines import ASRFullResult, BaseASREngine
 from app.services.asr.manager import get_model_manager
-from app.services.asr.qwen3_mlx import is_mlx_qwen_available
 from app.services.asr.qwenasr_rust import is_qwenasr_rust_available
 from .local_pool import LocalEnginePool
 
@@ -24,7 +23,6 @@ _VLLM_SHARED_CONCURRENCY = 8
 
 class RuntimeFamily(str, Enum):
     QWEN_VLLM = "qwen_vllm"
-    QWEN_MLX = "qwen_mlx"
     QWEN_RUST_CPU = "qwen_rust_cpu"
     FUNASR = "funasr"
 
@@ -87,10 +85,6 @@ class RuntimeRouter:
         if model_id.startswith("qwen3-asr-"):
             if device.startswith("cuda"):
                 return RuntimeFamily.QWEN_VLLM
-            if device == "mps":
-                if not is_mlx_qwen_available():
-                    raise RuntimeError("MLX backend is required for Apple Silicon Qwen3-ASR")
-                return RuntimeFamily.QWEN_MLX
             if device == "cpu" and is_qwenasr_rust_available():
                 return RuntimeFamily.QWEN_RUST_CPU
             raise RuntimeError(f"Qwen3-ASR is not available on device '{device}'")
@@ -98,8 +92,6 @@ class RuntimeRouter:
 
     def _pool_size_for_family(self, family: RuntimeFamily) -> int:
         if family == RuntimeFamily.QWEN_VLLM:
-            return 1
-        if family == RuntimeFamily.QWEN_MLX:
             return 1
         if family == RuntimeFamily.QWEN_RUST_CPU:
             return settings.QWEN_RUST_CPU_WORKERS

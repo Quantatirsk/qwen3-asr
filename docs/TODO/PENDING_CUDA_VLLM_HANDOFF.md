@@ -43,7 +43,7 @@
 当前后端语义：
 
 - `CUDA -> official vLLM`
-- `MPS -> MLX`
+- `macOS -> CPU Rust`
 - `CPU -> vendored QwenASR Rust`
 
 这次移除了 CUDA 下对 `qwen-asr[vllm]` 的直接依赖。
@@ -83,7 +83,7 @@
 当前说明已经更新为：
 
 - CUDA 使用官方 `vLLM` nightly
-- `word_timestamps=true` 在 CUDA vLLM / CPU Rust / Apple MLX 下都会自动调用 forced aligner
+- `word_timestamps=true` 在 CUDA vLLM / CPU Rust 下都会自动调用 forced aligner
 
 ## 本轮已完成的静态验证
 

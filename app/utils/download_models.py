@@ -5,7 +5,7 @@
 用于构建 Docker 镜像时预下载所有模型
 
 - Paraformer 模型从 ModelScope 下载
-- Qwen3-ASR 模型从 HuggingFace 下载 (CUDA vLLM / Apple Silicon MLX)
+- Qwen3-ASR 模型从 HuggingFace 下载 (CUDA vLLM / CPU Rust)
 """
 
 import argparse

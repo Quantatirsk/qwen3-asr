@@ -109,7 +109,7 @@ class Qwen3ASRService:
         if not engine.supports_realtime:
             raise Exception(
                 f"当前设备 {engine.device} 不支持 Qwen3-ASR 实时流式识别；"
-                "Apple Silicon 上的 Qwen3-ASR 现已改为 MLX 离线路径"
+                "当前仅支持 CUDA vLLM 与 CPU Rust 路径"
             )
 
         ctx.engine = engine

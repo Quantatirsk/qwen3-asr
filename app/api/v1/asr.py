@@ -170,7 +170,7 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
                     "default": False,
                     "example": False,
                 },
-                "description": "是否返回字词级时间戳（默认关闭；Qwen CUDA vLLM / CPU Rust / Apple MLX 在启用时会自动调用 forced aligner）",
+                "description": "是否返回字词级时间戳（默认关闭；Qwen CUDA vLLM / CPU Rust 在启用时会自动调用 forced aligner）",
             },
             # 5. 增强选项
             {

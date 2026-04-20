@@ -37,7 +37,6 @@ Speech recognition API service powered by [FunASR](https://github.com/alibaba-da
 ## Acknowledgements
 
 - [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR) provides the official model family and multimodal/vLLM usage guidance
-- [mlx-qwen3-asr](https://github.com/moona3k/mlx-qwen3-asr) provides the Apple Silicon backend used in this project
 - [QwenASR](https://github.com/huanglizhuo/QwenASR) provides the CPU Rust backend vendored by this project
 
 ## Quick Deployment
@@ -87,8 +86,8 @@ docker run -d --name funasr-api \
 ```
 
 > **Note**: CPU images now support `qwen3-asr-0.6b` via the bundled QwenASR Rust backend.
-> On CUDA vLLM, CPU Rust, and Apple MLX, `word_timestamps=true` now triggers the forced aligner automatically.
-> On Apple Silicon, Qwen3-ASR now uses the MLX backend for offline inference.
+> On CUDA vLLM and CPU Rust, `word_timestamps=true` now triggers the forced aligner automatically.
+> On macOS / Apple Silicon, Qwen3-ASR now runs through the Rust CPU backend.
 
 **Offline Deployment**: Use the helper script to prepare the current runtime model package, then copy to the offline machine:
 
@@ -124,7 +123,6 @@ Dependency modes are now unified in [pyproject.toml](/Users/quant/Documents/funa
 |------|---------|-------|
 | CPU | `uv sync --group cpu` | Linux/CPU runtime, includes CPU PyTorch |
 | GPU | `uv sync --group gpu` | Linux/NVIDIA runtime, installs official vLLM nightly |
-| Apple Silicon | `uv sync --group apple-silicon` | macOS/Apple Silicon runtime, installs MLX backend |
 
 ```bash
 # Clone project
@@ -137,10 +135,10 @@ uv sync --group gpu
 uv run python start.py
 ```
 
-Apple Silicon local development:
+macOS / Apple Silicon local development:
 
 ```bash
-uv sync --group apple-silicon
+uv sync --group cpu
 uv run python start.py
 ```
 
@@ -162,7 +160,7 @@ uv run python start.py
 | `model` | string | ignored | Compatibility parameter; ignored for offline requests |
 | `language` | string | Auto-detect | Language code (zh/en/ja) |
 | `enable_speaker_diarization` | bool | `true` | Enable speaker diarization |
-| `word_timestamps` | bool | `false` | Return word-level timestamps when the backend supports them. Qwen CUDA vLLM, CPU Rust, and Apple MLX automatically use the forced aligner when enabled. |
+| `word_timestamps` | bool | `false` | Return word-level timestamps when the backend supports them. Qwen CUDA vLLM and CPU Rust automatically use the forced aligner when enabled. |
 | `response_format` | string | `verbose_json` | Output format |
 | `prompt` | string | - | Prompt text (reserved) |
 | `temperature` | float | `0` | Sampling temperature (reserved) |
@@ -220,7 +218,7 @@ curl -X POST "http://localhost:8000/v1/audio/transcriptions" \
 | `audio_address` | string | `https://media.cdn.vect.one/podcast_demo.mp4` (docs example) | Audio/video URL (optional; ignored when body content is uploaded) |
 | `sample_rate` | int | `16000` | Sample rate |
 | `enable_speaker_diarization` | bool | `true` | Enable speaker diarization |
-| `word_timestamps` | bool | `false` | Return word-level timestamps when the backend supports them. Qwen CUDA vLLM, CPU Rust, and Apple MLX automatically use the forced aligner when enabled. |
+| `word_timestamps` | bool | `false` | Return word-level timestamps when the backend supports them. Qwen CUDA vLLM and CPU Rust automatically use the forced aligner when enabled. |
 | `vocabulary_id` | string | - | Hotwords (format: `word1 weight1 word2 weight2`) |
 
 **Usage Examples:**
@@ -306,7 +304,7 @@ Automatic long audio segmentation:
 
 **Qwen3-ASR Streaming** (using `/ws/v1/asr/qwen`):
 - ✅ Multi-language real-time recognition
-- ⚠️ Apple Silicon uses the MLX streaming path
+- ✅ CUDA vLLM and CPU Rust both support the current streaming path
 - ❌ Word-level timestamps are not available in the current streaming path
 
 ### Qwen3 Runtime Matrix
@@ -314,15 +312,14 @@ Automatic long audio segmentation:
 | Runtime | Backend | Offline | WebSocket Streaming | Word Timestamps Offline | Word Timestamps Streaming | Maturity |
 |---------|---------|---------|---------------------|-------------------------|---------------------------|----------|
 | Linux + NVIDIA GPU | Official vLLM nightly | ✅ | ✅ | ✅ | ❌ | Production-oriented |
-| Apple Silicon | MLX | ✅ | ✅ | ✅ | ❌ | Experimental streaming |
-| CPU | QwenASR Rust | ✅ | ✅ | ✅ (forced aligner) | ❌ | Functional baseline |
+| CPU / macOS | QwenASR Rust | ✅ | ✅ | ✅ (forced aligner) | ❌ | Recommended local fallback |
 
 ## Offline-Capable Models
 
 | Model ID | Name | Description | Features |
 |----------|------|-------------|----------|
-| `qwen3-asr-1.7b` | Qwen3-ASR 1.7B | High-performance multilingual ASR, 52 languages + dialects; CUDA uses vLLM, Apple Silicon uses MLX | Offline/Realtime |
-| `qwen3-asr-0.6b` | Qwen3-ASR 0.6B | Lightweight multilingual ASR; CUDA uses vLLM, Apple Silicon uses MLX, CPU uses Rust backend | Offline/Realtime |
+| `qwen3-asr-1.7b` | Qwen3-ASR 1.7B | High-performance multilingual ASR, 52 languages + dialects; CUDA uses vLLM | Offline/Realtime |
+| `qwen3-asr-0.6b` | Qwen3-ASR 0.6B | Lightweight multilingual ASR; CUDA uses vLLM, CPU/macOS uses Rust backend | Offline/Realtime |
 
 ## Realtime-Only Capability
 
@@ -333,8 +330,7 @@ Automatic long audio segmentation:
 **Runtime selection:**
 - **VRAM >= 32GB**: Select `qwen3-asr-1.7b`
 - **VRAM < 32GB**: Select `qwen3-asr-0.6b`
-- **Apple Silicon**: Select MLX-backed Qwen3
-- **CPU**: Select the vendored Rust-backed `qwen3-asr-0.6b`
+- **No CUDA (including macOS / Apple Silicon)**: Select the vendored Rust-backed `qwen3-asr-0.6b`
 - `paraformer-large` realtime capability is always prepared for websocket streaming
 
 ## Environment Variables
@@ -356,7 +352,7 @@ Advanced backend-specific settings:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `QWEN_RUST_CPU_WORKERS` | `2` | CPU Rust backend worker count |
+| `QWEN_RUST_CPU_WORKERS` | `4` | CPU Rust backend worker count (Rust ASR / forced align default to 4 runtimes) |
 | `QWENASR_LIBRARY_PATH` | auto-detect | Override vendored Rust dylib/so path |
 | `QWENASR_CPU_NUM_THREADS` | auto / safe `1` | Override per-runtime Rust CPU threads |
 

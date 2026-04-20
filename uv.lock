@@ -2,44 +2,33 @@ version = 1
 revision = 3
 requires-python = ">=3.10, <3.13"
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version == '3.11.*' and sys_platform == 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version == '3.11.*' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version < '3.11' and sys_platform != 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version == '3.11.*' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version < '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "python_full_version >= '3.11' and sys_platform == 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "python_full_version >= '3.11' and sys_platform == 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "python_full_version >= '3.11' and sys_platform == 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version < '3.11' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version == '3.11.*' and sys_platform == 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version == '3.11.*' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and sys_platform != 'darwin' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version == '3.11.*' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
+    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
+    "python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'win32' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'win32' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
 ]
 conflicts = [[
     { package = "funasr-api", group = "cpu" },
-    { package = "funasr-api", group = "gpu" },
-], [
-    { package = "funasr-api", group = "apple-silicon" },
     { package = "funasr-api", group = "gpu" },
 ]]
 
@@ -68,7 +57,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohappyeyeballs" },
     { name = "aiosignal" },
-    { name = "async-timeout", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "async-timeout", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "attrs" },
     { name = "frozenlist" },
     { name = "multidict" },
@@ -222,7 +211,7 @@ name = "anyio"
 version = "4.13.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "exceptiongroup", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "idna" },
     { name = "typing-extensions" },
 ]
@@ -419,7 +408,7 @@ name = "cffi"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/eb/56/b1ba7935a17738ae8453301356628e8147c79dbb825bcbc73dc7401f9846/cffi-2.0.0.tar.gz", hash = "sha256:44d1b5909021139fe36001ae048dbdde8214afa20200eda0f64c068cac5d5529", size = 523588, upload-time = "2025-09-08T23:24:04.541Z" }
 wheels = [
@@ -524,7 +513,7 @@ name = "click"
 version = "8.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/57/75/31212c6bf2503fdf920d87fee5d7a86a2e3bcf444984126f13d8e4016804/click-8.3.2.tar.gz", hash = "sha256:14162b8b3b3550a7d479eafa77dfd3c38d9dc8951f6f69c78913a8f9a7540fd5", size = 302856, upload-time = "2026-04-03T19:14:45.118Z" }
 wheels = [
@@ -556,8 +545,8 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "loguru" },
     { name = "pydantic" },
-    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "transformers" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/41/1b/c3c4a98ec5f2727656336f07a0c35862195c310d8eb0b2fa5b4be6848680/compressed_tensors-0.15.0.1.tar.gz", hash = "sha256:a8e93054e8a5ec49c980b09ed36c4c1249b4a8ee167920a8e461c4da26e78d99", size = 229412, upload-time = "2026-04-10T14:23:54.708Z" }
@@ -587,8 +576,8 @@ name = "cryptography"
 version = "46.0.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "platform_python_implementation != 'PyPy' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "cffi", marker = "platform_python_implementation != 'PyPy' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/47/93/ac8f3d5ff04d54bc814e961a43ae5b0b146154c89c61b47bb07557679b18/cryptography-46.0.7.tar.gz", hash = "sha256:e4cfd68c5f3e0bfdad0d38e023239b96a2fe84146481852dffbcca442c245aa5", size = 750652, upload-time = "2026-04-08T01:57:54.692Z" }
 wheels = [
@@ -687,36 +676,6 @@ wheels = [
 ]
 
 [[package]]
-name = "cython"
-version = "3.2.4"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/91/85/7574c9cd44b69a27210444b6650f6477f56c75fee1b70d7672d3e4166167/cython-3.2.4.tar.gz", hash = "sha256:84226ecd313b233da27dc2eb3601b4f222b8209c3a7216d8733b031da1dc64e6", size = 3280291, upload-time = "2026-01-04T14:14:14.473Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a1/10/720e0fb84eab4c927c4dd6b61eb7993f7732dd83d29ba6d73083874eade9/cython-3.2.4-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:02cb0cc0f23b9874ad262d7d2b9560aed9c7e2df07b49b920bda6f2cc9cb505e", size = 2960836, upload-time = "2026-01-04T14:14:51.103Z" },
-    { url = "https://files.pythonhosted.org/packages/7d/3d/b26f29092c71c36e0462752885bdfb18c23c176af4de953fdae2772a8941/cython-3.2.4-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:f136f379a4a54246facd0eb6f1ee15c3837cb314ce87b677582ec014db4c6845", size = 3370134, upload-time = "2026-01-04T14:14:53.627Z" },
-    { url = "https://files.pythonhosted.org/packages/56/9e/539fb0d09e4f5251b5b14f8daf77e71fee021527f1013791038234618b6b/cython-3.2.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:35ab0632186057406ec729374c737c37051d2eacad9d515d94e5a3b3e58a9b02", size = 3537552, upload-time = "2026-01-04T14:14:56.852Z" },
-    { url = "https://files.pythonhosted.org/packages/10/c6/82d19a451c050d1be0f05b1a3302267463d391db548f013ee88b5348a8e9/cython-3.2.4-cp310-cp310-win_amd64.whl", hash = "sha256:ca2399dc75796b785f74fb85c938254fa10c80272004d573c455f9123eceed86", size = 2766191, upload-time = "2026-01-04T14:14:58.709Z" },
-    { url = "https://files.pythonhosted.org/packages/85/cc/8f06145ec3efa121c8b1b67f06a640386ddacd77ee3e574da582a21b14ee/cython-3.2.4-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:ff9af2134c05e3734064808db95b4dd7341a39af06e8945d05ea358e1741aaed", size = 2953769, upload-time = "2026-01-04T14:15:00.361Z" },
-    { url = "https://files.pythonhosted.org/packages/55/b0/706cf830eddd831666208af1b3058c2e0758ae157590909c1f634b53bed9/cython-3.2.4-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:67922c9de058a0bfb72d2e75222c52d09395614108c68a76d9800f150296ddb3", size = 3243841, upload-time = "2026-01-04T14:15:02.066Z" },
-    { url = "https://files.pythonhosted.org/packages/ac/25/58893afd4ef45f79e3d4db82742fa4ff874b936d67a83c92939053920ccd/cython-3.2.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b362819d155fff1482575e804e43e3a8825332d32baa15245f4642022664a3f4", size = 3378083, upload-time = "2026-01-04T14:15:04.248Z" },
-    { url = "https://files.pythonhosted.org/packages/32/e4/424a004d7c0d8a4050c81846ebbd22272ececfa9a498cb340aa44fccbec2/cython-3.2.4-cp311-cp311-win_amd64.whl", hash = "sha256:1a64a112a34ec719b47c01395647e54fb4cf088a511613f9a3a5196694e8e382", size = 2769990, upload-time = "2026-01-04T14:15:06.53Z" },
-    { url = "https://files.pythonhosted.org/packages/91/4d/1eb0c7c196a136b1926f4d7f0492a96c6fabd604d77e6cd43b56a3a16d83/cython-3.2.4-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:64d7f71be3dd6d6d4a4c575bb3a4674ea06d1e1e5e4cd1b9882a2bc40ed3c4c9", size = 2970064, upload-time = "2026-01-04T14:15:08.567Z" },
-    { url = "https://files.pythonhosted.org/packages/03/1c/46e34b08bea19a1cdd1e938a4c123e6299241074642db9d81983cef95e9f/cython-3.2.4-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:869487ea41d004f8b92171f42271fbfadb1ec03bede3158705d16cd570d6b891", size = 3226757, upload-time = "2026-01-04T14:15:10.812Z" },
-    { url = "https://files.pythonhosted.org/packages/12/33/3298a44d201c45bcf0d769659725ae70e9c6c42adf8032f6d89c8241098d/cython-3.2.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:55b6c44cd30821f0b25220ceba6fe636ede48981d2a41b9bbfe3c7902ce44ea7", size = 3388969, upload-time = "2026-01-04T14:15:12.45Z" },
-    { url = "https://files.pythonhosted.org/packages/bb/f3/4275cd3ea0a4cf4606f9b92e7f8766478192010b95a7f516d1b7cf22cb10/cython-3.2.4-cp312-cp312-win_amd64.whl", hash = "sha256:767b143704bdd08a563153448955935844e53b852e54afdc552b43902ed1e235", size = 2756457, upload-time = "2026-01-04T14:15:14.67Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/8b/fd393f0923c82be4ec0db712fffb2ff0a7a131707b842c99bf24b549274d/cython-3.2.4-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:36bf3f5eb56d5281aafabecbaa6ed288bc11db87547bba4e1e52943ae6961ccf", size = 2875622, upload-time = "2026-01-04T14:15:39.749Z" },
-    { url = "https://files.pythonhosted.org/packages/73/48/48530d9b9d64ec11dbe0dd3178a5fe1e0b27977c1054ecffb82be81e9b6a/cython-3.2.4-cp39-abi3-manylinux1_i686.manylinux_2_28_i686.manylinux_2_5_i686.whl", hash = "sha256:6d5267f22b6451eb1e2e1b88f6f78a2c9c8733a6ddefd4520d3968d26b824581", size = 3210669, upload-time = "2026-01-04T14:15:41.911Z" },
-    { url = "https://files.pythonhosted.org/packages/5e/91/4865fbfef1f6bb4f21d79c46104a53d1a3fa4348286237e15eafb26e0828/cython-3.2.4-cp39-abi3-manylinux2014_armv7l.manylinux_2_17_armv7l.manylinux_2_31_armv7l.whl", hash = "sha256:3b6e58f73a69230218d5381817850ce6d0da5bb7e87eb7d528c7027cbba40b06", size = 2856835, upload-time = "2026-01-04T14:15:43.815Z" },
-    { url = "https://files.pythonhosted.org/packages/fa/39/60317957dbef179572398253f29d28f75f94ab82d6d39ea3237fb6c89268/cython-3.2.4-cp39-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:e71efb20048358a6b8ec604a0532961c50c067b5e63e345e2e359fff72feaee8", size = 2994408, upload-time = "2026-01-04T14:15:45.422Z" },
-    { url = "https://files.pythonhosted.org/packages/8d/30/7c24d9292650db4abebce98abc9b49c820d40fa7c87921c0a84c32f4efe7/cython-3.2.4-cp39-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:28b1e363b024c4b8dcf52ff68125e635cb9cb4b0ba997d628f25e32543a71103", size = 2891478, upload-time = "2026-01-04T14:15:47.394Z" },
-    { url = "https://files.pythonhosted.org/packages/86/70/03dc3c962cde9da37a93cca8360e576f904d5f9beecfc9d70b1f820d2e5f/cython-3.2.4-cp39-abi3-musllinux_1_2_i686.whl", hash = "sha256:31a90b4a2c47bb6d56baeb926948348ec968e932c1ae2c53239164e3e8880ccf", size = 3225663, upload-time = "2026-01-04T14:15:49.446Z" },
-    { url = "https://files.pythonhosted.org/packages/b1/97/10b50c38313c37b1300325e2e53f48ea9a2c078a85c0c9572057135e31d5/cython-3.2.4-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:e65e4773021f8dc8532010b4fbebe782c77f9a0817e93886e518c93bd6a44e9d", size = 3115628, upload-time = "2026-01-04T14:15:51.323Z" },
-    { url = "https://files.pythonhosted.org/packages/8f/b1/d6a353c9b147848122a0db370863601fdf56de2d983b5c4a6a11e6ee3cd7/cython-3.2.4-cp39-abi3-win32.whl", hash = "sha256:2b1f12c0e4798293d2754e73cd6f35fa5bbdf072bdc14bc6fc442c059ef2d290", size = 2437463, upload-time = "2026-01-04T14:15:53.787Z" },
-    { url = "https://files.pythonhosted.org/packages/2d/d8/319a1263b9c33b71343adfd407e5daffd453daef47ebc7b642820a8b68ed/cython-3.2.4-cp39-abi3-win_arm64.whl", hash = "sha256:3b8e62049afef9da931d55de82d8f46c9a147313b69d5ff6af6e9121d545ce7a", size = 2442754, upload-time = "2026-01-04T14:15:55.382Z" },
-    { url = "https://files.pythonhosted.org/packages/ff/fa/d3c15189f7c52aaefbaea76fb012119b04b9013f4bf446cb4eb4c26c4e6b/cython-3.2.4-py3-none-any.whl", hash = "sha256:732fc93bc33ae4b14f6afaca663b916c2fdd5dcbfad7114e17fb2434eeaea45c", size = 1257078, upload-time = "2026-01-04T14:14:12.373Z" },
-]
-
-[[package]]
 name = "datasets"
 version = "3.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -728,8 +687,8 @@ dependencies = [
     { name = "multiprocess" },
     { name = "numpy" },
     { name = "packaging" },
-    { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "pandas", version = "3.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "pandas", version = "3.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "pyarrow" },
     { name = "pyyaml" },
     { name = "requests" },
@@ -809,48 +768,6 @@ wheels = [
 ]
 
 [[package]]
-name = "dynet38"
-version = "2.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "cython" },
-    { name = "numpy" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9b/26/8a0c27713cdb4777eebf542a0ea527107a40c5896701d81466170589381e/dyNET38-2.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:a761e240fa29e09f16c22929ac5fcdaf61c36eb3bde9f25d82f24bfeaf9ce0ac", size = 3376815, upload-time = "2024-01-23T10:31:30.72Z" },
-    { url = "https://files.pythonhosted.org/packages/93/48/7bf80396a5cc61475924d108ca4204c8df4f94ae7837a18361128018b85a/dyNET38-2.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:3aea9200abbd6a03e447133b9f96873c213b12040e27500d1060cff9ccfa0827", size = 2945150, upload-time = "2024-06-14T15:19:26.799Z" },
-    { url = "https://files.pythonhosted.org/packages/24/1f/153d0269254be3e00ff03be8ef1788ab933ff1d0e66761cf68cf2a31e7df/dyNET38-2.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0ee03b8dce34ce1a0ccab0a224b927e7564b821448355294e9fde3dfc7d6ea60", size = 6193289, upload-time = "2024-06-16T11:36:19.971Z" },
-    { url = "https://files.pythonhosted.org/packages/90/28/7ecdc17e3ef6a001d98d4180698bf139768581efd8eb27cf33dca7359f50/dyNET38-2.2-cp310-cp310-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:881c22aab9a9ba73379c96669ab6a89ea5acfdc3b888c848fb3b90d7c1f9125a", size = 6181912, upload-time = "2024-01-23T10:31:33.927Z" },
-    { url = "https://files.pythonhosted.org/packages/39/ad/fd604e798a74a1603f662a7dccc050df38e6cc72763fb414c69be81886b0/dyNET38-2.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b25c9330f3c8dcef5616a483c760b16e0a17b0074533346f9b4912d8d1786d72", size = 6655609, upload-time = "2024-01-23T10:31:36.989Z" },
-    { url = "https://files.pythonhosted.org/packages/89/6c/d25e9be5754d5e39af025a27ed8b7c05da20a5d8eb0200df46112ecfb002/dyNET38-2.2-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:724da5e92b28729ecccd3bd48bf5e45ebefd5cd8df3774c9fe11cb316723bb85", size = 6768014, upload-time = "2024-01-23T10:31:39.98Z" },
-    { url = "https://files.pythonhosted.org/packages/82/5a/a83bb8c0ba41d8149d924d3849f0a27c9e925a287ab843151d1cb3575d26/dyNET38-2.2-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:5dd310261c2b9789d70fee90fa715a421cfde7741cb182db0876c28a9dc02d4a", size = 7192839, upload-time = "2024-01-23T10:31:43.425Z" },
-    { url = "https://files.pythonhosted.org/packages/0e/f1/ec449376424e26404c6360ba2dae60bad08b6b462f42339905f288c0da7c/dyNET38-2.2-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:2f6f45a59386f37347c4879bd4945a1e0dc986266571cf1d69d52c2524985027", size = 6854872, upload-time = "2024-06-16T11:36:23.349Z" },
-    { url = "https://files.pythonhosted.org/packages/21/93/0c08e87f2616b40cce781f8654de5ed872fbe8c6a623dbfb794864756977/dyNET38-2.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:3f5ed1499c8e379fb6281d7d00169cb57c088846e71e66e4462ab355521b6148", size = 3383951, upload-time = "2024-01-23T10:31:45.752Z" },
-    { url = "https://files.pythonhosted.org/packages/ee/5a/422aa4e06e81187be9f61d737a249edaac2e0d417ba7d1e2fab0cf107485/dyNET38-2.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:9a6b74b7e3e9e2f4cc253d25e35a46a1f0b8603a22d4c15ca2238e46401e1407", size = 2954588, upload-time = "2024-06-14T15:19:31.714Z" },
-    { url = "https://files.pythonhosted.org/packages/8b/34/0cb9c8e3602ef3544c61e2b123e12d37f1b1ebed98d39b82aa627737bb6a/dyNET38-2.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:313799701f7e44cbfaff98a88f1373beef9be57aa340e7e986238673de7d9173", size = 6510091, upload-time = "2024-06-16T11:36:25.655Z" },
-    { url = "https://files.pythonhosted.org/packages/43/3c/4297be1b6b4e8c3534c88a49f4122edeac31be61206af0c87e1f6586d51e/dyNET38-2.2-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1fdbb82e2f704e2b174b0567539553fda79424583be10e61e7c8e2c022afe9c0", size = 6499613, upload-time = "2024-01-23T10:31:48.668Z" },
-    { url = "https://files.pythonhosted.org/packages/fd/c3/46f879632262817aced0889c15c694d327173b3f75467994201d9ddc1f38/dyNET38-2.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8963383d935e802941c8f9d778403798452e172150c3b4b5dee288d50b62ecc8", size = 6961879, upload-time = "2024-01-23T10:31:51.197Z" },
-    { url = "https://files.pythonhosted.org/packages/76/da/73dd8148bfb041bad86dfba2349c5dca0a588bbba4dd9b7f8af8c1558dfd/dyNET38-2.2-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:81c8bd50e7bf9a9a8749d5e3876fc95fb8072a00ec98bf00e7346de59f9d24d8", size = 7066935, upload-time = "2024-01-23T10:31:54.438Z" },
-    { url = "https://files.pythonhosted.org/packages/47/6f/c252d1c450d173e0acca83a9f4edbfa2921ea133f349410fb87ff9c146b8/dyNET38-2.2-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:bb54f56deae8160b7984ade15d377ac655576ea98959b8e10f937ace2d108617", size = 7486721, upload-time = "2024-01-23T10:31:56.726Z" },
-    { url = "https://files.pythonhosted.org/packages/4e/49/1b30c6d908ac16a13bde7ee809dd03f297718e641d55fc995f1cce9c99d5/dyNET38-2.2-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:5975e52b4f7a933321af61647b98ae1e1dead156b15e05f139c7b71356e27e96", size = 7140574, upload-time = "2024-06-16T11:36:28.034Z" },
-    { url = "https://files.pythonhosted.org/packages/f7/ab/9b90acd5b77c7ea64dcf7c258b9fa20e8229a00cefbe41b855d805c67384/dyNET38-2.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5e6a644c0ffc68083d85b67aaa639abe82812f384962ec074749bd68bcd3d9e3", size = 2947396, upload-time = "2024-06-14T15:19:39.498Z" },
-    { url = "https://files.pythonhosted.org/packages/0f/4b/bbc70a71ce666e204f1086e315df6e9094dd6acbc17f55fa6d467e26fce2/dyNET38-2.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:54be808a97fd3cc36476f0d5a932f021739a5c28989f6e217320655c13467978", size = 6252937, upload-time = "2024-06-16T11:36:30.895Z" },
-    { url = "https://files.pythonhosted.org/packages/85/14/33e2beb5be4c1298c339c1b1146dca149b09cd047dd0a6eb68957f3c465a/dyNET38-2.2-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:60a84845b0043c6cbd4db6f364a97b282fdb0953461ae9ee9e17a6e8433de7bb", size = 6215636, upload-time = "2024-01-23T10:31:59.784Z" },
-    { url = "https://files.pythonhosted.org/packages/94/da/da6f1e5bcda0cfbadcb1fd1ef8c7435e36b7cc36e57368decb80ac54531f/dyNET38-2.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8693bf8e98fdddfa116fa1e213f1c471be772e1b9e006ad5278a2b2a8f7b4d70", size = 6748542, upload-time = "2024-01-23T10:32:03.414Z" },
-    { url = "https://files.pythonhosted.org/packages/ad/d5/0617734c5b4fe09d15f548f43a0d12da9dcd276e0c740f380270f57b2889/dyNET38-2.2-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:cd7c30a32805ebed012746603bd3b3a1194b13aa0efc828d4e0035e20e8d5ee0", size = 6741756, upload-time = "2024-01-23T10:32:06.43Z" },
-    { url = "https://files.pythonhosted.org/packages/82/1b/d83607f75f5a71d891f2408bdca31eaa166fb43dda2f792625f75bb0d275/dyNET38-2.2-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:573d6d2cccdfee6f93ca4a3a2e4bc12f0e76c75b91d1eeb420546bec28c0b4b0", size = 7246792, upload-time = "2024-01-23T10:32:08.827Z" },
-    { url = "https://files.pythonhosted.org/packages/20/2e/25a78ba8dd9bc045811f78d656aba145900e1393bae1bfc1c6f93dbabb76/dyNET38-2.2-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:74d82985200bb8a557cbafc0865e16160bb34682b70608473b5cd88e56bd72ba", size = 7028081, upload-time = "2024-06-16T11:36:33.797Z" },
-    { url = "https://files.pythonhosted.org/packages/7f/7c/34afc25d76e9213dcb6c9009f6686c5a5394665bbf8eb60aef55c102058f/dyNET38-2.2-pp310-pypy310_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:8b190ce0d4dd8819ddb263201508d703cea4ad46cedac33009be2e7a0db1cd77", size = 2944544, upload-time = "2024-01-23T10:33:09.662Z" },
-    { url = "https://files.pythonhosted.org/packages/b8/aa/553bdacea150e76cdaba4f3e44061afd20ed78d6a7e5cd219bcd6dcacb01/dyNET38-2.2-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f5781f8ec8eb82c8b4051ad41234ded1c5307c052deefc8c21d458487413b718", size = 3209952, upload-time = "2024-01-23T10:33:11.626Z" },
-    { url = "https://files.pythonhosted.org/packages/7c/63/cddcff52543b7cac76203b301dc6a7fc8fcd64f94cbbc01051cf86fbe189/dynet38-2.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:b5c247cd730007fe35241c5fa3cc33f0c8eb523da5f9f66beabfa7c64b16d7e5", size = 3694960, upload-time = "2025-12-30T19:08:16.459Z" },
-    { url = "https://files.pythonhosted.org/packages/0d/35/cbfc3eaa0039e1d39c796fcbe9d3bda2db3591beb3087bf69574c84b5a5b/dynet38-2.2-cp310-cp310-win_amd64.whl", hash = "sha256:cc7b204da3266f374e5dc55f1359b6d25ce94947bc9a18dbdf555411ee5536eb", size = 1304684, upload-time = "2025-12-29T12:14:39.509Z" },
-    { url = "https://files.pythonhosted.org/packages/0e/50/0f9c7c702baabb6f477c124415a4c7cffb02e9c4891a9ed101a20e332733/dynet38-2.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:fed13baeb332b9d761ffd3e61983e4b0a107ab57e0e5fbde90e3f94d059306c8", size = 3695298, upload-time = "2025-12-30T19:08:20.554Z" },
-    { url = "https://files.pythonhosted.org/packages/51/c0/be3c5934bba18fa0fa92e183158423687464e43c484d04fb51dfde3b9bf6/dynet38-2.2-cp311-cp311-win_amd64.whl", hash = "sha256:3d5a88d2ea7b518b422d57b3fbc123cd7f42e78c80357736f6f7b8f179fac6d9", size = 1306616, upload-time = "2025-12-29T12:14:42.027Z" },
-    { url = "https://files.pythonhosted.org/packages/69/35/dc76f2a745762caffa2326a50c2cf4eea06279f2fa03927e0d93f9c36e5a/dynet38-2.2-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:772c053aca8956d7e0ba5f463ed52435800482fb8e3c8cbb411cdffa8a9e90a2", size = 3643925, upload-time = "2025-12-30T19:08:24.37Z" },
-    { url = "https://files.pythonhosted.org/packages/ff/4f/a5b22e11549f0a5dc6feccdb50414aaf3c05decf0d8ca29288984a21fc5a/dynet38-2.2-cp312-cp312-win_amd64.whl", hash = "sha256:fd9967ed3ec071cc4c0c084d758ab44dac34cb37beb625ea9fcf2221c2085975", size = 1299414, upload-time = "2025-12-29T12:14:44Z" },
-]
-
-[[package]]
 name = "editdistance"
 version = "0.8.1"
 source = { registry = "https://pypi.org/simple" }
@@ -923,7 +840,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -1125,8 +1042,8 @@ dependencies = [
     { name = "packaging" },
     { name = "requests" },
     { name = "tabulate" },
-    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "tqdm" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d9/2d/aa36fa1fee744c46fef99436baea5cda4a34244846c1df0fea97eaa9a856/flashinfer_python-0.6.7.tar.gz", hash = "sha256:348d51a6db0c184819a06a4462380256cf989eb1d2dfc261d9b64ada133a27f1", size = 6502817, upload-time = "2026-03-25T04:41:29.173Z" }
@@ -1266,21 +1183,16 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
-apple-silicon = [
-    { name = "mlx-qwen3-asr", extra = ["aligner"], marker = "(platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon') or (platform_machine != 'arm64' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'arm64' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torch", version = "2.3.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon') or (platform_machine != 'arm64' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'arm64' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torch", version = "2.3.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torchaudio", version = "2.3.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'arm64' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon') or (platform_machine != 'arm64' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'arm64' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torchaudio", version = "2.3.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-]
 cpu = [
-    { name = "torch", version = "2.3.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (platform_machine != 'aarch64' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'aarch64' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torch", version = "2.3.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (platform_machine != 'aarch64' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torchaudio", version = "2.3.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (platform_machine != 'aarch64' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'aarch64' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torchaudio", version = "2.3.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (platform_machine != 'aarch64' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.3.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (platform_machine != 'aarch64' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.3.1", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.3.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torchaudio", version = "2.3.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (platform_machine != 'aarch64' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torchaudio", version = "2.3.1", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torchaudio", version = "2.3.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 gpu = [
-    { name = "vllm", extra = ["audio"], marker = "(sys_platform == 'linux' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "vllm", extra = ["audio"], marker = "(sys_platform == 'linux' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 
 [package.metadata]
@@ -1311,13 +1223,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-apple-silicon = [
-    { name = "mlx-qwen3-asr", extras = ["aligner"], marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = "==0.3.2" },
-    { name = "torch", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = "==2.3.1" },
-    { name = "torchaudio", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = "==2.3.1" },
-]
 cpu = [
+    { name = "torch", marker = "sys_platform == 'darwin'", specifier = "==2.3.1" },
     { name = "torch", marker = "sys_platform == 'linux'", specifier = "==2.3.1", index = "https://download.pytorch.org/whl/cpu" },
+    { name = "torchaudio", marker = "sys_platform == 'darwin'", specifier = "==2.3.1" },
     { name = "torchaudio", marker = "sys_platform == 'linux'", specifier = "==2.3.1", index = "https://download.pytorch.org/whl/cpu" },
 ]
 gpu = [{ name = "vllm", extras = ["audio"], marker = "sys_platform == 'linux'", index = "https://wheels.vllm.ai/nightly" }]
@@ -1406,8 +1315,8 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "joblib" },
     { name = "numpy" },
-    { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "scipy" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0c/22/32a66dd4ce72145ec1b792c794b98897be467bdf18c10aa8b48275530b11/hdbscan-0.8.41.tar.gz", hash = "sha256:e41e823e5bb21ff2173f252d226266b1dda82bdbba5d89106eafb251429dff3d", size = 7091384, upload-time = "2025-12-12T15:48:30.807Z" }
@@ -1510,7 +1419,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "filelock" },
     { name = "fsspec" },
-    { name = "hf-xet", marker = "platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "hf-xet", marker = "platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "packaging" },
     { name = "pyyaml" },
     { name = "requests" },
@@ -1605,18 +1514,6 @@ wheels = [
 ]
 
 [[package]]
-name = "intel-openmp"
-version = "2021.4.0"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/97/62/8b06bd5e455110b9dd8cdff4cc85685f4ce206fcbc9513e4fa0791ae1c04/intel_openmp-2021.4.0-py2.py3-none-macosx_10_15_x86_64.macosx_11_0_x86_64.whl", hash = "sha256:41c01e266a7fdb631a7609191709322da2bbf24b252ba763f125dd651bcc7675", size = 1263776, upload-time = "2021-09-28T17:18:57.676Z" },
-    { url = "https://files.pythonhosted.org/packages/e6/a7/d0f7074b1f0670d1e3c694e101cf577d5b50fde265146ff11ca73ff1d679/intel_openmp-2021.4.0-py2.py3-none-manylinux1_i686.whl", hash = "sha256:3b921236a38384e2016f0f3d65af6732cf2c12918087128a9163225451e776f2", size = 952837, upload-time = "2021-09-28T17:13:35.594Z" },
-    { url = "https://files.pythonhosted.org/packages/08/a0/eacf78b5d87cec6c6664d018b48d65051bf70bc43098e6fa589b17ae9f48/intel_openmp-2021.4.0-py2.py3-none-manylinux1_x86_64.whl", hash = "sha256:e2240ab8d01472fed04f3544a878cda5da16c26232b7ea1b59132dbfb48b186e", size = 9946392, upload-time = "2021-09-28T17:13:40.836Z" },
-    { url = "https://files.pythonhosted.org/packages/45/18/527f247d673ff84c38e0b353b6901539b99e83066cd505be42ad341ab16d/intel_openmp-2021.4.0-py2.py3-none-win32.whl", hash = "sha256:6e863d8fd3d7e8ef389d52cf97a50fe2afe1a19247e8c0d168ce021546f96fc9", size = 1860605, upload-time = "2021-09-28T17:03:44.748Z" },
-    { url = "https://files.pythonhosted.org/packages/6f/21/b590c0cc3888b24f2ac9898c41d852d7454a1695fbad34bee85dba6dc408/intel_openmp-2021.4.0-py2.py3-none-win_amd64.whl", hash = "sha256:eef4c8bcc8acefd7f5cd3b9384dbf73d59e2c99fc56545712ded913f43c4a94f", size = 3516906, upload-time = "2021-09-28T17:03:50.453Z" },
-]
-
-[[package]]
 name = "interegular"
 version = "0.3.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1654,7 +1551,7 @@ name = "jinja2"
 version = "3.1.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "markupsafe", marker = "extra == 'group-10-funasr-api-apple-silicon' or extra == 'group-10-funasr-api-cpu' or extra == 'group-10-funasr-api-gpu'" },
+    { name = "markupsafe", marker = "(sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (sys_platform == 'linux' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz", hash = "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d", size = 245115, upload-time = "2025-03-05T20:05:02.478Z" }
 wheels = [
@@ -1838,8 +1735,8 @@ dependencies = [
     { name = "numba" },
     { name = "numpy" },
     { name = "pooch" },
-    { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "scipy" },
     { name = "soundfile" },
     { name = "soxr" },
@@ -1908,8 +1805,8 @@ name = "loguru"
 version = "0.7.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "win32-setctime", marker = "sys_platform == 'win32' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "win32-setctime", marker = "sys_platform == 'win32' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9e/30/d87a423766b24db416a46e9335b9602b054a72b96a88a241f2b09b560fa8/loguru-0.7.2.tar.gz", hash = "sha256:e671a53522515f34fd406340ee968cb9ecafbc4b36c679da03c18fd8d0bd51ac", size = 145103, upload-time = "2023-09-11T15:24:37.926Z" }
 wheels = [
@@ -2029,78 +1926,6 @@ audio = [
 ]
 image = [
     { name = "opencv-python-headless" },
-]
-
-[[package]]
-name = "mkl"
-version = "2021.4.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "intel-openmp", marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
-    { name = "tbb", marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b6/b2/b8c755092e3881d6b5ea74be49c7bf3758b6174296626aed39c3416a1b02/mkl-2021.4.0-py2.py3-none-macosx_10_15_x86_64.macosx_11_0_x86_64.whl", hash = "sha256:67460f5cd7e30e405b54d70d1ed3ca78118370b65f7327d495e9c8847705e2fb", size = 186391276, upload-time = "2021-09-28T17:19:34.028Z" },
-    { url = "https://files.pythonhosted.org/packages/21/ee/e739a5d42fdc8a77c57f067814d57e9bd4eaaadb82d5b3186bbe4faddf76/mkl-2021.4.0-py2.py3-none-manylinux1_i686.whl", hash = "sha256:636d07d90e68ccc9630c654d47ce9fdeb036bb46e2b193b3a9ac8cfea683cce5", size = 161704154, upload-time = "2021-09-28T17:15:54.345Z" },
-    { url = "https://files.pythonhosted.org/packages/68/08/e5fe13998ed4c08300cea8cd14e249bf17340b1dd6f5b859ed00d3914125/mkl-2021.4.0-py2.py3-none-manylinux1_x86_64.whl", hash = "sha256:398dbf2b0d12acaf54117a5210e8f191827f373d362d796091d161f610c1ebfb", size = 280918625, upload-time = "2021-09-28T17:16:21.456Z" },
-    { url = "https://files.pythonhosted.org/packages/ce/c6/892fe3bc91e811b78e4f85653864f2d92541d5e5c306b0cb3c2311e9ca64/mkl-2021.4.0-py2.py3-none-win32.whl", hash = "sha256:439c640b269a5668134e3dcbcea4350459c4a8bc46469669b2d67e07e3d330e8", size = 129048357, upload-time = "2021-09-28T17:08:58.256Z" },
-    { url = "https://files.pythonhosted.org/packages/fe/1c/5f6dbf18e8b73e0a5472466f0ea8d48ce9efae39bd2ff38cebf8dce61259/mkl-2021.4.0-py2.py3-none-win_amd64.whl", hash = "sha256:ceef3cafce4c009dd25f65d7ad0d833a0fbadc3d8903991ec92351fe5de1e718", size = 228499609, upload-time = "2021-09-28T17:09:19.683Z" },
-]
-
-[[package]]
-name = "mlx"
-version = "0.31.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "mlx-metal", marker = "sys_platform == 'darwin'" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9b/f9/f1663dafd45af02467f4f41777c13ec34b9104b2b0450d870c3f906285cd/mlx-0.31.1-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:bc46c911cc060d2eaf21b9e24a1712dc56763b660b53631b9057a32ab1c0271a", size = 574137, upload-time = "2026-03-12T02:15:54.996Z" },
-    { url = "https://files.pythonhosted.org/packages/c6/26/1fd632f537a5160a21475a70aaef252090c62f9629f45ad20f5acfe810f3/mlx-0.31.1-cp310-cp310-macosx_15_0_arm64.whl", hash = "sha256:fa132def5b3d959362077521c80f1fc80f64c45060d2940dc1d66a1aa19ce5f6", size = 574140, upload-time = "2026-03-12T02:15:56.709Z" },
-    { url = "https://files.pythonhosted.org/packages/5c/c9/e790fa8ddc1b27fea7ba749699883f31c65e166b18e4598beab4574e4686/mlx-0.31.1-cp310-cp310-macosx_26_0_arm64.whl", hash = "sha256:877ff2f98debd035b922825a0d7e7e1be0959fc5ca1d24cb5020a23e510ff16d", size = 574124, upload-time = "2026-03-12T02:15:58.323Z" },
-    { url = "https://files.pythonhosted.org/packages/b4/da/f7375fc2be05d026640c5ced085a9e71066a33100638e5762347dae5d680/mlx-0.31.1-cp310-cp310-manylinux_2_35_aarch64.whl", hash = "sha256:931c9316ec47b45ec0e737519f4f4c90eb69cbbdaaecadd6dd2ccdf1a85d4e61", size = 641428, upload-time = "2026-03-12T02:15:59.743Z" },
-    { url = "https://files.pythonhosted.org/packages/1c/3f/ab060661d966d435e41212d4f6d6e9d1202da8b9043b1c18c343ab7d1b08/mlx-0.31.1-cp310-cp310-manylinux_2_35_x86_64.whl", hash = "sha256:dec00ce7b094d6bc2876996291fd76c9e28326bc1a9853440903f2a06946ce1f", size = 674521, upload-time = "2026-03-12T02:16:01.057Z" },
-    { url = "https://files.pythonhosted.org/packages/75/32/25dc2eae1d6f867224ef2bca2c644e3e913fe8067991f8394c090b720e3e/mlx-0.31.1-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:8863835fb36c7c4f65008b1426ddb9ff7931a13c975e0ef58a40002ae8048922", size = 574311, upload-time = "2026-03-12T02:16:02.651Z" },
-    { url = "https://files.pythonhosted.org/packages/9b/bf/c5aa1d1154f5a216139c8162cd3e6568b7eb427390d655f7f5ae3a1a61e7/mlx-0.31.1-cp311-cp311-macosx_15_0_arm64.whl", hash = "sha256:0de504c1f1fe73b32fc3cf457b8eac30d1f7ce22440ef075c1970f96712e6fff", size = 574312, upload-time = "2026-03-12T02:16:04.231Z" },
-    { url = "https://files.pythonhosted.org/packages/3a/88/ef57747552c9e9da0c28465d9266c05a0009b698d90fb0bc63eb81840b8d/mlx-0.31.1-cp311-cp311-macosx_26_0_arm64.whl", hash = "sha256:10715b895e1f3e984c2c54257b7db956ff8af1fa93255412794a3724fe2dd3b1", size = 574385, upload-time = "2026-03-12T02:16:05.528Z" },
-    { url = "https://files.pythonhosted.org/packages/ac/51/dbea4bbe7a2e4cd05226965b34198d49459cfaef8b9b37b72f006a9811ab/mlx-0.31.1-cp311-cp311-manylinux_2_35_aarch64.whl", hash = "sha256:d065625ab3101adcd7f5824297243fe40a0615099a06f5597ab67284483aa2f8", size = 641347, upload-time = "2026-03-12T02:16:07.013Z" },
-    { url = "https://files.pythonhosted.org/packages/c5/86/3db98e8805637fb56f078311d622e9500f5c9088f6d79a6e304ec8235b47/mlx-0.31.1-cp311-cp311-manylinux_2_35_x86_64.whl", hash = "sha256:b2cf8502d9d64dc6851034fcd4a656cbb26be20c36f190f2971f4ac0caed89cb", size = 674769, upload-time = "2026-03-12T02:16:08.51Z" },
-    { url = "https://files.pythonhosted.org/packages/38/29/71fe1f68756f515856e6930973c23245810d4aa3cd22fddd719d86a709dc/mlx-0.31.1-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:8a63b31a398c9519f2bb0c81cf3865d9baca4ff573ffc31ead465d18286184e8", size = 574308, upload-time = "2026-03-12T02:16:10.256Z" },
-    { url = "https://files.pythonhosted.org/packages/21/be/70654a2cee0d71fd10bd237a50a79d06ae51679a194db6a3b16c0c84e6a5/mlx-0.31.1-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:a7a9347df4dcc41f0d16ff70b65650820af4879f686534b233b16826a22afa00", size = 574309, upload-time = "2026-03-12T02:16:11.577Z" },
-    { url = "https://files.pythonhosted.org/packages/ad/69/c7bc7b04f76b0cbd678f328011d1634bd0bcfc2da45aba06e084cb031127/mlx-0.31.1-cp312-cp312-macosx_26_0_arm64.whl", hash = "sha256:6cdb797ea31787d1ce9e5be77991c4bd5cbf129ab15f7253b78e09737f535fce", size = 574289, upload-time = "2026-03-12T02:16:13.146Z" },
-    { url = "https://files.pythonhosted.org/packages/55/f7/dcc129228faab4d406041d91413c5999250ab79da6fe5417ac84f1616ff1/mlx-0.31.1-cp312-cp312-manylinux_2_35_aarch64.whl", hash = "sha256:1ed1991c8e39f841d5756c0c543beb819763a2f80fba3f4b150bc6cad4d973de", size = 626439, upload-time = "2026-03-12T02:16:14.741Z" },
-    { url = "https://files.pythonhosted.org/packages/90/1d/8b32e46ea98ab5c1c15cf1b37ac97af651977f84e72e1800412a700c51d9/mlx-0.31.1-cp312-cp312-manylinux_2_35_x86_64.whl", hash = "sha256:195c5cb27328380287c0ffe9ef48f860ab75ec5d3dfce153d475dc2c99369708", size = 668679, upload-time = "2026-03-12T02:16:16.012Z" },
-]
-
-[[package]]
-name = "mlx-metal"
-version = "0.31.1"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/39/66/2313497fdbc7fbadf8e026c09366e3f049f9114e65ca4edc23cdb8699186/mlx_metal-0.31.1-py3-none-macosx_14_0_arm64.whl", hash = "sha256:70741174131dbf7fdd479cb730e06e08c358eac3bf7905d9e884e7960cfdd5b8", size = 38624074, upload-time = "2026-03-12T02:15:48.036Z" },
-    { url = "https://files.pythonhosted.org/packages/c7/34/4c3c6890ce6095b2ab2ba2f5f15c9a7ba17208d47f8cacb572885a2dc0eb/mlx_metal-0.31.1-py3-none-macosx_15_0_arm64.whl", hash = "sha256:6c56bd8cd27743e635f5a90a22535af7c31bd22b4b126d46b6da2da52d72e413", size = 38618950, upload-time = "2026-03-12T02:15:51.908Z" },
-    { url = "https://files.pythonhosted.org/packages/51/bc/987cb99e3aafb296aa11ce5133838a10eae8447edd53168d0804d4fb3a14/mlx_metal-0.31.1-py3-none-macosx_26_0_arm64.whl", hash = "sha256:e7324b7c56b519ae67c025d3ced07e5d35bc3a9f19d4c45fe4927f385148c59e", size = 49256543, upload-time = "2026-03-12T02:15:54.851Z" },
-]
-
-[[package]]
-name = "mlx-qwen3-asr"
-version = "0.3.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "huggingface-hub" },
-    { name = "mlx" },
-    { name = "numpy" },
-    { name = "regex" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e6/37/0a85b07e533a53a7f46ff9719c734241042c454e6626687d7c68541b3b62/mlx_qwen3_asr-0.3.2.tar.gz", hash = "sha256:348e647056f2552c75b015af1a88930cf87f9342065de2602b3ed35ff057b89a", size = 234127, upload-time = "2026-03-24T11:13:38.457Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/70/c9/9d70ec98ce13df945d34140613ce2350096ebfc3e93248fae2ea4f2b0a7f/mlx_qwen3_asr-0.3.2-py3-none-any.whl", hash = "sha256:1603ea2b6b0c14b0c68552e29741c844a9d2edd8239d4c9971e3cc26d26dfa66", size = 163128, upload-time = "2026-03-24T11:13:37.201Z" },
-]
-
-[package.optional-dependencies]
-aligner = [
-    { name = "nagisa" },
-    { name = "soynlp" },
 ]
 
 [[package]]
@@ -2234,7 +2059,7 @@ name = "multidict"
 version = "6.7.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1a/c2/c2d94cbe6ac1753f3fc980da97b3d930efe1da3af3c9f5125354436c073d/multidict-6.7.1.tar.gz", hash = "sha256:ec6652a1bee61c53a3e5776b6049172c53b6aaba34f18c9ad04f82712bac623d", size = 102010, upload-time = "2026-01-26T02:46:45.979Z" }
 wheels = [
@@ -2314,56 +2139,14 @@ wheels = [
 ]
 
 [[package]]
-name = "nagisa"
-version = "0.2.12"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "dynet38" },
-    { name = "numpy" },
-    { name = "six" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d1/0a/ed1cb1ffff3d50f9c37900dff5a36279340be932ac9af117d1d5e33781dc/nagisa-0.2.12.tar.gz", hash = "sha256:986d9b79be7eb2eec966d51b98aefacd3d7e18a500cf12a19792df0ddd548e5c", size = 20945363, upload-time = "2026-02-12T17:42:32.021Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2f/47/1c46877f165c86bcd3a0ef92c880068f771256ce4d0d399bf9ca24b3502a/nagisa-0.2.12-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:e397cbe60216dd62b883b1dcc022c00526fafd46a42f847da81c246aa29ee142", size = 21366591, upload-time = "2026-02-12T17:47:01.607Z" },
-    { url = "https://files.pythonhosted.org/packages/27/66/c11b5411abbcebf57b2ac1baa1fe18697fed3f2390ae3d9dd43be45d63a5/nagisa-0.2.12-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:a133d91f45f1ebb4c4ae3d8dfd6a8779b2fb3c69b53881e99bba0aa6239fa53e", size = 21359464, upload-time = "2026-02-12T17:43:08.665Z" },
-    { url = "https://files.pythonhosted.org/packages/15/33/c471c564741de69534fc56f5bbcbf3e9468d57e0b0aba38d51e529a0675d/nagisa-0.2.12-cp310-cp310-manylinux1_i686.manylinux_2_28_i686.manylinux_2_5_i686.whl", hash = "sha256:d84b83a8f668a1e5b9148b918278c61f153642e4a9f26ff62eaeabb34344d987", size = 21683673, upload-time = "2026-02-12T17:38:59.772Z" },
-    { url = "https://files.pythonhosted.org/packages/48/32/bfb46baebdba48f72f5ff92dadbd4091fadd0cf96636275de0fc3f286236/nagisa-0.2.12-cp310-cp310-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:df48f92d7a23004e51f89bb9f0367193767269db3df2ab8eff926229e097ce09", size = 21698179, upload-time = "2026-02-12T17:39:05.717Z" },
-    { url = "https://files.pythonhosted.org/packages/46/f5/7ef3f4145cc0e1596f66ec6ec026abd17b715b2289ecd80eeaf7344d2d65/nagisa-0.2.12-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:dc075fa759b32ee766b979f0cd13d92430e8e1e068c85583c059ed9f22a331bc", size = 21691781, upload-time = "2026-02-12T17:45:06.309Z" },
-    { url = "https://files.pythonhosted.org/packages/f5/82/c162f8db326a56ebccbb70f5501b922f64b07e6af81ceb5447b25e50c82d/nagisa-0.2.12-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:c40eb167bfa819fadc49a80ffc77518e2689efaa5107adfa2c598a57776cc9f9", size = 21686640, upload-time = "2026-02-12T17:45:11.158Z" },
-    { url = "https://files.pythonhosted.org/packages/bc/52/ec66fa3ada46ce8a1300702c6bf2ed3706987ebef3bd27d1987a6f2d2ca4/nagisa-0.2.12-cp310-cp310-musllinux_1_2_i686.whl", hash = "sha256:6509ad4745c303b793a79a9413318d7d6a169e5d43915fe54dbee577fc659f95", size = 21690367, upload-time = "2026-02-12T17:39:11.265Z" },
-    { url = "https://files.pythonhosted.org/packages/46/ac/6d254fe8c89d341e1fde5bd9dc38aa346ef64c064e486ef1dc9fcc5bbe33/nagisa-0.2.12-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:7b98e1b03b7441f3f9d5f4b936c0d677bfd7c4c942190238890f5f78480b2ca6", size = 21699319, upload-time = "2026-02-12T17:39:17.235Z" },
-    { url = "https://files.pythonhosted.org/packages/d0/b3/6216f1a53c7ebec604d9c4bb4a7af532e75bc36dddc0e6521c33c74afbc6/nagisa-0.2.12-cp310-cp310-win_amd64.whl", hash = "sha256:d7a3ffeae96e2b156852cefe8f744da6dd18535e47a521427c1a3e140e114a38", size = 21354928, upload-time = "2026-02-12T17:44:05.543Z" },
-    { url = "https://files.pythonhosted.org/packages/41/ef/b08b901aa4039c9232aeca467b042b7c5397c0c4bed8a3441a2a810c295b/nagisa-0.2.12-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:022b2c755c7d4735ce887870e267bbca591aabe0f512abe6efc2b0ddadf32de1", size = 21366111, upload-time = "2026-02-12T17:47:05.297Z" },
-    { url = "https://files.pythonhosted.org/packages/ca/61/d5ded6cf34162a2f578bbf38ec26cf3f00fd6c249972a424412fc9a12452/nagisa-0.2.12-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:caa12b76891fabd7cfb2537d2ecbbef3be322621cb82214f0fc7e847b7510302", size = 21359107, upload-time = "2026-02-12T17:43:12.26Z" },
-    { url = "https://files.pythonhosted.org/packages/c5/51/95b094057b36b729d68858b8721ff2482954a70b3775680c795493d0fb4a/nagisa-0.2.12-cp311-cp311-manylinux1_i686.manylinux_2_28_i686.manylinux_2_5_i686.whl", hash = "sha256:fd6c591b9446f89148a9c909e90e21cadbff7d0ecc72613c5b2e58fd04b209c6", size = 21703576, upload-time = "2026-02-12T17:39:22.498Z" },
-    { url = "https://files.pythonhosted.org/packages/df/a3/fad133b47509c1107d38154867e52507f2d279b7b4b20c92e755b5226828/nagisa-0.2.12-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:ebed9860162bacdb340bf4aa6f4e9653a8a1f872e94cc280d66fbffebf793a70", size = 21720637, upload-time = "2026-02-12T17:39:28.496Z" },
-    { url = "https://files.pythonhosted.org/packages/7c/50/27b5ba813081c6953bb4bad8434cfdde795ae1441f8c42892cf5c0246fc9/nagisa-0.2.12-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:1f33d1cae0672c60c133b7a4834f5fdd2b230719a8a79624eb0b8b0b0a3ffa7a", size = 21713111, upload-time = "2026-02-12T17:45:16.688Z" },
-    { url = "https://files.pythonhosted.org/packages/68/88/9a4aa9aa25f2b60dd5f0824fd117f86f7d7dec520cd53b10d8b996ce01bd/nagisa-0.2.12-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:91ed1943e127c0a0948cec40ed17ac6ce22f3488a804a9ce4d86f9522118caa9", size = 21709885, upload-time = "2026-02-12T17:45:21.128Z" },
-    { url = "https://files.pythonhosted.org/packages/74/47/1439a38921ba51098ed2a37705250a84e09d43903e71392326b6719e26ac/nagisa-0.2.12-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:2ce2c7312a0ab37f8f8afb0c0dc04e3ae1524ecf9eb490e019e24e9d23dddb2c", size = 21712019, upload-time = "2026-02-12T17:39:33.942Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/86/1151083c82ace36328fa94d9f837eef5e8961c147a0b1867bdadd60c6ca0/nagisa-0.2.12-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:a9700e117df0472cc8eb61fca9daa62a7203a4b6e0c6d363e0dfcf352b1ac99a", size = 21721389, upload-time = "2026-02-12T17:39:39.422Z" },
-    { url = "https://files.pythonhosted.org/packages/c0/c8/e1cae3650105373777308cbce2b6ba152feb770f241afd38d0e77875263e/nagisa-0.2.12-cp311-cp311-win_amd64.whl", hash = "sha256:fe90ac52bd21c2a0d49212e61d5fc29b3775d56e7638f87f4dde3994fba9eac9", size = 21355414, upload-time = "2026-02-12T17:44:11.312Z" },
-    { url = "https://files.pythonhosted.org/packages/0d/84/1c8df79f2ab605ae77f952589d0e4d5deb2e190555ac4e4c88efd495c9ed/nagisa-0.2.12-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:8bb45b88782f1fd5b5f8e2b20bccb73f2830d99c4e24ef82779007eb24d8e5b1", size = 21366084, upload-time = "2026-02-12T17:47:09.677Z" },
-    { url = "https://files.pythonhosted.org/packages/b5/d3/ac8354a73a5224075ce22cc385e904feda647cdc5f88e28f459ed7a62ae0/nagisa-0.2.12-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:566e3a27e35b23f415aa31f54c9ee9ae63a87f939dcbafa6a2129bd06aaf4336", size = 21358167, upload-time = "2026-02-12T17:43:25.732Z" },
-    { url = "https://files.pythonhosted.org/packages/a9/72/d9c0b8aa93cba6ba1835c4d9675334fdd74e554f1eb1a491caea018d2d98/nagisa-0.2.12-cp312-cp312-manylinux1_i686.manylinux_2_28_i686.manylinux_2_5_i686.whl", hash = "sha256:6017388d04c16ed5c0fd96913428c1d8094f54b0de3ef533363915d64615b373", size = 21685846, upload-time = "2026-02-12T17:39:44.641Z" },
-    { url = "https://files.pythonhosted.org/packages/90/2b/2ee8919eb106a76dd1b9b1bfe0111bd42e952bc83fb804165c06790fb6bd/nagisa-0.2.12-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:449469b0c69f7f2111a1dce29aea32e38d0e471514cf16aa06da6ec90f00cf17", size = 21699314, upload-time = "2026-02-12T17:39:50.305Z" },
-    { url = "https://files.pythonhosted.org/packages/a7/2f/a055c42cd3621000fe56aa448b67fb3d5be177482248090906016662c764/nagisa-0.2.12-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:a87f5e8b8b5c905121ea900966aa2c8738ad28b9369ae2a32f95a8664ae77334", size = 21689385, upload-time = "2026-02-12T17:45:26.177Z" },
-    { url = "https://files.pythonhosted.org/packages/c7/99/4deeabbdecf2a0dcbba33489d6f80d20e99322f8b0fc19776056641c8899/nagisa-0.2.12-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:c918917f0b0285bc8b927772e791a04abb197b707a335c1b765ae53c09cbcfcb", size = 21679020, upload-time = "2026-02-12T17:45:32.055Z" },
-    { url = "https://files.pythonhosted.org/packages/72/4f/172124763348df3274709021d00772978c258e4b39642c3bcca0139c5dd7/nagisa-0.2.12-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:79014d3f9bab53994126277f73064815c7f861db88e6864c2d951a7bfbd0d8f8", size = 21691996, upload-time = "2026-02-12T17:39:55.543Z" },
-    { url = "https://files.pythonhosted.org/packages/93/10/e2a4ee125eaf692dbeab249fd34225623ab2137e74780890c70bdd0e2a05/nagisa-0.2.12-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:d2e6a8d690ed21699d8c7487d731e065f76af5c1c381ddcc802ba9248d40a336", size = 21693739, upload-time = "2026-02-12T17:40:00.614Z" },
-    { url = "https://files.pythonhosted.org/packages/db/49/b39506a36c70cbbeeb3ff235b5448e34288052eaab3fca32a82a581b33d4/nagisa-0.2.12-cp312-cp312-win_amd64.whl", hash = "sha256:b69042236d65877c4adab0b68dcd68699f0d808ae490cd0638bc00804dcd1e10", size = 21354366, upload-time = "2026-02-12T17:44:16.119Z" },
-]
-
-[[package]]
 name = "networkx"
 version = "3.4.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version < '3.11' and sys_platform != 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
+    "python_full_version < '3.11' and sys_platform != 'darwin' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
+    "python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/fd/1d/06475e1cd5264c0b870ea2cc6fdb3e37177c1e565c43f56ff17a10e3937f/networkx-3.4.2.tar.gz", hash = "sha256:307c3669428c5362aab27c8a1260aa8f47c4e91d3891f48be0141738d8d053e1", size = 2151368, upload-time = "2024-10-21T12:39:38.695Z" }
 wheels = [
@@ -2375,13 +2158,11 @@ name = "networkx"
 version = "3.6.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
+    "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
+    "python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6a/51/63fe664f3908c97be9d2e4f1158eb633317598cfa6e1fc14af5383f17512/networkx-3.6.1.tar.gz", hash = "sha256:26b7c357accc0c8cde558ad486283728b65b6a95d85ee1cd66bafab4c8168509", size = 2517025, upload-time = "2025-12-08T17:02:39.908Z" }
 wheels = [
@@ -2796,21 +2577,19 @@ name = "pandas"
 version = "2.3.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version < '3.11' and sys_platform != 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version < '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "python_full_version < '3.11' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and sys_platform != 'darwin' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
+    "python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
 ]
 dependencies = [
-    { name = "numpy", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "python-dateutil", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "pytz", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "tzdata", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "numpy", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "python-dateutil", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "pytz", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "tzdata", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/33/01/d40b85317f86cf08d853a4f495195c73815fdf205eef3993821720274518/pandas-2.3.3.tar.gz", hash = "sha256:e05e1af93b977f7eafa636d043f9f94c7ee3ac81af99c13508215942e64c993b", size = 4495223, upload-time = "2025-09-29T23:34:51.853Z" }
 wheels = [
@@ -2842,34 +2621,28 @@ name = "pandas"
 version = "3.0.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version == '3.11.*' and sys_platform == 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version == '3.11.*' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version == '3.11.*' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "python_full_version >= '3.11' and sys_platform == 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "python_full_version >= '3.11' and sys_platform == 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "python_full_version >= '3.11' and sys_platform == 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version == '3.11.*' and sys_platform == 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version == '3.11.*' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version == '3.11.*' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
+    "python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'win32' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'win32' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
 ]
 dependencies = [
-    { name = "numpy", marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "python-dateutil", marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "tzdata", marker = "(python_full_version >= '3.11' and sys_platform == 'emscripten') or (python_full_version >= '3.11' and sys_platform == 'win32') or (sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'emscripten' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'emscripten' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'win32' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "numpy", marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "python-dateutil", marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "tzdata", marker = "(python_full_version >= '3.11' and sys_platform == 'emscripten') or (python_full_version >= '3.11' and sys_platform == 'win32') or (sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'emscripten' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'win32' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/da/99/b342345300f13440fe9fe385c3c481e2d9a595ee3bab4d3219247ac94e9a/pandas-3.0.2.tar.gz", hash = "sha256:f4753e73e34c8d83221ba58f232433fca2748be8b18dbca02d242ed153945043", size = 4645855, upload-time = "2026-03-31T06:48:30.816Z" }
 wheels = [
@@ -3439,8 +3212,8 @@ dependencies = [
     { name = "joblib" },
     { name = "llvmlite" },
     { name = "numba" },
-    { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "scipy" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4a/fb/7f58c397fb31666756457ee2ac4c0289ef2daad57f4ae4be8dec12f80b03/pynndescent-0.6.0.tar.gz", hash = "sha256:7ffde0fb5b400741e055a9f7d377e3702e02250616834231f6c209e39aac24f5", size = 2992987, upload-time = "2026-01-08T21:29:58.943Z" }
@@ -3618,8 +3391,8 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "apache-tvm-ffi" },
     { name = "nvidia-cutlass-dsl" },
-    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "torch-c-dlpack-ext" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d1/66/44faa8cc71a980e5b559c44f590700c0a54d4cbaba9f7f4f8173b92b3158/quack_kernels-0.3.10.tar.gz", hash = "sha256:c51c3909bf15983d9288c8e6fbeb894b050faf443c7b84b44df28de1bbb10a43", size = 234070, upload-time = "2026-04-14T09:32:00.723Z" }
@@ -3911,21 +3684,19 @@ name = "scikit-learn"
 version = "1.7.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version < '3.11' and sys_platform != 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version < '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "python_full_version < '3.11' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and sys_platform != 'darwin' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
+    "python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version < '3.11' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
 ]
 dependencies = [
-    { name = "joblib", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "numpy", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "scipy", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "threadpoolctl", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "joblib", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "numpy", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "scipy", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "threadpoolctl", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/98/c2/a7855e41c9d285dfe86dc50b250978105dce513d6e459ea66a6aeb0e1e0c/scikit_learn-1.7.2.tar.gz", hash = "sha256:20e9e49ecd130598f1ca38a1d85090e1a600147b9c02fa6f15d69cb53d968fda", size = 7193136, upload-time = "2025-09-09T08:21:29.075Z" }
 wheels = [
@@ -3951,35 +3722,29 @@ name = "scikit-learn"
 version = "1.8.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version == '3.11.*' and sys_platform == 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version == '3.11.*' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version == '3.11.*' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "python_full_version >= '3.11' and sys_platform == 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "python_full_version >= '3.11' and sys_platform == 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
-    "python_full_version >= '3.11' and sys_platform == 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
-    "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-apple-silicon' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.12' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.12' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version == '3.11.*' and sys_platform == 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version == '3.11.*' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "python_full_version == '3.11.*' and sys_platform == 'darwin' and extra != 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu'",
+    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu')",
+    "python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'win32' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32' and extra == 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'win32' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform == 'emscripten' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
+    "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra != 'group-10-funasr-api-cpu' and extra != 'group-10-funasr-api-gpu'",
 ]
 dependencies = [
-    { name = "joblib", marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "numpy", marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "scipy", marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "threadpoolctl", marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "joblib", marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "numpy", marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "scipy", marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "threadpoolctl", marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0e/d4/40988bf3b8e34feec1d0e6a051446b1f66225f8529b9309becaeef62b6c4/scikit_learn-1.8.0.tar.gz", hash = "sha256:9bccbb3b40e3de10351f8f5068e105d0f4083b1a65fa07b6634fbc401a6287fd", size = 7335585, upload-time = "2025-12-10T07:08:53.618Z" }
 wheels = [
@@ -4257,22 +4022,6 @@ wheels = [
 ]
 
 [[package]]
-name = "soynlp"
-version = "0.0.493"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-    { name = "psutil" },
-    { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-10-funasr-api-apple-silicon') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-10-funasr-api-apple-silicon') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "scipy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7d/05/fb3f0c9248e60a0224e77198c31517b93b92d6060873b641caf474d42993/soynlp-0.0.493.tar.gz", hash = "sha256:4b20b825edbcadb9ebd494de54d8ca50b0ee317fe58d090e8b509d733422136a", size = 405393, upload-time = "2019-08-25T05:28:00.755Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7e/50/6913dc52a86a6b189419e59f9eef1b8d599cffb6f44f7bb91854165fc603/soynlp-0.0.493-py3-none-any.whl", hash = "sha256:2aed0ced1f0f74f7bdd0bdc24a979c5cb9ee4a28393642db52a83d174ed65b7a", size = 416753, upload-time = "2019-08-25T05:27:54.56Z" },
-]
-
-[[package]]
 name = "sse-starlette"
 version = "3.3.4"
 source = { registry = "https://pypi.org/simple" }
@@ -4312,7 +4061,7 @@ name = "sympy"
 version = "1.14.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "mpmath", marker = "extra == 'group-10-funasr-api-apple-silicon' or extra == 'group-10-funasr-api-cpu' or extra == 'group-10-funasr-api-gpu'" },
+    { name = "mpmath", marker = "(sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (sys_platform == 'linux' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/83/d3/803453b36afefb7c2bb238361cd4ae6125a569b4db67cd9e79846ba2d68c/sympy-1.14.0.tar.gz", hash = "sha256:d3d3fe8df1e5a0b42f0e7bdf50541697dbe7d23746e894990c030e2b05e72517", size = 7793921, upload-time = "2025-04-27T18:05:01.611Z" }
 wheels = [
@@ -4326,17 +4075,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/46/58/8c37dea7bbf769b20d58e7ace7e5edfe65b849442b00ffcdd56be88697c6/tabulate-0.10.0.tar.gz", hash = "sha256:e2cfde8f79420f6deeffdeda9aaec3b6bc5abce947655d17ac662b126e48a60d", size = 91754, upload-time = "2026-03-04T18:55:34.402Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/99/55/db07de81b5c630da5cbf5c7df646580ca26dfaefa593667fc6f2fe016d2e/tabulate-0.10.0-py3-none-any.whl", hash = "sha256:f0b0622e567335c8fabaaa659f1b33bcb6ddfe2e496071b743aa113f8774f2d3", size = 39814, upload-time = "2026-03-04T18:55:31.284Z" },
-]
-
-[[package]]
-name = "tbb"
-version = "2021.13.1"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/62/52e55f0045efa6b10a69edb306c9bfdf4ec7d59cf88906f4fd104482fbfa/tbb-2021.13.1-py2.py3-none-manylinux1_i686.whl", hash = "sha256:bb5bdea0c0e9e6ad0739e7a8796c2635ce9eccca86dd48c426cd8027ac70fb1d", size = 5205093, upload-time = "2024-08-07T15:08:54.695Z" },
-    { url = "https://files.pythonhosted.org/packages/cc/67/b4dc53ce8de52cc9c3d75ffd93477b802659db093f97c8b6d63c917e5616/tbb-2021.13.1-py2.py3-none-manylinux1_x86_64.whl", hash = "sha256:d916359dc685579d09e4b344241550afc1cc034f7f5ec7234c258b6680912d70", size = 5386608, upload-time = "2024-08-07T15:09:37.338Z" },
-    { url = "https://files.pythonhosted.org/packages/fb/8a/5062b00c378c051e26507e5eca8d3b5c91ed63f8a2139f6f0f422be84b02/tbb-2021.13.1-py3-none-win32.whl", hash = "sha256:00f5e5a70051650ddd0ab6247c0549521968339ec21002e475cd23b1cbf46d66", size = 248994, upload-time = "2024-08-07T15:10:08.934Z" },
-    { url = "https://files.pythonhosted.org/packages/9b/24/84ce997e8ae6296168a74d0d9c4dde572d90fb23fd7c0b219c30ff71e00e/tbb-2021.13.1-py3-none-win_amd64.whl", hash = "sha256:cbf024b2463fdab3ebe3fa6ff453026358e6b903839c80d647e08ad6d0796ee9", size = 286908, upload-time = "2024-08-07T15:09:05.677Z" },
 ]
 
 [[package]]
@@ -4470,17 +4208,17 @@ name = "torch"
 version = "2.3.1"
 source = { registry = "https://download.pytorch.org/whl/cpu" }
 resolution-markers = [
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (python_full_version >= '3.11' and sys_platform == 'darwin')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (python_full_version < '3.11' and sys_platform == 'darwin')",
+    "python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux'",
+    "python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux'",
 ]
 dependencies = [
-    { name = "filelock", marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or sys_platform == 'darwin'" },
-    { name = "fsspec", marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or sys_platform == 'darwin'" },
-    { name = "jinja2", marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or sys_platform == 'darwin'" },
-    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon') or (python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon') or (python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu') or (python_full_version >= '3.11' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon') or (python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon') or (python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu') or (python_full_version < '3.11' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "sympy", marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or sys_platform == 'darwin'" },
-    { name = "typing-extensions", marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or sys_platform == 'darwin'" },
+    { name = "filelock", marker = "platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux'" },
+    { name = "fsspec", marker = "platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux'" },
+    { name = "jinja2", marker = "platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux'" },
+    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version >= '3.11' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'aarch64' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version < '3.11' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_machine != 'aarch64' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "sympy", marker = "platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux'" },
+    { name = "typing-extensions", marker = "platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.3.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6544fdf29018668c0a6d4a1bcc955982c1ada70806281b010cba93bdcfbdcf22" },
@@ -4493,21 +4231,52 @@ wheels = [
 
 [[package]]
 name = "torch"
+version = "2.3.1"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.11' and sys_platform == 'darwin'",
+    "python_full_version < '3.11' and sys_platform == 'darwin'",
+]
+dependencies = [
+    { name = "filelock", marker = "sys_platform == 'darwin'" },
+    { name = "fsspec", marker = "sys_platform == 'darwin'" },
+    { name = "jinja2", marker = "sys_platform == 'darwin'" },
+    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu') or (python_full_version >= '3.11' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu') or (python_full_version < '3.11' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "sympy", marker = "sys_platform == 'darwin'" },
+    { name = "typing-extensions", marker = "sys_platform == 'darwin'" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cb/e2/1bd899d3eb60c6495cf5d0d2885edacac08bde7a1407eadeb2ab36eca3c7/torch-2.3.1-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:605a25b23944be5ab7c3467e843580e1d888b8066e5aaf17ff7bf9cc30001cc3", size = 779135478, upload-time = "2024-06-05T16:40:40.688Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/67/93143534e1c1293a08fcb96cced205c199c6ae9306707b1a29f533e359f0/torch-2.3.1-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:f2357eb0965583a0954d6f9ad005bba0091f956aef879822274b1bcdb11bd308", size = 86932717, upload-time = "2024-06-05T16:42:10.461Z" },
+    { url = "https://files.pythonhosted.org/packages/85/fc/ee5bb50eff313149657f173b003649677e27fa3aaae1ecc806add37f017c/torch-2.3.1-cp310-cp310-win_amd64.whl", hash = "sha256:32b05fe0d1ada7f69c9f86c14ff69b0ef1957a5a54199bacba63d22d8fab720b", size = 159777142, upload-time = "2024-06-05T16:42:22.058Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/52/7ab0a00b54aa1651e79a9ebc721d45fba86d8c8ab65c4ec6e0a49f09527a/torch-2.3.1-cp310-none-macosx_11_0_arm64.whl", hash = "sha256:7c09a94362778428484bcf995f6004b04952106aee0ef45ff0b4bab484f5498d", size = 61002907, upload-time = "2024-06-05T16:42:33.299Z" },
+    { url = "https://files.pythonhosted.org/packages/07/9a/4c5e74264439837814656201da13a898056a5201c976ef042544bceb840f/torch-2.3.1-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:b2ec81b61bb094ea4a9dee1cd3f7b76a44555375719ad29f05c0ca8ef596ad39", size = 779156414, upload-time = "2024-06-05T16:41:48.275Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/dc/82b5314ffcffa071440108fdccf59159abcd937b8e4d53f3237914089e60/torch-2.3.1-cp311-cp311-manylinux2014_aarch64.whl", hash = "sha256:490cc3d917d1fe0bd027057dfe9941dc1d6d8e3cae76140f5dd9a7e5bc7130ab", size = 86949326, upload-time = "2024-06-05T16:42:28.595Z" },
+    { url = "https://files.pythonhosted.org/packages/d3/1d/a257913c89572de61316461db91867f87519146e58132cdeace3d9ffbe1f/torch-2.3.1-cp311-cp311-win_amd64.whl", hash = "sha256:5802530783bd465fe66c2df99123c9a54be06da118fbd785a25ab0a88123758a", size = 159781829, upload-time = "2024-06-05T16:41:16.308Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/5f/f41b14a398d484bf218d5167ec9061c1e76f500d9e25166117818c8bacda/torch-2.3.1-cp311-none-macosx_11_0_arm64.whl", hash = "sha256:a7dd4ed388ad1f3d502bf09453d5fe596c7b121de7e0cfaca1e2017782e9bbac", size = 61007595, upload-time = "2024-06-05T16:42:16.707Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/82/68ccd49add4d21937f087871350905ffc709f32c92bf95334e7abf442147/torch-2.3.1-cp312-cp312-manylinux1_x86_64.whl", hash = "sha256:a486c0b1976a118805fc7c9641d02df7afbb0c21e6b555d3bb985c9f9601b61a", size = 779079866, upload-time = "2024-06-05T16:39:11.615Z" },
+    { url = "https://files.pythonhosted.org/packages/1b/a1/e8b286b85f19dd701a4b853c0554898b1fa69cea552c7d1ec39bc86f59aa/torch-2.3.1-cp312-cp312-manylinux2014_aarch64.whl", hash = "sha256:224259821fe3e4c6f7edf1528e4fe4ac779c77addaa74215eb0b63a5c474d66c", size = 86853451, upload-time = "2024-06-05T16:42:05.146Z" },
+    { url = "https://files.pythonhosted.org/packages/af/77/cf6ceb000f8a064c7b373fb3471d85bcc39917d175af82fead4a2857c669/torch-2.3.1-cp312-cp312-win_amd64.whl", hash = "sha256:e5fdccbf6f1334b2203a61a0e03821d5845f1421defe311dabeae2fc8fbeac2d", size = 159727172, upload-time = "2024-06-05T16:41:33.436Z" },
+    { url = "https://files.pythonhosted.org/packages/49/b6/1a2e3d43d4bc4ad7a4575b3745d707a68d5ed00ba263b205b6281bdd0921/torch-2.3.1-cp312-none-macosx_11_0_arm64.whl", hash = "sha256:3c333dc2ebc189561514eda06e81df22bf8fb64e2384746b2cb9f04f96d1d4c8", size = 60978559, upload-time = "2024-06-05T16:41:27.77Z" },
+]
+
+[[package]]
+name = "torch"
 version = "2.3.1+cpu"
 source = { registry = "https://download.pytorch.org/whl/cpu" }
 resolution-markers = [
-    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32')",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux')",
+    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux')",
+    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux')",
 ]
 dependencies = [
-    { name = "filelock", marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
-    { name = "fsspec", marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
-    { name = "jinja2", marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
-    { name = "mkl", marker = "sys_platform == 'win32'" },
-    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon') or (python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version >= '3.11' and platform_machine != 'aarch64' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_machine != 'aarch64' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version >= '3.11' and sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon') or (python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version < '3.11' and platform_machine != 'aarch64' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_machine != 'aarch64' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version < '3.11' and sys_platform != 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "sympy", marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
-    { name = "typing-extensions", marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
+    { name = "filelock", marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux')" },
+    { name = "fsspec", marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux')" },
+    { name = "jinja2", marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux')" },
+    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version >= '3.11' and platform_machine != 'aarch64' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version < '3.11' and platform_machine != 'aarch64' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux' and extra == 'group-10-funasr-api-cpu') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'linux' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "sympy", marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux')" },
+    { name = "typing-extensions", marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux')" },
 ]
 wheels = [
     { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp310-cp310-linux_x86_64.whl", hash = "sha256:d679e21d871982b9234444331a26350902cfd2d5ca44ce6f49896af8b3a3087d" },
@@ -4526,8 +4295,8 @@ dependencies = [
     { name = "filelock", marker = "sys_platform == 'darwin'" },
     { name = "fsspec", marker = "sys_platform == 'darwin'" },
     { name = "jinja2", marker = "sys_platform == 'darwin'" },
-    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform != 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "setuptools", marker = "sys_platform == 'darwin'" },
     { name = "sympy", marker = "sys_platform == 'darwin'" },
     { name = "typing-extensions", marker = "sys_platform == 'darwin'" },
@@ -4551,8 +4320,8 @@ dependencies = [
     { name = "filelock", marker = "sys_platform != 'darwin'" },
     { name = "fsspec", marker = "sys_platform != 'darwin'" },
     { name = "jinja2", marker = "sys_platform != 'darwin'" },
-    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (python_full_version >= '3.11' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (python_full_version < '3.11' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'darwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "setuptools", marker = "sys_platform != 'darwin'" },
     { name = "sympy", marker = "sys_platform != 'darwin'" },
     { name = "typing-extensions", marker = "sys_platform != 'darwin'" },
@@ -4577,8 +4346,8 @@ name = "torch-c-dlpack-ext"
 version = "0.1.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/37/de/921b6491efce5c389a5ef9bbed3d2d6660005840dae488124173180859ab/torch_c_dlpack_ext-0.1.5.tar.gz", hash = "sha256:d06f0357d575d22a168cc77acb9020fc4bae30968ceb6718a055dcbe92bacabe", size = 12913, upload-time = "2026-01-12T11:25:08.484Z" }
 wheels = [
@@ -4614,11 +4383,11 @@ name = "torchaudio"
 version = "2.3.1"
 source = { registry = "https://download.pytorch.org/whl/cpu" }
 resolution-markers = [
-    "(python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (python_full_version >= '3.11' and sys_platform == 'darwin')",
-    "(python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (python_full_version < '3.11' and sys_platform == 'darwin')",
+    "python_full_version >= '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux'",
+    "python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux'",
 ]
 dependencies = [
-    { name = "torch", version = "2.3.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or sys_platform == 'darwin'" },
+    { name = "torch", version = "2.3.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://download-r2.pytorch.org/whl/cpu/torchaudio-2.3.1-cp310-cp310-linux_aarch64.whl", hash = "sha256:6b57e773aad72743d50a64a7402a06cb8bdfcc709efc6d8c26429d940e6788e2" },
@@ -4631,14 +4400,40 @@ wheels = [
 
 [[package]]
 name = "torchaudio"
+version = "2.3.1"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.11' and sys_platform == 'darwin'",
+    "python_full_version < '3.11' and sys_platform == 'darwin'",
+]
+dependencies = [
+    { name = "torch", version = "2.3.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'darwin'" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/27/b9/727f98f746d94b52ff490761abe8e8c595e79b284a4e4f157ba36bd74d44/torchaudio-2.3.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:1f9134b27e5a7f0c1e33382fc0fe278e53695768cb0af02e8d22b5006c74a2ad", size = 1811090, upload-time = "2024-06-05T16:45:07.998Z" },
+    { url = "https://files.pythonhosted.org/packages/8e/2a/f33c0f2d9cc51a2f33e13902c47fafac1bad0c3a02077382e869bd9939c2/torchaudio-2.3.1-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:88796183c12631dbc3dca58a74625e2fb6c5c7e50a54649df14239439d874ba6", size = 3349847, upload-time = "2024-06-05T16:44:44.895Z" },
+    { url = "https://files.pythonhosted.org/packages/d3/2a/b14b5ac15d21d8e9851f63d863a31bbff7481fb526e98de0c2ac66f10243/torchaudio-2.3.1-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:6b57e773aad72743d50a64a7402a06cb8bdfcc709efc6d8c26429d940e6788e2", size = 1646475, upload-time = "2024-06-05T16:45:02.211Z" },
+    { url = "https://files.pythonhosted.org/packages/f1/ac/5857e7e99cbd935e1f1e48283832315eeb2a36264e4f356f2db1491253aa/torchaudio-2.3.1-cp310-cp310-win_amd64.whl", hash = "sha256:5b1224f944d1a3fc9755bd2876df6824a42c60cf4f32a05426dfdcd9668466da", size = 2366857, upload-time = "2024-06-05T16:44:53.892Z" },
+    { url = "https://files.pythonhosted.org/packages/41/c3/51482591d741c0c069f5825fe02d9ae387dc63eef2fe4cea1d1f3b07a623/torchaudio-2.3.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:01984f38398ca5e98ecfbfeafb72ae5b2131d0bb8aa464b5777addb3e4826877", size = 1816843, upload-time = "2024-06-05T16:45:04.237Z" },
+    { url = "https://files.pythonhosted.org/packages/62/04/3acb3673dcc9f493e65798d752841137cfcc14220a8eb4ec8dc202382bcc/torchaudio-2.3.1-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:68815815e09105fe1171f0541681a7ebaf6d5d52b8e095ccde94b8064b107002", size = 3355690, upload-time = "2024-06-05T16:44:55.522Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/8b/a883b4359c88d4e77d9301b4aaba6793a5de09a69010f2b56ba47655f49e/torchaudio-2.3.1-cp311-cp311-manylinux2014_aarch64.whl", hash = "sha256:c8c727c8341825bd18d91017c4c00f36b53b08f2176cdb9bdcb0def1c450b21d", size = 1651755, upload-time = "2024-06-05T16:44:59.953Z" },
+    { url = "https://files.pythonhosted.org/packages/7a/bf/5af72c1c4522bcf67df140427120b0e7898b2abc5afa5da917b722983a5b/torchaudio-2.3.1-cp311-cp311-win_amd64.whl", hash = "sha256:341e33450831146bc4c4cc8191d94484f1acc8bb566c2463a57c4133f792464e", size = 2368862, upload-time = "2024-06-05T16:44:41.152Z" },
+    { url = "https://files.pythonhosted.org/packages/45/97/e584276755305d3a0af0ff280ce7eeafc45855355ae0a6de38b13ac195ac/torchaudio-2.3.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5e36685420a07a176146e9d6e0fa8225198f126e167a00785538f853807e2d43", size = 1808180, upload-time = "2024-06-05T16:44:58.503Z" },
+    { url = "https://files.pythonhosted.org/packages/48/b7/04a96dabea4ffd1cc990b429c36f08316b442f2ea4964bd8b52e28aeb36f/torchaudio-2.3.1-cp312-cp312-manylinux1_x86_64.whl", hash = "sha256:07b72d76fa108ac0f3400a759456ba96bdaa2b8649fd9588cc93295a532b01d9", size = 3350075, upload-time = "2024-06-05T16:44:39.047Z" },
+    { url = "https://files.pythonhosted.org/packages/53/30/89de93b7082b58c29f2e368a737c613a07d0adbe87505b9592f4c88be718/torchaudio-2.3.1-cp312-cp312-manylinux2014_aarch64.whl", hash = "sha256:42af6c7a430e6268f2c028e06078d413912b5ec6efa28a097ebdd3c3c79659df", size = 1646768, upload-time = "2024-06-05T16:44:46.727Z" },
+    { url = "https://files.pythonhosted.org/packages/22/fa/23a6456de8b6fbac7026efb9c7163335c57b79437618686149daf2f9be39/torchaudio-2.3.1-cp312-cp312-win_amd64.whl", hash = "sha256:25bd1137e47de96b48ef0dc4865bc620a0b759e44c009c7e78e92d7bfdf257ba", size = 2362582, upload-time = "2024-06-05T16:44:34.565Z" },
+]
+
+[[package]]
+name = "torchaudio"
 version = "2.3.1+cpu"
 source = { registry = "https://download.pytorch.org/whl/cpu" }
 resolution-markers = [
-    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux') or (python_full_version >= '3.11' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32')",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux') or (python_full_version < '3.11' and sys_platform != 'darwin' and sys_platform != 'linux')",
+    "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux')",
+    "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version < '3.11' and platform_python_implementation != 'CPython' and sys_platform == 'linux')",
 ]
 dependencies = [
-    { name = "torch", version = "2.3.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
+    { name = "torch", version = "2.3.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux')" },
 ]
 wheels = [
     { url = "https://download-r2.pytorch.org/whl/cpu/torchaudio-2.3.1%2Bcpu-cp310-cp310-linux_x86_64.whl", hash = "sha256:e156d43a1d48073f4eed943ddf0285b9079fc93ce41371172cd1e94ac766f803" },
@@ -4687,8 +4482,8 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
     { name = "pillow" },
-    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/74/b4/cdfee31e0402ea035135462cb0ab496e974d56fab6b4e7a1f0cbccb8cd28/torchvision-0.26.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:a06d4772a8e13e772906ed736cc53ec6639e5e60554f8e5fa6ca165aabebc464", size = 1863503, upload-time = "2026-03-23T18:13:01.384Z" },
@@ -4710,7 +4505,7 @@ name = "tqdm"
 version = "4.67.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz", hash = "sha256:7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb", size = 169598, upload-time = "2026-02-03T17:35:53.048Z" }
 wheels = [
@@ -4804,8 +4599,8 @@ dependencies = [
     { name = "numba" },
     { name = "numpy" },
     { name = "pynndescent" },
-    { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "scipy" },
     { name = "tqdm" },
 ]
@@ -4830,7 +4625,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
     { name = "h11" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c3/d1/8f3c683c9561a4e6689dd3b1d345c815f10f86acd044ee1fb9a4dcd0b8c5/uvicorn-0.40.0.tar.gz", hash = "sha256:839676675e87e73694518b5574fd0f24c9d97b46bea16df7b8c05ea1a51071ea", size = 81761, upload-time = "2025-12-21T14:16:22.45Z" }
 wheels = [
@@ -4839,11 +4634,11 @@ wheels = [
 
 [package.optional-dependencies]
 standard = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "httptools" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
-    { name = "uvloop", marker = "(platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32') or (platform_python_implementation == 'PyPy' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (platform_python_implementation == 'PyPy' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'cygwin' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'cygwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'win32' and extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'win32' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "uvloop", marker = "(platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32') or (platform_python_implementation == 'PyPy' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'cygwin' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu') or (sys_platform == 'win32' and extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "watchfiles" },
     { name = "websockets" },
 ]
@@ -4876,7 +4671,7 @@ wheels = [
 
 [[package]]
 name = "vllm"
-version = "0.19.2rc1.dev11+g45232a454"
+version = "0.19.2rc1.dev19+g6e10cb54f"
 source = { registry = "https://wheels.vllm.ai/nightly" }
 dependencies = [
     { name = "aiohttp" },
@@ -4939,10 +4734,10 @@ dependencies = [
     { name = "soundfile" },
     { name = "tiktoken" },
     { name = "tokenizers" },
-    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torchaudio", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torchaudio", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torchaudio", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torchaudio", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "torchvision" },
     { name = "tqdm" },
     { name = "transformers" },
@@ -4951,8 +4746,8 @@ dependencies = [
     { name = "xgrammar", marker = "platform_machine == 'aarch64' or platform_machine == 'arm64' or platform_machine == 'ppc64le' or platform_machine == 's390x' or platform_machine == 'x86_64'" },
 ]
 wheels = [
-    { url = "https://wheels.vllm.ai/45232a454e4c57191633fefda5baa9fa1f5dc8fd/vllm-0.19.2rc1.dev11%2Bg45232a454-cp38-abi3-manylinux_2_31_aarch64.whl" },
-    { url = "https://wheels.vllm.ai/45232a454e4c57191633fefda5baa9fa1f5dc8fd/vllm-0.19.2rc1.dev11%2Bg45232a454-cp38-abi3-manylinux_2_31_x86_64.whl" },
+    { url = "https://wheels.vllm.ai/6e10cb54f69bf26cd4986cda3faa5eb07f25875e/vllm-0.19.2rc1.dev19%2Bg6e10cb54f-cp38-abi3-manylinux_2_31_aarch64.whl" },
+    { url = "https://wheels.vllm.ai/6e10cb54f69bf26cd4986cda3faa5eb07f25875e/vllm-0.19.2rc1.dev19%2Bg6e10cb54f-cp38-abi3-manylinux_2_31_x86_64.whl" },
 ]
 
 [package.optional-dependencies]
@@ -5088,8 +4883,8 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
     { name = "pydantic" },
-    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
-    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-apple-silicon' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
+    { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'group-10-funasr-api-gpu') or (extra == 'group-10-funasr-api-cpu' and extra == 'group-10-funasr-api-gpu')" },
     { name = "transformers" },
     { name = "triton", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "typing-extensions" },

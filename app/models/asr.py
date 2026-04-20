@@ -49,7 +49,7 @@ class ASRQueryParams(BaseModel):
 
     word_timestamps: Optional[bool] = Field(
         default=False,
-        description="是否返回字词级时间戳（默认关闭；Qwen CPU Rust / Apple MLX 会在启用时自动调用 forced aligner）",
+        description="是否返回字词级时间戳（默认关闭；Qwen CUDA vLLM / CPU Rust 会在启用时自动调用 forced aligner）",
     )
 
     # 5. 增强选项

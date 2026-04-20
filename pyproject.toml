@@ -31,16 +31,11 @@ dependencies = [
 
 [dependency-groups]
 cpu = [
-  "torch==2.3.1 ; sys_platform == 'linux'",
-  "torchaudio==2.3.1 ; sys_platform == 'linux'",
+  "torch==2.3.1 ; sys_platform == 'linux' or sys_platform == 'darwin'",
+  "torchaudio==2.3.1 ; sys_platform == 'linux' or sys_platform == 'darwin'",
 ]
 gpu = [
   "vllm[audio] ; sys_platform == 'linux'",
-]
-apple-silicon = [
-  "torch==2.3.1 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
-  "torchaudio==2.3.1 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
-  "mlx-qwen3-asr[aligner]==0.3.2 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
 ]
 
 [build-system]
@@ -57,10 +52,6 @@ conflicts = [
   [
     { group = "cpu" },
     { group = "gpu" },
-  ],
-  [
-    { group = "gpu" },
-    { group = "apple-silicon" },
   ],
 ]
 

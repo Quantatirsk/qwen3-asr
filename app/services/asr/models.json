@@ -18,7 +18,7 @@
             "name": "Qwen3-ASR-1.7B",
             "kind": "model",
             "engine": "qwen3",
-            "description": "Qwen3-ASR 1.7B，支持52种语言和方言；CUDA 使用 vLLM，Apple Silicon 使用 MLX，CPU 使用 QwenASR Rust backend",
+            "description": "Qwen3-ASR 1.7B，支持52种语言和方言；CUDA 使用 vLLM，CPU/macOS 使用 QwenASR Rust backend",
             "languages": [
                 "zh",
                 "en",
@@ -51,7 +51,7 @@
             "name": "Qwen3-ASR-0.6B",
             "kind": "model",
             "engine": "qwen3",
-            "description": "Qwen3-ASR 0.6B，轻量版支持52种语言和方言；CUDA 使用 vLLM，Apple Silicon 使用 MLX，CPU 使用 QwenASR Rust backend",
+            "description": "Qwen3-ASR 0.6B，轻量版支持52种语言和方言；CUDA 使用 vLLM，CPU/macOS 使用 QwenASR Rust backend",
             "languages": [
                 "zh",
                 "en",

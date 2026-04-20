@@ -24,12 +24,13 @@ def load_supported_model_ids() -> list[str]:
 
 def detect_qwen_model_by_vram(all_model_ids: Optional[list[str]] = None) -> Optional[str]:
     """Pick the active Qwen model for the current machine."""
-    from app.core.device import has_gpu, get_vram_gb
+    from app.core.device import detect_device, get_vram_gb
     from app.services.asr.qwenasr_rust import is_qwenasr_rust_available
 
     model_ids = all_model_ids or load_supported_model_ids()
+    resolved_device = detect_device(settings.DEVICE)
 
-    if not has_gpu():
+    if resolved_device == "cpu":
         return "qwen3-asr-0.6b" if is_qwenasr_rust_available() and "qwen3-asr-0.6b" in model_ids else None
 
     vram = get_vram_gb()

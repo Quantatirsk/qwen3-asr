@@ -3,30 +3,7 @@
 
 from __future__ import annotations
 
-import importlib.util
 import sys
-
-
-def validate_apple_silicon_runtime() -> bool:
-    """Validate Apple Silicon MLX runtime before model warmup."""
-    try:
-        from app.core.config import settings
-        from app.core.device import detect_device
-
-        if detect_device(settings.DEVICE) != "mps":
-            return True
-
-        if importlib.util.find_spec("mlx_qwen3_asr") is not None:
-            return True
-
-        print("❌ 当前 Python 环境未安装 mlx-qwen3-asr。")
-        print("Apple Silicon 上的 Qwen3-ASR 现已使用 MLX backend。")
-        print("请安装 Apple Silicon 依赖后重试：")
-        print("  uv sync --group apple-silicon")
-        return False
-    except Exception as exc:
-        print(f"⚠️  Apple Silicon 运行时检查失败: {exc}")
-        return False
 
 
 def ensure_models_downloaded(interactive: bool) -> bool:
@@ -61,6 +38,4 @@ def ensure_models_downloaded(interactive: bool) -> bool:
 
 def run_cli_preflight() -> bool:
     """Preflight checks for the CLI entrypoint."""
-    return validate_apple_silicon_runtime() and ensure_models_downloaded(
-        interactive=sys.stdin.isatty(),
-    )
+    return ensure_models_downloaded(interactive=sys.stdin.isatty())

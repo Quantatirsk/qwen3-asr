@@ -1,6 +1,6 @@
 # FunASR-API 部署指南
 
-快速部署 FunASR-API 语音识别服务，支持 CPU、NVIDIA GPU 和 Apple Silicon 三种运行形态。
+快速部署 FunASR-API 语音识别服务，支持 CPU/macOS 与 NVIDIA GPU 两种运行形态。
 
 如果你正在继续验证本轮 CUDA 官方 vLLM 迁移，请同时参考：
 
@@ -12,7 +12,6 @@
 |------|------|------|
 | CPU | `uv sync --group cpu` | Linux/CPU 运行时 |
 | GPU | `uv sync --group gpu` | Linux/NVIDIA 运行时，官方 vLLM nightly |
-| Apple Silicon | `uv sync --group apple-silicon` | macOS/Apple Silicon 运行时 |
 
 ## 快速部署
 
@@ -80,25 +79,20 @@ docker run -d --name funasr-api \
 
 **注意：** CPU 版本不使用 GPU/vLLM 路径。
 当前 CPU 镜像已集成 QwenASR Rust backend，会自动选择 `qwen3-asr-0.6b`。
-CUDA vLLM、CPU Rust 和 Apple Silicon MLX 路径下，`word_timestamps=true` 会自动调用 forced aligner 返回字词级时间戳。
+CUDA vLLM 与 CPU Rust 路径下，`word_timestamps=true` 会自动调用 forced aligner 返回字词级时间戳。
 设计背景与实现思路可参考：
 
-- 当前 Qwen3 后端：`CUDA -> vLLM`、`MPS -> MLX`、`CPU -> vendored QwenASR Rust`
+- 当前 Qwen3 后端：`CUDA -> vLLM`、`CPU/macOS -> vendored QwenASR Rust`
 - 引用项目 [QwenASR](https://github.com/huanglizhuo/QwenASR)
 
-### Apple Silicon 本地部署
+### macOS / Apple Silicon 本地部署
 
-适用于 M1/M2/M3/M4 机器上的离线 Qwen3-ASR 推理。Apple Silicon 上的 Qwen3-ASR 已切换为 MLX backend，不再使用原先的 MPS + `qwen_asr` 兼容路径。
+适用于 M1/M2/M3/M4 机器上的本地 Qwen3-ASR 推理。当前 macOS 已统一走 vendored QwenASR Rust CPU backend。
 
 ```bash
-uv sync --group apple-silicon
+uv sync --group cpu
 uv run python start.py
 ```
-
-注意：
-- Apple Silicon 上 `qwen3-asr-*` 支持离线转写和 `word_timestamps`
-- `/ws/v1/asr/qwen` 在 Apple Silicon 上走 MLX 流式路径
-- 当前 MLX 流式路径不返回词级时间戳
 
 ### 验证部署
 
@@ -170,8 +164,8 @@ docker build -t funasr-api:gpu-latest -f Dockerfile.gpu .
 
 | 模型 | 说明 | 适用场景 |
 |------|------|----------|
-| Qwen3-ASR-1.7B ⭐ | 多语言 ASR（52种语言+方言，字级时间戳） | CUDA / Apple Silicon |
-| Qwen3-ASR-0.6B | 轻量版多语言 ASR | CUDA / Apple Silicon / CPU Rust |
+| Qwen3-ASR-1.7B ⭐ | 多语言 ASR（52种语言+方言，字级时间戳） | CUDA |
+| Qwen3-ASR-0.6B | 轻量版多语言 ASR | CUDA / CPU Rust / macOS |
 | Paraformer Large | WebSocket 实时识别能力 | CPU/GPU 均可 |
 
 **运行时模型选择：**
@@ -179,8 +173,7 @@ docker build -t funasr-api:gpu-latest -f Dockerfile.gpu .
 系统根据机器资源自动选择合适的 Qwen3-ASR 模型：
 - **显存 >= 32GB**: 自动加载 `qwen3-asr-1.7b`
 - **显存 < 32GB**: 自动加载 `qwen3-asr-0.6b`
-- **Apple Silicon**: 自动加载基于 MLX 的 Qwen3
-- **无 CUDA / 非 Apple Silicon**: 自动加载基于 vendored Rust 的 `qwen3-asr-0.6b`
+- **无 CUDA（含 macOS / Apple Silicon）**: 自动加载基于 vendored Rust 的 `qwen3-asr-0.6b`
 
 `paraformer-large` realtime capability 会始终为 WebSocket 流式识别准备。
 
@@ -206,7 +199,7 @@ docker build -t funasr-api:gpu-latest -f Dockerfile.gpu .
 
 | 环境变量 | 默认值 | 说明 |
 |----------|--------|------|
-| `DEVICE` | `auto` | 设备选择：`auto`, `cpu`, `cuda:0`, `mps` |
+| `DEVICE` | `auto` | 设备选择：`auto`, `cpu`, `cuda:0` |
 | `CUDA_VISIBLE_DEVICES` | `0` | 可见的 GPU 设备，控制启动实例数量 |
 
 ### 内置 Nginx 与限流配置
@@ -226,11 +219,11 @@ docker build -t funasr-api:gpu-latest -f Dockerfile.gpu .
 
 | 环境变量 | 默认值 | 说明 |
 |----------|--------|------|
-| `ASR_BATCH_SIZE` | `4` | ASR 批处理大小（GPU 建议 4，CPU 建议 2） |
+| `ASR_BATCH_SIZE` | `4` | ASR 批处理大小；CPU Rust 现已支持批内 4 路并行 |
 | `INFERENCE_THREAD_POOL_SIZE` | 自动 | 推理线程池大小；默认按 CPU 核数自动设置 |
 | `MAX_SEGMENT_SEC` | `30` | 音频分段最大时长（秒） |
 | `WS_MAX_BUFFER_SIZE` | `160000` | WebSocket 音频缓冲区大小（样本数） |
-| `QWEN_RUST_CPU_WORKERS` | `2` | CPU Rust backend worker 数 |
+| `QWEN_RUST_CPU_WORKERS` | `4` | CPU Rust backend worker 数；Rust ASR / forced align 默认 4 个 runtime |
 | `QWENASR_CPU_NUM_THREADS` | 自动 / 安全 `1` | 覆盖单个 Rust runtime 的 CPU 线程数 |
 | `QWENASR_LIBRARY_PATH` | 自动探测 | 覆盖 vendored Rust 动态库路径 |
 

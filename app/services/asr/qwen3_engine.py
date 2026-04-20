@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Qwen3-ASR engine with official vLLM, CPU Rust, and Apple MLX backends."""
+"""Qwen3-ASR engine with official vLLM and vendored Rust backends."""
 
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, List, Any
 from dataclasses import dataclass
 
@@ -15,7 +16,6 @@ from .qwenasr_rust import (
     is_qwenasr_rust_available,
     resolve_qwenasr_num_threads,
 )
-from .qwen3_mlx import Qwen3MLXBackend, is_mlx_qwen_available
 from .qwen3_vllm import Qwen3VLLMBackend, is_vllm_available
 from ...core.exceptions import DefaultServerErrorException
 from ...core.config import settings
@@ -136,7 +136,7 @@ class Qwen3ASREngine(BaseASREngine):
 
     @property
     def supports_realtime(self) -> bool:
-        return self._backend in {"vllm", "rust", "mlx"}
+        return self._backend in {"vllm", "rust"}
 
     def __init__(
         self,
@@ -151,16 +151,22 @@ class Qwen3ASREngine(BaseASREngine):
         """Initialize Qwen3-ASR engine
 
         CUDA -> official vLLM backend
-        CPU  -> QwenASR Rust backend
-        MPS  -> MLX backend
+        CPU/macOS -> QwenASR Rust backend
         """
         from app.core.device import detect_device
+
+        model_id = _kwargs.pop("model_id", None)
+        if model_id:
+            model_path = model_id
 
         self._device = detect_device(device)
         self.model_id = model_path
         self.model_path = model_path
         self._backend = self._select_backend()
         self._forced_aligner_path = forced_aligner_path
+        self._rust_num_threads = 0
+        self._rust_verbosity = 0
+        self._rust_batch_runtimes: list[QwenASRRustRuntime] = []
 
         try:
             if self._backend == "vllm":
@@ -170,12 +176,6 @@ class Qwen3ASREngine(BaseASREngine):
                 )
             elif self._backend == "rust":
                 self.model = self._load_rust_backend(model_path, forced_aligner_path)
-            elif self._backend == "mlx":
-                self.model = self._load_mlx_backend(
-                    model_path=model_path,
-                    forced_aligner_path=forced_aligner_path,
-                    max_new_tokens=max_new_tokens,
-                )
             else:
                 raise DefaultServerErrorException(
                     f"Qwen3-ASR is not available on device '{self._device}'"
@@ -194,14 +194,6 @@ class Qwen3ASREngine(BaseASREngine):
                     "Install it with: pip install --pre 'vllm[audio]'"
                 )
             return "vllm"
-        if self._device == "mps":
-            if not is_mlx_qwen_available():
-                raise DefaultServerErrorException(
-                    "Current Python environment is missing mlx-qwen3-asr. "
-                    "Apple Silicon Qwen3-ASR now uses the MLX backend. "
-                    "Install it with: pip install 'mlx-qwen3-asr[aligner]'"
-                )
-            return "mlx"
         if self._device == "cpu" and is_qwenasr_rust_available():
             return "rust"
         return "transformers"
@@ -220,6 +212,8 @@ class Qwen3ASREngine(BaseASREngine):
                 num_threads,
                 settings.QWEN_RUST_CPU_WORKERS,
             )
+        self._rust_num_threads = num_threads
+        self._rust_verbosity = 0
         return QwenASRRustRuntime(
             model_path=model_path,
             forced_aligner_path=forced_aligner_path,
@@ -227,25 +221,68 @@ class Qwen3ASREngine(BaseASREngine):
             verbosity=0,
         )
 
-    def _load_mlx_backend(
+    def _get_rust_batch_runtimes(self, worker_count: int) -> list[QwenASRRustRuntime]:
+        if worker_count <= 1:
+            return [self.model]
+
+        if not self._rust_batch_runtimes:
+            self._rust_batch_runtimes = [self.model]
+
+        while len(self._rust_batch_runtimes) < worker_count:
+            self._rust_batch_runtimes.append(
+                QwenASRRustRuntime(
+                    model_path=self.model_path,
+                    forced_aligner_path=self._forced_aligner_path,
+                    num_threads=self._rust_num_threads,
+                    verbosity=self._rust_verbosity,
+                )
+            )
+
+        return self._rust_batch_runtimes[:worker_count]
+
+    def _rust_transcribe_segment(
         self,
-        model_path: str,
-        forced_aligner_path: Optional[str],
-        max_new_tokens: int,
-    ) -> Qwen3MLXBackend:
-        logger.info("Loading Qwen3-ASR (MLX): %s, device=%s", model_path, self._device)
-        return Qwen3MLXBackend(
-            model_path=model_path,
-            forced_aligner_path=forced_aligner_path,
-            max_new_tokens=max_new_tokens,
+        runtime: QwenASRRustRuntime,
+        seg: Any,
+        hotwords: str,
+        enable_punctuation: bool,
+        enable_itn: bool,
+        sample_rate: int,
+        word_timestamps: bool,
+    ) -> ASRSegmentResult:
+        if word_timestamps:
+            text = runtime.transcribe_file(seg.temp_file)
+            word_tokens = [
+                WordToken(
+                    text=str(item["text"]),
+                    start_time=round(float(item["start_ms"]) / 1000.0, 3),
+                    end_time=round(float(item["end_ms"]) / 1000.0, 3),
+                )
+                for item in runtime.align_transcript(
+                    audio_path=seg.temp_file,
+                    text=text,
+                )
+            ]
+            return ASRSegmentResult(
+                text=text,
+                start_time=seg.start_sec,
+                end_time=seg.end_sec,
+                speaker_id=getattr(seg, "speaker_id", None),
+                word_tokens=word_tokens or None,
+            )
+
+        text = runtime.transcribe_file(seg.temp_file)
+        return ASRSegmentResult(
+            text=text or "",
+            start_time=seg.start_sec,
+            end_time=seg.end_sec,
+            speaker_id=getattr(seg, "speaker_id", None),
         )
 
     def _warmup_forced_aligner(self) -> None:
         if not self._forced_aligner_path:
             return
         if self._backend == "vllm":
-            self.model.ensure_forced_aligner_loaded()
-        if self._backend == "mlx":
             self.model.ensure_forced_aligner_loaded()
 
     def _load_vllm(
@@ -280,8 +317,6 @@ class Qwen3ASREngine(BaseASREngine):
     ) -> str:
         if self._backend == "rust":
             return self.model.transcribe_file(audio_path)
-        if self._backend == "mlx":
-            return self.model.transcribe_text(audio_path, context=hotwords or "")
         if self._backend == "vllm":
             return self.model.transcribe_text(
                 audio_path,
@@ -335,13 +370,6 @@ class Qwen3ASREngine(BaseASREngine):
             return ASRRawResult(
                 text=text,
                 segments=[ASRSegmentResult(text=text, start_time=0.0, end_time=0.0)] if text else [],
-            )
-        if self._backend == "mlx":
-            word_timestamps = kwargs.get("word_timestamps", False)
-            return self.model.transcribe_raw(
-                audio_path=audio_path,
-                context=hotwords or "",
-                word_timestamps=word_timestamps,
             )
         if self._backend == "vllm":
             return self.model.transcribe_raw(
@@ -397,16 +425,6 @@ class Qwen3ASREngine(BaseASREngine):
         sample_rate: int = 16000,
         word_timestamps: bool = False,
     ) -> List[ASRSegmentResult]:
-        if self._backend in {"rust", "mlx"}:
-            return super()._transcribe_batch(
-                segments=segments,
-                hotwords=hotwords,
-                enable_punctuation=enable_punctuation,
-                enable_itn=enable_itn,
-                sample_rate=sample_rate,
-                word_timestamps=word_timestamps,
-            )
-
         output = [ASRSegmentResult(text="", start_time=0.0, end_time=0.0) for _ in segments]
 
         valid: List[tuple[int, Any]] = []
@@ -418,6 +436,32 @@ class Qwen3ASREngine(BaseASREngine):
                 logger.warning(f"Qwen3 批处理片段无效或文件不存在: segment={idx + 1}, file={temp_file}")
 
         if not valid:
+            return output
+
+        if self._backend == "rust":
+            worker_count = max(1, min(settings.ASR_BATCH_SIZE, len(valid)))
+            runtimes = self._get_rust_batch_runtimes(worker_count)
+
+            for batch_start in range(0, len(valid), worker_count):
+                chunk = valid[batch_start:batch_start + worker_count]
+                chunk_runtimes = runtimes[:len(chunk)]
+                with ThreadPoolExecutor(max_workers=len(chunk)) as executor:
+                    futures = [
+                        executor.submit(
+                            self._rust_transcribe_segment,
+                            runtime,
+                            seg,
+                            hotwords,
+                            enable_punctuation,
+                            enable_itn,
+                            sample_rate,
+                            word_timestamps,
+                        )
+                        for runtime, (_idx, seg) in zip(chunk_runtimes, chunk)
+                    ]
+
+                    for (idx, _seg), future in zip(chunk, futures):
+                        output[idx] = future.result()
             return output
 
         if self._backend == "vllm":
@@ -486,7 +530,7 @@ class Qwen3ASREngine(BaseASREngine):
 
     @_handle_asr_error("初始化流式状态")
     def init_streaming_state(self, context: str = "", language: Optional[str] = None, **kwargs) -> Qwen3StreamingState:
-        if self._backend not in {"vllm", "rust", "mlx"}:
+        if self._backend not in {"vllm", "rust"}:
             raise DefaultServerErrorException(
                 f"Qwen3 backend={self._backend} does not support realtime streaming"
             )
@@ -515,34 +559,6 @@ class Qwen3ASREngine(BaseASREngine):
                 last_text="",
                 last_language=language or "",
             )
-        if self._backend == "mlx":
-            chunk_size_sec = float(kwargs.get("chunk_size_sec", 2.0))
-            unfixed_chunk_num = int(kwargs.get("unfixed_chunk_num", 2))
-            unfixed_token_num = int(kwargs.get("unfixed_token_num", 5))
-            max_new_tokens = int(kwargs.get("max_new_tokens", 32))
-            streaming_state = self.model.init_streaming_state(
-                context=context,
-                language=language,
-                chunk_size_sec=chunk_size_sec,
-                unfixed_chunk_num=unfixed_chunk_num,
-                unfixed_token_num=unfixed_token_num,
-                max_new_tokens=max_new_tokens,
-                max_context_sec=float(kwargs.get("max_context_sec", 30.0)),
-                finalization_mode=str(kwargs.get("finalization_mode", "accuracy")),
-                endpointing_mode=str(kwargs.get("endpointing_mode", "fixed")),
-            )
-            return Qwen3StreamingState(
-                internal_state=streaming_state,
-                chunk_size_sec=chunk_size_sec,
-                unfixed_chunk_num=unfixed_chunk_num,
-                unfixed_token_num=unfixed_token_num,
-                max_new_tokens=max_new_tokens,
-                language=language,
-                chunk_count=int(getattr(streaming_state, "chunk_id", 0)),
-                last_text=str(getattr(streaming_state, "text", "") or ""),
-                last_language=str(getattr(streaming_state, "language", "") or ""),
-            )
-
         if self._backend == "vllm":
             streaming_state = self.model.init_streaming_state(context=context, language=language, **kwargs)
             return Qwen3StreamingState(
@@ -563,7 +579,7 @@ class Qwen3ASREngine(BaseASREngine):
 
     @_handle_asr_error("流式识别")
     def streaming_transcribe(self, pcm16k: np.ndarray, state: Qwen3StreamingState) -> Qwen3StreamingState:
-        if self._backend not in {"vllm", "rust", "mlx"}:
+        if self._backend not in {"vllm", "rust"}:
             raise DefaultServerErrorException(
                 f"Qwen3 backend={self._backend} does not support realtime streaming"
             )
@@ -582,13 +598,6 @@ class Qwen3ASREngine(BaseASREngine):
             state.last_text = text
             state.last_language = state.language or ""
             return state
-        if self._backend == "mlx":
-            streaming_state = self.model.feed_stream(pcm, state.internal_state)
-            state.internal_state = streaming_state
-            state.chunk_count = int(getattr(streaming_state, "chunk_id", state.chunk_count))
-            state.last_text = str(getattr(streaming_state, "text", "") or "")
-            state.last_language = str(getattr(streaming_state, "language", "") or "")
-            return state
 
         streaming_state = self.model.feed_stream(pcm, state.internal_state)
         state.internal_state = streaming_state
@@ -599,7 +608,7 @@ class Qwen3ASREngine(BaseASREngine):
 
     @_handle_asr_error("结束流式识别")
     def finish_streaming_transcribe(self, state: Qwen3StreamingState) -> Qwen3StreamingState:
-        if self._backend not in {"vllm", "rust", "mlx"}:
+        if self._backend not in {"vllm", "rust"}:
             raise DefaultServerErrorException(
                 f"Qwen3 backend={self._backend} does not support realtime streaming"
             )
@@ -614,13 +623,6 @@ class Qwen3ASREngine(BaseASREngine):
             )
             state.last_text = text
             state.last_language = state.language or ""
-            return state
-        if self._backend == "mlx":
-            streaming_state = self.model.finish_stream(state.internal_state)
-            state.internal_state = streaming_state
-            state.chunk_count = int(getattr(streaming_state, "chunk_id", state.chunk_count))
-            state.last_text = str(getattr(streaming_state, "text", "") or "")
-            state.last_language = str(getattr(streaming_state, "language", "") or "")
             return state
 
         streaming_state = self.model.finish_stream(state.internal_state)

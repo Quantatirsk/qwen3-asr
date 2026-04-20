@@ -75,14 +75,10 @@ async def lifespan(app: FastAPI):
 
     # 所有 Worker 都需要预加载模型
     try:
-        from .bootstrap import validate_apple_silicon_runtime
         from .utils.model_loader import (
             preload_models,
             verify_required_models_integrity,
         )
-
-        if not validate_apple_silicon_runtime():
-            raise RuntimeError("Apple Silicon runtime validation failed")
 
         integrity_result = verify_required_models_integrity()
         if integrity_result["invalid_models"]:
