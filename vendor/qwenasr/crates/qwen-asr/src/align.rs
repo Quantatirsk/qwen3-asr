@@ -210,7 +210,8 @@ pub fn forced_align(
     text: &str,
     language: &str,
 ) -> Option<Vec<AlignResult>> {
-    let cfg = &ctx.config.clone();
+    let shared = ctx.shared.clone();
+    let cfg = &shared.config.clone();
     let dim = cfg.dec_hidden;
     let seg_time = cfg.timestamp_segment_time;
 
@@ -219,7 +220,7 @@ pub fn forced_align(
         return None;
     }
 
-    let vocab_path = format!("{}/vocab.json", ctx.model_dir);
+    let vocab_path = format!("{}/vocab.json", shared.model_dir);
     let tokenizer = QwenTokenizer::load(&vocab_path)?;
 
     ctx.reset_perf();
@@ -240,7 +241,7 @@ pub fn forced_align(
     let mel_ms = elapsed_ms(t0);
 
     let t0 = get_time_ms();
-    let (enc_output, enc_seq_len) = ctx.encoder.forward(cfg, &mel, mel_frames, Some(&mut ctx.enc_bufs))?;
+    let (enc_output, enc_seq_len) = shared.encoder.forward(cfg, &mel, mel_frames, Some(&mut ctx.enc_bufs))?;
     let enc_ms = elapsed_ms(t0);
 
     if kernels::verbose() >= 2 {
@@ -256,7 +257,7 @@ pub fn forced_align(
     let total_seq = prefix_len + enc_seq_len + suffix_len + text_tokens.len();
 
     let mut input_embeds = vec![0.0f32; total_seq * dim];
-    let tok_emb = ctx.decoder.tok_embeddings_bf16;
+    let tok_emb = shared.decoder.tok_embeddings_bf16;
 
     let mut off = 0;
     for &tok in PREFIX_HEAD {
@@ -297,7 +298,7 @@ pub fn forced_align(
     ctx.kv_cache.len = 0;
 
     let logits = decoder::decoder_prefill_logits(
-        &ctx.decoder, cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+        &shared.decoder, cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
         &mut ctx.dec_bufs, &input_embeds, total_seq,
     );
     let prefill_ms = elapsed_ms(t0);

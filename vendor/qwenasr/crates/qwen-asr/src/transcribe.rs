@@ -66,7 +66,8 @@ fn transcribe_segment(
     tokenizer: &QwenTokenizer,
     past_tokens: Option<&[i32]>,
 ) -> Option<(String, i32)> {
-    let cfg = &ctx.config.clone();
+    let shared = ctx.shared.clone();
+    let cfg = &shared.config.clone();
     let dim = cfg.dec_hidden;
     let seg_t0 = get_time_ms();
     let mut n_text_tokens = 0i32;
@@ -82,7 +83,7 @@ fn transcribe_segment(
 
     // Encoder
     let t0 = get_time_ms();
-    let (enc_output, enc_seq_len) = ctx.encoder.forward(cfg, &mel, mel_frames, Some(&mut ctx.enc_bufs))?;
+    let (enc_output, enc_seq_len) = shared.encoder.forward(cfg, &mel, mel_frames, Some(&mut ctx.enc_bufs))?;
     let enc_ms = elapsed_ms(t0);
 
     if kernels::verbose() >= 2 {
@@ -104,7 +105,7 @@ fn transcribe_segment(
     let total_seq = prefix_len + enc_seq_len + suffix_len + n_past_prompt_tokens;
 
     let mut input_embeds = vec![0.0f32; total_seq * dim];
-    let tok_emb = ctx.decoder.tok_embeddings_bf16;
+    let tok_emb = shared.decoder.tok_embeddings_bf16;
 
     // Embed prefix head
     let mut off = 0;
@@ -173,14 +174,14 @@ fn transcribe_segment(
     ctx.kv_cache.len = 0;
     let prefill_len = total_seq - 1;
     decoder::decoder_prefill(
-        &ctx.decoder, cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+        &shared.decoder, cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
         &mut ctx.dec_bufs, &input_embeds, prefill_len,
     );
 
     // First token from last prefill position
     let last_embed = &input_embeds[prefill_len * dim..(prefill_len + 1) * dim];
     let mut token = decoder::decoder_forward(
-        &ctx.decoder, cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+        &shared.decoder, cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
         &mut ctx.dec_bufs, last_embed,
     );
 
@@ -220,7 +221,7 @@ fn transcribe_segment(
 
         unsafe { tok_embed_bf16_to_f32(&mut tmp_embed, tok_emb, token, dim) };
         token = decoder::decoder_forward(
-            &ctx.decoder, cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+            &shared.decoder, cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
             &mut ctx.dec_bufs, &tmp_embed,
         );
     }
@@ -295,6 +296,7 @@ fn should_insert_boundary_space(prev_ch: u8, next_ch: u8) -> bool {
 /// automatically split at low-energy boundaries.
 /// Returns `None` if the tokenizer or encoder fails to initialize.
 pub fn transcribe_audio(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
+    let shared = ctx.shared.clone();
     ctx.reset_perf();
     ctx.perf_audio_ms = 1000.0 * samples.len() as f64 / SAMPLE_RATE as f64;
 
@@ -320,7 +322,7 @@ pub fn transcribe_audio(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
         );
     }
 
-    let tokenizer = load_tokenizer(&ctx.model_dir)?;
+    let tokenizer = load_tokenizer(&shared.model_dir)?;
     if !ctx.prepare_prompt_tokens(&tokenizer) {
         return None;
     }
@@ -446,7 +448,8 @@ pub fn transcribe_stdin(ctx: &mut QwenCtx) -> Option<String> {
 /// Trades throughput for lower latency compared to offline mode. If no
 /// `token_cb` is set, falls back to a single offline decode of the full audio.
 pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
-    let cfg = ctx.config.clone();
+    let shared = ctx.shared.clone();
+    let cfg = shared.config.clone();
     let dim = cfg.dec_hidden;
     let chunk_samples = (ctx.stream_chunk_sec * SAMPLE_RATE as f32) as usize;
     let rollback = ctx.stream_rollback;
@@ -467,13 +470,13 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
         if kernels::verbose() >= 2 {
             eprintln!("Streaming: no token callback, using direct final refinement");
         }
-        let tokenizer = load_tokenizer(&ctx.model_dir)?;
+        let tokenizer = load_tokenizer(&shared.model_dir)?;
         ctx.prepare_prompt_tokens(&tokenizer);
         let (text, _) = transcribe_segment(ctx, &audio_samples, &tokenizer, None)?;
         return Some(text);
     }
 
-    let tokenizer = load_tokenizer(&ctx.model_dir)?;
+    let tokenizer = load_tokenizer(&shared.model_dir)?;
     if !ctx.prepare_prompt_tokens(&tokenizer) {
         return None;
     }
@@ -481,7 +484,7 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
     let enc_window_frames = cfg.enc_n_window_infer.clamp(100, 800);
     let enc_window_samples = enc_window_frames * HOP_LENGTH;
 
-    let tok_emb = ctx.decoder.tok_embeddings_bf16;
+    let tok_emb = shared.decoder.tok_embeddings_bf16;
 
     let mut raw_tokens: Vec<i32> = Vec::new();
     let mut stable_text_tokens: Vec<i32> = Vec::new();
@@ -521,7 +524,7 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
         while (enc_cache_base_windows + enc_cache.len()) * enc_window_samples < full_end {
             let ws = (enc_cache_base_windows + enc_cache.len()) * enc_window_samples;
             let (mel, mel_frames) = audio::mel_spectrogram(&audio_samples[ws..ws + enc_window_samples])?;
-            let (win_enc, win_seq) = ctx.encoder.forward(&cfg, &mel, mel_frames, Some(&mut ctx.enc_bufs))?;
+            let (win_enc, win_seq) = shared.encoder.forward(&cfg, &mel, mel_frames, Some(&mut ctx.enc_bufs))?;
             enc_cached_seq_total += win_seq;
             enc_cache.push(EncWindow { seq_len: win_seq, enc_output: win_enc });
         }
@@ -532,7 +535,7 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
         if full_end < audio_cursor {
             let _partial_samples = audio_cursor - full_end;
             if let Some((mel, mel_frames)) = audio::mel_spectrogram(&audio_samples[full_end..audio_cursor]) {
-                if let Some((enc, seq)) = ctx.encoder.forward(&cfg, &mel, mel_frames, Some(&mut ctx.enc_bufs)) {
+                if let Some((enc, seq)) = shared.encoder.forward(&cfg, &mel, mel_frames, Some(&mut ctx.enc_bufs)) {
                     partial_seq = seq;
                     partial_enc = enc;
                 }
@@ -643,7 +646,7 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
         let delta_prefill = prefill_len - reused_prefill;
         if delta_prefill > 0 {
             decoder::decoder_prefill(
-                &ctx.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+                &shared.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
                 &mut ctx.dec_bufs,
                 &input_embeds[reused_prefill * dim..],
                 delta_prefill,
@@ -652,7 +655,7 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
 
         let last_embed = &input_embeds[prefill_len * dim..(prefill_len + 1) * dim];
         let mut token = decoder::decoder_forward(
-            &ctx.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+            &shared.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
             &mut ctx.dec_bufs, last_embed,
         );
 
@@ -674,7 +677,7 @@ pub fn transcribe_stream(ctx: &mut QwenCtx, samples: &[f32]) -> Option<String> {
             chunk_tokens.push(token);
             unsafe { tok_embed_bf16_to_f32(&mut tmp_embed, tok_emb, token, dim); }
             token = decoder::decoder_forward(
-                &ctx.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+                &shared.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
                 &mut ctx.dec_bufs, &tmp_embed,
             );
         }
@@ -905,7 +908,8 @@ pub fn stream_push_audio(
     state: &mut StreamState,
     finalize: bool,
 ) -> Option<String> {
-    let cfg = ctx.config.clone();
+    let shared = ctx.shared.clone();
+    let cfg = shared.config.clone();
     let dim = cfg.dec_hidden;
     let chunk_samples = (ctx.stream_chunk_sec * SAMPLE_RATE as f32) as usize;
     let rollback = ctx.stream_rollback;
@@ -914,7 +918,7 @@ pub fn stream_push_audio(
 
     // Lazy-init tokenizer
     if state.tokenizer.is_none() {
-        state.tokenizer = load_tokenizer(&ctx.model_dir);
+        state.tokenizer = load_tokenizer(&shared.model_dir);
     }
     let tokenizer = state.tokenizer.as_ref()?;
 
@@ -936,7 +940,7 @@ pub fn stream_push_audio(
 
     let enc_window_frames = cfg.enc_n_window_infer.clamp(100, 800);
     let enc_window_samples = enc_window_frames * HOP_LENGTH;
-    let tok_emb = ctx.decoder.tok_embeddings_bf16;
+    let tok_emb = shared.decoder.tok_embeddings_bf16;
     let mut tmp_embed = vec![0.0f32; dim];
     let mut delta_bytes: Vec<u8> = Vec::new();
 
@@ -959,7 +963,7 @@ pub fn stream_push_audio(
     while (state.enc_cache_base_windows + state.enc_cache.len()) * enc_window_samples < full_end {
         let ws = (state.enc_cache_base_windows + state.enc_cache.len()) * enc_window_samples;
         let (mel, mel_frames) = audio::mel_spectrogram(&samples[ws..ws + enc_window_samples])?;
-        let (win_enc, win_seq) = ctx.encoder.forward(&cfg, &mel, mel_frames, Some(&mut ctx.enc_bufs))?;
+        let (win_enc, win_seq) = shared.encoder.forward(&cfg, &mel, mel_frames, Some(&mut ctx.enc_bufs))?;
         state.enc_cached_seq_total += win_seq;
         state.enc_cache.push(EncWindow { seq_len: win_seq, enc_output: win_enc });
     }
@@ -978,7 +982,7 @@ pub fn stream_push_audio(
     let partial_enc;
     if need_encode && full_end < state.audio_cursor {
         if let Some((mel, mel_frames)) = audio::mel_spectrogram(&samples[full_end..state.audio_cursor]) {
-            if let Some((enc, seq)) = ctx.encoder.forward(&cfg, &mel, mel_frames, Some(&mut ctx.enc_bufs)) {
+            if let Some((enc, seq)) = shared.encoder.forward(&cfg, &mel, mel_frames, Some(&mut ctx.enc_bufs)) {
                 partial_seq = seq;
                 partial_enc = enc;
                 state.last_partial_cursor = state.audio_cursor;
@@ -1107,7 +1111,7 @@ pub fn stream_push_audio(
     let delta_prefill = prefill_len - reused_prefill;
     if delta_prefill > 0 {
         decoder::decoder_prefill(
-            &ctx.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+            &shared.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
             &mut ctx.dec_bufs,
             &input_embeds[reused_prefill * dim..],
             delta_prefill,
@@ -1116,7 +1120,7 @@ pub fn stream_push_audio(
 
     let last_embed = &input_embeds[prefill_len * dim..(prefill_len + 1) * dim];
     let mut token = decoder::decoder_forward(
-        &ctx.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+        &shared.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
         &mut ctx.dec_bufs, last_embed,
     );
 
@@ -1145,7 +1149,7 @@ pub fn stream_push_audio(
         chunk_tokens.push(token);
         unsafe { tok_embed_bf16_to_f32(&mut tmp_embed, tok_emb, token, dim); }
         token = decoder::decoder_forward(
-            &ctx.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
+            &shared.decoder, &cfg, &mut ctx.kv_cache, &mut ctx.rope_cache,
             &mut ctx.dec_bufs, &tmp_embed,
         );
     }

@@ -1,4 +1,4 @@
-//! Top-level engine state ([`QwenCtx`]) owning all loaded weights and runtime buffers.
+//! Top-level engine state ([`QwenCtx`]) with shared model weights and private runtime buffers.
 
 use crate::config::*;
 use crate::decoder::*;
@@ -7,10 +7,101 @@ use crate::encoder::EncoderBuffers;
 use crate::kernels;
 use crate::safetensors::MultiSafetensors;
 use crate::tokenizer::QwenTokenizer;
+use std::collections::HashMap;
+use std::ops::Deref;
+use std::sync::{Arc, Mutex, OnceLock, Weak};
 
 pub type TokenCallback = Box<dyn Fn(&str) + Send>;
 
-/// Top-level ASR engine state owning model weights, KV cache, and scratch buffers.
+/// Shared read-only model weights reused across multiple runtime contexts.
+pub struct SharedQwenModel {
+    pub config: QwenConfig,
+    pub encoder: Encoder,
+    pub decoder: Decoder,
+    pub _safetensors: MultiSafetensors, // kept alive for mmap'd BF16 pointers
+    pub model_dir: String,
+}
+
+type SharedModelCache = Mutex<HashMap<String, Weak<SharedQwenModel>>>;
+
+fn shared_model_cache() -> &'static SharedModelCache {
+    static CACHE: OnceLock<SharedModelCache> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+impl SharedQwenModel {
+    fn load(model_dir: &str) -> Option<Arc<Self>> {
+        if let Ok(cache) = shared_model_cache().lock() {
+            if let Some(shared) = cache.get(model_dir).and_then(Weak::upgrade) {
+                if kernels::verbose() >= 1 {
+                    eprintln!("Reusing shared model weights from {}", model_dir);
+                }
+                return Some(shared);
+            }
+        }
+
+        if kernels::verbose() >= 1 {
+            eprintln!("Loading model from {}", model_dir);
+        }
+
+        let ms = MultiSafetensors::open(model_dir)?;
+
+        // Detect model variant from tensor shapes
+        let info = crate::config::DetectInfo {
+            has_enc_layer_18: ms.has_tensor("thinker.audio_tower.layers.18.self_attn.q_proj.weight"),
+            lm_head_shape: ms.find("thinker.lm_head.weight").map(|(_, t)| t.shape.as_slice()),
+            embed_tokens_shape: ms.find("thinker.model.embed_tokens.weight").map(|(_, t)| t.shape.as_slice()),
+            gate_proj_shape: ms.find("thinker.model.layers.0.mlp.gate_proj.weight").map(|(_, t)| t.shape.as_slice()),
+        };
+        let cfg = QwenConfig::detect(&info);
+
+        if kernels::verbose() >= 1 {
+            let variant = if cfg.dec_hidden >= 2048 { "1.7B" } else { "0.6B" };
+            let model_type = if cfg.is_aligner() { "ForcedAligner" } else { "ASR" };
+            eprintln!("Detected: Qwen3-{}-{}", model_type, variant);
+            if cfg.is_aligner() {
+                eprintln!(
+                    "  classify_num={}, timestamp_segment_time={:.0}ms",
+                    cfg.classify_num, cfg.timestamp_segment_time
+                );
+                eprintln!(
+                    "  encoder: {}d {}L, decoder: {}d {}L",
+                    cfg.enc_d_model, cfg.enc_layers, cfg.dec_hidden, cfg.dec_layers
+                );
+            }
+        }
+
+        if kernels::verbose() >= 1 {
+            eprintln!("Loading encoder weights...");
+        }
+        let encoder = Encoder::load(&ms, &cfg)?;
+
+        if kernels::verbose() >= 1 {
+            eprintln!("Loading decoder weights...");
+        }
+        let decoder = Decoder::load(&ms, &cfg)?;
+
+        if kernels::verbose() >= 1 {
+            eprintln!("Model weights loaded.");
+        }
+
+        let shared = Arc::new(SharedQwenModel {
+            config: cfg,
+            encoder,
+            decoder,
+            _safetensors: ms,
+            model_dir: model_dir.to_string(),
+        });
+
+        if let Ok(mut cache) = shared_model_cache().lock() {
+            cache.insert(model_dir.to_string(), Arc::downgrade(&shared));
+        }
+
+        Some(shared)
+    }
+}
+
+/// Top-level ASR engine state owning runtime caches, prompts, and scratch buffers.
 ///
 /// Create with [`QwenCtx::load`], then pass to functions in the [`crate::transcribe`] module.
 ///
@@ -24,11 +115,7 @@ pub type TokenCallback = Box<dyn Fn(&str) + Send>;
 /// | `prompt` | None | Optional text prompt (set via [`QwenCtx::set_prompt`]) |
 /// | `force_language` | None | Force a language (set via [`QwenCtx::set_force_language`]) |
 pub struct QwenCtx {
-    pub config: QwenConfig,
-    pub encoder: Encoder,
-    pub decoder: Decoder,
-    pub _safetensors: MultiSafetensors, // kept alive for mmap'd BF16 pointers
-    pub model_dir: String,
+    pub shared: Arc<SharedQwenModel>,
 
     // KV cache
     pub kv_cache: KvCache,
@@ -73,6 +160,14 @@ pub struct QwenCtx {
     pub perf_decode_ms: f64,
 }
 
+impl Deref for QwenCtx {
+    type Target = SharedQwenModel;
+
+    fn deref(&self) -> &Self::Target {
+        &self.shared
+    }
+}
+
 impl QwenCtx {
     /// Load a Qwen3-ASR model from `model_dir`.
     ///
@@ -84,58 +179,17 @@ impl QwenCtx {
     /// let ctx = QwenCtx::load("qwen3-asr-0.6b").expect("failed to load");
     /// ```
     pub fn load(model_dir: &str) -> Option<Self> {
-        if kernels::verbose() >= 1 {
-            eprintln!("Loading model from {}", model_dir);
-        }
-
-        let ms = MultiSafetensors::open(model_dir)?;
-
-        // Detect model variant from tensor shapes
-        let info = crate::config::DetectInfo {
-            has_enc_layer_18: ms.has_tensor("thinker.audio_tower.layers.18.self_attn.q_proj.weight"),
-            lm_head_shape: ms.find("thinker.lm_head.weight").map(|(_, t)| t.shape.as_slice()),
-            embed_tokens_shape: ms.find("thinker.model.embed_tokens.weight").map(|(_, t)| t.shape.as_slice()),
-            gate_proj_shape: ms.find("thinker.model.layers.0.mlp.gate_proj.weight").map(|(_, t)| t.shape.as_slice()),
-        };
-        let cfg = QwenConfig::detect(&info);
-
-        if kernels::verbose() >= 1 {
-            let variant = if cfg.dec_hidden >= 2048 { "1.7B" } else { "0.6B" };
-            let model_type = if cfg.is_aligner() { "ForcedAligner" } else { "ASR" };
-            eprintln!("Detected: Qwen3-{}-{}", model_type, variant);
-            if cfg.is_aligner() {
-                eprintln!("  classify_num={}, timestamp_segment_time={:.0}ms",
-                          cfg.classify_num, cfg.timestamp_segment_time);
-                eprintln!("  encoder: {}d {}L, decoder: {}d {}L",
-                          cfg.enc_d_model, cfg.enc_layers, cfg.dec_hidden, cfg.dec_layers);
-            }
-        }
-
-        // Load encoder
-        if kernels::verbose() >= 1 {
-            eprintln!("Loading encoder weights...");
-        }
-        let encoder = Encoder::load(&ms, &cfg)?;
-
-        // Load decoder
-        if kernels::verbose() >= 1 {
-            eprintln!("Loading decoder weights...");
-        }
-        let decoder = Decoder::load(&ms, &cfg)?;
-
+        let shared = SharedQwenModel::load(model_dir)?;
+        let cfg = shared.config.clone();
         let kv_cache = KvCache::new(cfg.dec_layers, 2048, cfg.dec_kv_heads, cfg.dec_head_dim);
         let dec_bufs = DecoderBuffers::new(&cfg);
 
         if kernels::verbose() >= 1 {
-            eprintln!("Model loaded.");
+            eprintln!("Runtime buffers initialized.");
         }
 
         Some(QwenCtx {
-            config: cfg,
-            encoder,
-            decoder,
-            _safetensors: ms,
-            model_dir: model_dir.to_string(),
+            shared,
             kv_cache,
             dec_bufs,
             enc_bufs: EncoderBuffers::new(),
