@@ -874,8 +874,61 @@ fn int8_matvec_threaded(y: &mut [f32], x: &[f32], w_int8: &[i8], w_scales: &[f32
 
     #[cfg(not(target_arch = "aarch64"))]
     {
-        let _ = (y, x, w_int8, w_scales, bias, in_dim, out_dim, x_int8, x_scale, n_threads);
-        unimplemented!("INT8 matvec only on aarch64");
+        if n_threads <= 1 || out_dim <= 1 {
+            for row in 0..out_dim {
+                let w_row = &w_int8[row * in_dim..(row + 1) * in_dim];
+                let mut acc = 0i32;
+                for col in 0..in_dim {
+                    acc += (x_int8[col] as i32) * (w_row[col] as i32);
+                }
+                let mut value = (acc as f32) * x_scale * w_scales[row];
+                if let Some(bias_values) = bias {
+                    value += bias_values[row];
+                }
+                y[row] = value;
+            }
+            return;
+        }
+
+        let x_int8_ptr = x_int8.as_ptr() as usize;
+        let w_int8_ptr = w_int8.as_ptr() as usize;
+        let w_scales_ptr = w_scales.as_ptr() as usize;
+        let y_ptr = y.as_mut_ptr() as usize;
+        let bias_ptr = bias.map(|values| values.as_ptr() as usize);
+
+        parallel_for(|tid, nt| {
+            let chunk = out_dim.div_ceil(nt);
+            let start = tid * chunk;
+            let end = (start + chunk).min(out_dim);
+            if start >= end {
+                return;
+            }
+
+            for row in start..end {
+                let w_row = unsafe {
+                    std::slice::from_raw_parts(
+                        (w_int8_ptr as *const i8).add(row * in_dim),
+                        in_dim,
+                    )
+                };
+                let x_local = unsafe {
+                    std::slice::from_raw_parts(x_int8_ptr as *const i8, in_dim)
+                };
+                let mut acc = 0i32;
+                for col in 0..in_dim {
+                    acc += (x_local[col] as i32) * (w_row[col] as i32);
+                }
+                let mut value = (acc as f32)
+                    * x_scale
+                    * unsafe { *((w_scales_ptr as *const f32).add(row)) };
+                if let Some(ptr) = bias_ptr {
+                    value += unsafe { *((ptr as *const f32).add(row)) };
+                }
+                unsafe {
+                    *((y_ptr as *mut f32).add(row)) = value;
+                }
+            }
+        });
     }
 }
 
@@ -961,8 +1014,90 @@ pub fn linear_nobias_int8_qkv(
     }
     #[cfg(not(target_arch = "aarch64"))]
     {
-        let _ = (q, k, v, x, wq_int8, wq_scales, wk_int8, wk_scales, wv_int8, wv_scales, in_dim, q_dim, kv_dim, x_int8, x_scale, n_threads);
-        unimplemented!("INT8 QKV only on aarch64");
+        let total_dim = q_dim + 2 * kv_dim;
+        if n_threads <= 1 || total_dim <= 1 {
+            for row in 0..q_dim {
+                let weights = &wq_int8[row * in_dim..(row + 1) * in_dim];
+                let mut acc = 0i32;
+                for col in 0..in_dim {
+                    acc += (x_int8[col] as i32) * (weights[col] as i32);
+                }
+                q[row] = (acc as f32) * x_scale * wq_scales[row];
+            }
+            for row in 0..kv_dim {
+                let weights = &wk_int8[row * in_dim..(row + 1) * in_dim];
+                let mut acc = 0i32;
+                for col in 0..in_dim {
+                    acc += (x_int8[col] as i32) * (weights[col] as i32);
+                }
+                k[row] = (acc as f32) * x_scale * wk_scales[row];
+            }
+            for row in 0..kv_dim {
+                let weights = &wv_int8[row * in_dim..(row + 1) * in_dim];
+                let mut acc = 0i32;
+                for col in 0..in_dim {
+                    acc += (x_int8[col] as i32) * (weights[col] as i32);
+                }
+                v[row] = (acc as f32) * x_scale * wv_scales[row];
+            }
+            return;
+        }
+
+        let total_dim = q_dim + 2 * kv_dim;
+        let q_ptr = q.as_mut_ptr() as usize;
+        let k_ptr = k.as_mut_ptr() as usize;
+        let v_ptr = v.as_mut_ptr() as usize;
+        let x_int8_ptr = x_int8.as_ptr() as usize;
+        let wq_ptr = wq_int8.as_ptr() as usize;
+        let wk_ptr = wk_int8.as_ptr() as usize;
+        let wv_ptr = wv_int8.as_ptr() as usize;
+        let wq_scales_ptr = wq_scales.as_ptr() as usize;
+        let wk_scales_ptr = wk_scales.as_ptr() as usize;
+        let wv_scales_ptr = wv_scales.as_ptr() as usize;
+
+        parallel_for(|tid, nt| {
+            let chunk = total_dim.div_ceil(nt);
+            let start = tid * chunk;
+            let end = (start + chunk).min(total_dim);
+            if start >= end {
+                return;
+            }
+
+            for row in start..end {
+                let (out_ptr, local_row, weights_ptr, scales_ptr) = if row < q_dim {
+                    (q_ptr as *mut f32, row, wq_ptr as *const i8, wq_scales_ptr as *const f32)
+                } else if row < q_dim + kv_dim {
+                    (
+                        k_ptr as *mut f32,
+                        row - q_dim,
+                        wk_ptr as *const i8,
+                        wk_scales_ptr as *const f32,
+                    )
+                } else {
+                    (
+                        v_ptr as *mut f32,
+                        row - q_dim - kv_dim,
+                        wv_ptr as *const i8,
+                        wv_scales_ptr as *const f32,
+                    )
+                };
+
+                let weights = unsafe {
+                    std::slice::from_raw_parts(weights_ptr.add(local_row * in_dim), in_dim)
+                };
+                let x_local = unsafe {
+                    std::slice::from_raw_parts(x_int8_ptr as *const i8, in_dim)
+                };
+                let mut acc = 0i32;
+                for col in 0..in_dim {
+                    acc += (x_local[col] as i32) * (weights[col] as i32);
+                }
+                let value = (acc as f32) * x_scale * unsafe { *scales_ptr.add(local_row) };
+                unsafe {
+                    *out_ptr.add(local_row) = value;
+                }
+            }
+        });
     }
 }
 
@@ -1021,8 +1156,71 @@ pub fn linear_nobias_int8_swiglu(
     }
     #[cfg(not(target_arch = "aarch64"))]
     {
-        let _ = (ffn_out, x, w_int8, w_scales, in_dim, intermediate, x_int8, x_scale, n_threads);
-        unimplemented!("INT8 swiglu only on aarch64");
+        if n_threads <= 1 || intermediate <= 1 {
+            for row in 0..intermediate {
+                let gate_weights = &w_int8[(2 * row) * in_dim..(2 * row + 1) * in_dim];
+                let up_weights = &w_int8[(2 * row + 1) * in_dim..(2 * row + 2) * in_dim];
+                let mut gate_acc = 0i32;
+                let mut up_acc = 0i32;
+                for col in 0..in_dim {
+                    let x_value = x_int8[col] as i32;
+                    gate_acc += x_value * (gate_weights[col] as i32);
+                    up_acc += x_value * (up_weights[col] as i32);
+                }
+                let gate = (gate_acc as f32) * x_scale * w_scales[2 * row];
+                let up = (up_acc as f32) * x_scale * w_scales[2 * row + 1];
+                ffn_out[row] = gate / (1.0 + (-gate).exp()) * up;
+            }
+            return;
+        }
+
+        let x_int8_ptr = x_int8.as_ptr() as usize;
+        let w_int8_ptr = w_int8.as_ptr() as usize;
+        let w_scales_ptr = w_scales.as_ptr() as usize;
+        let out_ptr = ffn_out.as_mut_ptr() as usize;
+
+        parallel_for(|tid, nt| {
+            let chunk = intermediate.div_ceil(nt);
+            let start = tid * chunk;
+            let end = (start + chunk).min(intermediate);
+            if start >= end {
+                return;
+            }
+
+            for row in start..end {
+                let gate_weights = unsafe {
+                    std::slice::from_raw_parts(
+                        (w_int8_ptr as *const i8).add((2 * row) * in_dim),
+                        in_dim,
+                    )
+                };
+                let up_weights = unsafe {
+                    std::slice::from_raw_parts(
+                        (w_int8_ptr as *const i8).add((2 * row + 1) * in_dim),
+                        in_dim,
+                    )
+                };
+                let x_local = unsafe {
+                    std::slice::from_raw_parts(x_int8_ptr as *const i8, in_dim)
+                };
+                let mut gate_acc = 0i32;
+                let mut up_acc = 0i32;
+                for col in 0..in_dim {
+                    let x_value = x_local[col] as i32;
+                    gate_acc += x_value * (gate_weights[col] as i32);
+                    up_acc += x_value * (up_weights[col] as i32);
+                }
+                let gate = (gate_acc as f32)
+                    * x_scale
+                    * unsafe { *((w_scales_ptr as *const f32).add(2 * row)) };
+                let up = (up_acc as f32)
+                    * x_scale
+                    * unsafe { *((w_scales_ptr as *const f32).add(2 * row + 1)) };
+                unsafe {
+                    *((out_ptr as *mut f32).add(row)) = gate / (1.0 + (-gate).exp()) * up;
+                }
+            }
+        });
     }
 }
 
@@ -1886,9 +2084,85 @@ pub fn argmax_matvec_int8(x: &[f32], w_int8: &[i8], w_scales: &[f32], in_dim: us
 
     #[cfg(not(target_arch = "aarch64"))]
     {
-        // Fallback: use f32 computation
-        let _ = (x, w_int8, w_scales, in_dim, out_dim, n_threads, x_int8, x_scale);
-        unimplemented!("INT8 argmax only implemented for aarch64")
+        if n_threads <= 1 || out_dim <= 1 {
+            let mut best_idx = 0usize;
+            let mut best_val = f32::NEG_INFINITY;
+            for row in 0..out_dim {
+                let weights = &w_int8[row * in_dim..(row + 1) * in_dim];
+                let mut acc = 0i32;
+                for col in 0..in_dim {
+                    acc += (x_int8[col] as i32) * (weights[col] as i32);
+                }
+                let value = (acc as f32) * x_scale * w_scales[row];
+                if value > best_val {
+                    best_val = value;
+                    best_idx = row;
+                }
+            }
+            return best_idx;
+        }
+
+        let mut best_indices = vec![0usize; n_threads];
+        let mut best_vals = vec![f32::NEG_INFINITY; n_threads];
+
+        let x_int8_ptr = x_int8.as_ptr() as usize;
+        let w_int8_ptr = w_int8.as_ptr() as usize;
+        let w_scales_ptr = w_scales.as_ptr() as usize;
+        let bi_ptr = best_indices.as_mut_ptr() as usize;
+        let bv_ptr = best_vals.as_mut_ptr() as usize;
+
+        parallel_for(|tid, nt| {
+            let chunk = out_dim.div_ceil(nt);
+            let start = tid * chunk;
+            let end = (start + chunk).min(out_dim);
+            if start >= end {
+                unsafe {
+                    *(bv_ptr as *mut f32).add(tid) = f32::NEG_INFINITY;
+                    *(bi_ptr as *mut usize).add(tid) = 0;
+                }
+                return;
+            }
+
+            let x_local = unsafe {
+                std::slice::from_raw_parts(x_int8_ptr as *const i8, in_dim)
+            };
+            let mut best_idx = start;
+            let mut best_val = f32::NEG_INFINITY;
+            for row in start..end {
+                let weights = unsafe {
+                    std::slice::from_raw_parts(
+                        (w_int8_ptr as *const i8).add(row * in_dim),
+                        in_dim,
+                    )
+                };
+                let mut acc = 0i32;
+                for col in 0..in_dim {
+                    acc += (x_local[col] as i32) * (weights[col] as i32);
+                }
+                let value = (acc as f32)
+                    * x_scale
+                    * unsafe { *((w_scales_ptr as *const f32).add(row)) };
+                if value > best_val {
+                    best_val = value;
+                    best_idx = row;
+                }
+            }
+
+            unsafe {
+                *(bi_ptr as *mut usize).add(tid) = best_idx;
+                *(bv_ptr as *mut f32).add(tid) = best_val;
+            }
+        });
+
+        let mut best = best_indices[0];
+        let mut best_val = best_vals[0];
+        for i in 1..n_threads {
+            if best_vals[i] > best_val {
+                best_val = best_vals[i];
+                best = best_indices[i];
+            }
+        }
+        return best;
     }
 }
 
