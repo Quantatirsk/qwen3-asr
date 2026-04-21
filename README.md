@@ -119,8 +119,6 @@ tar -xzvf funasr-models-*.tar.gz
 docker-compose up -d
 ```
 
-See [MODEL_SETUP.md](./docs/MODEL_SETUP.md) for more details.
-
 > Detailed deployment instructions: [Deployment Guide](./docs/deployment.md)
 
 ### Local Development
@@ -363,7 +361,12 @@ Recommended public settings:
 | `MAX_SEGMENT_SEC` | `30` | Max audio segment duration (seconds) |
 | `ASR_ENABLE_NEARFIELD_FILTER` | `true` | Enable far-field sound filtering |
 
-> Detailed configuration: [Near-Field Filter Docs](./docs/nearfield_filter.md)
+Far-field filter notes:
+
+- `ASR_NEARFIELD_RMS_THRESHOLD=0.01` is the current default and recommended starting point
+- raise it in noisy rooms to filter more background speech
+- lower it in quiet rooms if soft speech is being dropped
+- use `LOG_LEVEL=DEBUG` temporarily when you need to inspect filter behavior
 
 Advanced backend-specific settings:
 
@@ -398,7 +401,6 @@ After starting the service:
 ## Links
 
 - **Deployment Guide**: [Detailed Docs](./docs/deployment.md)
-- **Near-Field Filter Config**: [Config Guide](./docs/nearfield_filter.md)
 - **FunASR**: [FunASR GitHub](https://github.com/alibaba-damo-academy/FunASR)
 - **Chinese README**: [中文文档](./docs/README_zh.md)
 

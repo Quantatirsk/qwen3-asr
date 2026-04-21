@@ -117,8 +117,6 @@ tar -xzvf funasr-models-*.tar.gz
 docker-compose up -d
 ```
 
-详见 [MODEL_SETUP.md](./MODEL_SETUP.md)
-
 > 详细部署说明请查看 [部署指南](./deployment.md)
 
 ### 本地开发
@@ -361,7 +359,12 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 | `MAX_SEGMENT_SEC`                | `30`         | 音频分段最大时长（秒）                        |
 | `ASR_ENABLE_NEARFIELD_FILTER`    | `true`       | 启用远场声音过滤                              |
 
-> 详细配置说明请查看 [远场过滤文档](./nearfield_filter.md)
+远场过滤调优建议：
+
+- `ASR_NEARFIELD_RMS_THRESHOLD=0.01` 是当前默认值，也是推荐起点
+- 嘈杂环境可以适当调高，增强背景语音过滤
+- 安静环境如果出现小声说话漏识别，可以适当调低
+- 需要观察过滤行为时，可临时设置 `LOG_LEVEL=DEBUG`
 
 后端专项高级配置：
 
@@ -396,7 +399,6 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 ## 相关链接
 
 - **部署指南**: [详细文档](./deployment.md)
-- **远场过滤配置**: [配置指南](./nearfield_filter.md)
 - **FunASR**: [FunASR GitHub](https://github.com/alibaba-damo-academy/FunASR)
 - **QwenASR**: [QwenASR GitHub](https://github.com/huanglizhuo/QwenASR)
 

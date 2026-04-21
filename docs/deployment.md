@@ -182,7 +182,32 @@ docker build -t funasr-api:gpu-latest -f Dockerfile.gpu .
 ### 模型下载
 
 当前默认启用 `HF_HUB_LOCAL_FILES_ONLY=1`，推荐在启动前先准备模型缓存。
-如需预下载或内网部署，请参考 [MODEL_SETUP.md](./MODEL_SETUP.md)。
+推荐方式：
+
+```bash
+# 交互式导出当前运行计划所需模型
+./scripts/prepare-models.sh
+
+# 或直接使用项目 CLI
+uv run python -m app.utils.download_models
+uv run python -m app.utils.download_models --export-dir ./models
+```
+
+离线部署时，推荐目录结构：
+
+```text
+./models/
+  modelscope/
+  huggingface/
+```
+
+然后保持与 compose 文件一致的挂载：
+
+```yaml
+volumes:
+  - ./models/modelscope:/root/.cache/modelscope
+  - ./models/huggingface:/root/.cache/huggingface
+```
 
 ## 环境变量配置
 
@@ -242,7 +267,12 @@ docker build -t funasr-api:gpu-latest -f Dockerfile.gpu .
 | `ASR_NEARFIELD_RMS_THRESHOLD` | `0.01` | RMS 能量阈值 |
 | `LOG_LEVEL=DEBUG` | - | 需要观察过滤细节时打开调试日志 |
 
-详细配置请参考 [远场过滤文档](./nearfield_filter.md)
+调优建议：
+
+- `ASR_NEARFIELD_RMS_THRESHOLD=0.01` 是当前默认值，也是推荐起点
+- 嘈杂环境可以适当调高，增强背景语音过滤
+- 安静环境如果出现小声说话漏识别，可以适当调低
+- 需要观察过滤行为时，可临时设置 `LOG_LEVEL=DEBUG`
 
 ### 鉴权配置
 

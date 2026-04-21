@@ -19,17 +19,17 @@
 
 ### 0.1 默认 `qwen3-asr-0.6b`
 
-| 样本 | 时长 | total_sec | RTF | asr_sec | align_sec | 结果文件 |
-|------|------|-----------|-----|---------|-----------|----------|
-| 2 分钟样本 | `120s` | `17.78s` | `0.1481` | `9.54s` | `8.23s` | [temp/test_assets/qwen_rust_workers_2min_macos_verify.json](/Users/quant/Documents/funasr-api/temp/test_assets/qwen_rust_workers_2min_macos_verify.json) |
-| 10 分钟样本 | `600s` | `36.04s` | `0.0601` | `17.76s` | `18.28s` | [temp/qwen_rust_workers_10min_18.json](/Users/quant/Documents/funasr-api/temp/qwen_rust_workers_10min_18.json) |
+| 样本 | 时长 | total_sec | RTF | asr_sec | align_sec |
+|------|------|-----------|-----|---------|-----------|
+| 2 分钟样本 | `120s` | `17.78s` | `0.1481` | `9.54s` | `8.23s` |
+| 10 分钟样本 | `600s` | `36.04s` | `0.0601` | `17.76s` | `18.28s` |
 
 ### 0.2 显式指定 `qwen3-asr-1.7b`
 
-| 样本 | 时长 | total_sec | RTF | asr_sec | align_sec | 结果文件 |
-|------|------|-----------|-----|---------|-----------|----------|
-| 2 分钟样本 | `120s` | `18.72s` | `0.1560` | `10.48s` | `5.42s` | [temp/test_assets/qwen_rust_workers_2min_macos_1p7b.json](/Users/quant/Documents/funasr-api/temp/test_assets/qwen_rust_workers_2min_macos_1p7b.json) |
-| 10 分钟样本 | `600s` | `57.24s` | `0.0954` | `36.21s` | `19.40s` | [temp/qwen_rust_workers_10min_1p7b_18.json](/Users/quant/Documents/funasr-api/temp/qwen_rust_workers_10min_1p7b_18.json) |
+| 样本 | 时长 | total_sec | RTF | asr_sec | align_sec |
+|------|------|-----------|-----|---------|-----------|
+| 2 分钟样本 | `120s` | `18.72s` | `0.1560` | `10.48s` | `5.42s` |
+| 10 分钟样本 | `600s` | `57.24s` | `0.0954` | `36.21s` | `19.40s` |
 
 说明：
 
