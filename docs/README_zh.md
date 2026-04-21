@@ -32,8 +32,6 @@
 > - macOS / Apple Silicon 现在默认总是 `qwen3-asr-0.6b`，除非调用方显式指定 `qwen3-asr-1.7b`
 > - 离线路径中的 `model` / `model_id` 现在仅为兼容参数，不再真正切换激活模型
 > - `ENABLED_MODELS` 已移除
->
-> 当前运行时 / 设备真值表请优先参考 [runtime_instruction.md](./runtime_instruction.md)。
 
 ## 主要特性
 
@@ -101,7 +99,6 @@ docker run -d --name funasr-api \
 > **注意**: 当前 CPU 镜像已通过内置 QwenASR Rust backend 支持 `qwen3-asr-0.6b`。
 > CUDA vLLM 与 CPU Rust 路径下，`word_timestamps=true` 都会自动调用 forced aligner；当前实际后端为 `CUDA -> vLLM`、`CPU/macOS -> vendored QwenASR Rust`。
 > Apple Silicon 上的 Qwen3-ASR 现已统一走 Rust CPU backend。
-> 当前运行时 / 设备真值表请优先参考 [runtime_instruction.md](./runtime_instruction.md)。
 
 **内网部署**：使用辅助脚本准备当前运行计划所需模型，然后复制到内网机器：
 
@@ -153,6 +150,23 @@ macOS / Apple Silicon 本地开发：
 uv sync --group cpu
 uv run python start.py
 ```
+
+## 当前运行时默认值
+
+当前主线代码的运行时行为如下：
+
+- `DEVICE=auto`
+  - 有 CUDA 时解析为 `cuda:0`
+  - 否则解析为 `cpu`
+- `DEVICE=mps` 会直接归一化为 `cpu`
+- `Linux + CUDA` 使用官方 `vLLM`
+- `Linux + CPU` 使用 vendored `QwenASR` Rust
+- `macOS / Apple Silicon` 也使用 vendored `QwenASR` Rust
+- macOS / Apple Silicon 默认总是 `qwen3-asr-0.6b`
+- 在 macOS 上，只有调用方显式指定时才会使用 `qwen3-asr-1.7b`
+- `word_timestamps=true` 在当前离线 CUDA 与 CPU Rust 路径下可用
+- WebSocket 流式路径当前不返回词级时间戳
+- CAM++ 说话人分离仍然必须保留，并继续跟随 `DEVICE`；在 CPU 上的主要热点仍是 speaker verification embedding
 
 ## API 接口
 

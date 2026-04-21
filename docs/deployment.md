@@ -80,7 +80,10 @@ docker run -d --name funasr-api \
 **注意：** CPU 版本不使用 GPU/vLLM 路径。
 当前 CPU 镜像已集成 QwenASR Rust backend，会自动选择 `qwen3-asr-0.6b`。
 CUDA vLLM 与 CPU Rust 路径下，`word_timestamps=true` 会自动调用 forced aligner 返回字词级时间戳。
-如果需要查看当前主线代码真实成立的运行时 / 设备行为，请优先参考 [runtime_instruction.md](./runtime_instruction.md)。
+当前运行时 / 设备默认值以主 README 为准：
+
+- [README.md](/Users/quant/Documents/funasr-api/README.md)
+- [docs/README_zh.md](/Users/quant/Documents/funasr-api/docs/README_zh.md)
 设计背景与实现思路可参考：
 
 - 当前 Qwen3 后端：`CUDA -> vLLM`、`CPU/macOS -> vendored QwenASR Rust`

@@ -34,8 +34,6 @@ Speech recognition API service powered by [FunASR](https://github.com/alibaba-da
 > - macOS / Apple Silicon now defaults to `qwen3-asr-0.6b` unless the caller explicitly selects `qwen3-asr-1.7b`
 > - Offline `model` / `model_id` are now compatibility-only parameters and no longer switch the active offline model
 > - `ENABLED_MODELS` has been removed
->
-> For the current runtime/device truth table, see [runtime_instruction.md](./docs/runtime_instruction.md).
 
 ## Features
 
@@ -103,7 +101,6 @@ docker run -d --name funasr-api \
 > **Note**: CPU images now support `qwen3-asr-0.6b` via the bundled QwenASR Rust backend.
 > On CUDA vLLM and CPU Rust, `word_timestamps=true` now triggers the forced aligner automatically.
 > On macOS / Apple Silicon, Qwen3-ASR now runs through the Rust CPU backend.
-> For the current runtime/device truth table, see [runtime_instruction.md](./docs/runtime_instruction.md).
 
 **Offline Deployment**: Use the helper script to prepare the current runtime model package, then copy to the offline machine:
 
@@ -155,6 +152,21 @@ macOS / Apple Silicon local development:
 uv sync --group cpu
 uv run python start.py
 ```
+
+## Runtime Defaults
+
+Current runtime behavior on the mainline codebase:
+
+- `DEVICE=auto` resolves to `cuda:0` when CUDA is available, otherwise `cpu`
+- `DEVICE=mps` is normalized to `cpu`
+- `Linux + CUDA` uses official `vLLM`
+- `Linux + CPU` uses vendored `QwenASR` Rust
+- `macOS / Apple Silicon` also uses vendored `QwenASR` Rust
+- macOS / Apple Silicon defaults to `qwen3-asr-0.6b`
+- `qwen3-asr-1.7b` on macOS is only used when the caller explicitly selects it
+- `word_timestamps=true` works on the current offline CUDA and CPU Rust paths
+- WebSocket streaming does not currently return word-level timestamps
+- CAM++ speaker diarization remains required and still follows `DEVICE`; on CPU its main hotspot is speaker verification embedding
 
 ## API Endpoints
 
