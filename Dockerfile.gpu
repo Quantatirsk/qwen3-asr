@@ -37,12 +37,12 @@ WORKDIR /app
 RUN pip install --no-cache-dir uv
 COPY pyproject.toml uv.lock* /app/
 RUN uv venv /opt/venv && \
-    uv sync --group gpu --no-dev --no-install-project --frozen
+    uv sync --group gpu --no-dev --no-install-project
 
 # Override CPU-only torch installed by uv sync with CUDA-enabled version.
 # pyproject.toml [tool.uv.sources] redirects torch to pytorch-cpu index on Linux,
 # which replaces the base image's CUDA torch. Reinstall from cu126 to restore it.
-RUN uv pip install torch==2.10.0 torchaudio==2.10.0 --index-url https://download.pytorch.org/whl/cu126
+RUN uv pip install torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0 --index-url https://download.pytorch.org/whl/cu126
 
 # Clean apt cache but keep build-essential and cuda-nvcc-12-6 for FlashInfer JIT compilation
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*

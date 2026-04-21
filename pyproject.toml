@@ -22,7 +22,7 @@ dependencies = [
   "httpx==0.28.1",
   "wetext==0.1.2",
   "python-dotenv==1.2.1",
-  "transformers==4.57.6",
+  "transformers>=4.40,<4.45",
   "huggingface_hub==0.34.0",
   "hdbscan==0.8.41",
   "loguru==0.7.2",
