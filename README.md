@@ -35,7 +35,7 @@ Speech recognition API service powered by [FunASR](https://github.com/alibaba-da
 > - Offline `model` / `model_id` are now compatibility-only parameters and no longer switch the active offline model
 > - `ENABLED_MODELS` has been removed
 >
-> See [Release 1.0 notes](./docs/RELEASE_1.0.md) and [runtime_instruction.md](./docs/runtime_instruction.md).
+> For the current runtime/device truth table, see [runtime_instruction.md](./docs/runtime_instruction.md).
 
 ## Features
 

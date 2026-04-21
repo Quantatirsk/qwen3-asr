@@ -33,7 +33,7 @@
 > - 离线路径中的 `model` / `model_id` 现在仅为兼容参数，不再真正切换激活模型
 > - `ENABLED_MODELS` 已移除
 >
-> 请结合 [Release 1.0 说明](./RELEASE_1.0.md) 和 [runtime_instruction.md](./runtime_instruction.md) 一起阅读。
+> 当前运行时 / 设备真值表请优先参考 [runtime_instruction.md](./runtime_instruction.md)。
 
 ## 主要特性
 
