@@ -141,12 +141,17 @@ class BaseASREngine(ABC):
         start_time = time.time()
         model_id = getattr(self, 'model_id', 'unknown')
 
-        logger.info(f"[transcribe_long_audio] 音频: {audio_path}, speaker_diarization={enable_speaker_diarization}, word_level={word_timestamps}")
+        task_prefix = f"[{task_id}] " if task_id else ""
+
+        logger.info(
+            f"{task_prefix}[transcribe_long_audio] 音频: {audio_path}, "
+            f"speaker_diarization={enable_speaker_diarization}, word_level={word_timestamps}"
+        )
 
         try:
             # 获取音频时长
             duration = get_audio_duration(audio_path)
-            logger.info(f"[transcribe_long_audio] 音频时长: {duration:.2f}秒")
+            logger.info(f"{task_prefix}[transcribe_long_audio] 音频时长: {duration:.2f}秒")
 
             # 统一使用分段处理
             speaker_segments = None
@@ -156,16 +161,16 @@ class BaseASREngine(ABC):
                 # 多说话人：使用说话人分离
                 from app.utils.speaker_diarizer import SpeakerDiarizer
 
-                logger.info("使用说话人分离模式")
+                logger.info(f"{task_prefix}使用说话人分离模式")
                 diarizer = SpeakerDiarizer()
                 speaker_segments = diarizer.split_audio_by_speakers(audio_path)
 
                 if not speaker_segments:
-                    logger.warning("说话人分离未检测到片段，fallback 到 VAD 分割")
+                    logger.warning(f"{task_prefix}说话人分离未检测到片段，fallback 到 VAD 分割")
 
             if not speaker_segments:
                 # 单说话人：使用 VAD 分割
-                logger.info("使用 VAD 分割模式")
+                logger.info(f"{task_prefix}使用 VAD 分割模式")
                 splitter = AudioSplitter(device=self.device)
                 audio_segments = splitter.split_audio_file(audio_path)
 
@@ -174,21 +179,25 @@ class BaseASREngine(ABC):
             if not segments_to_process:
                 raise DefaultServerErrorException("音频分割失败：未生成任何片段")
 
-            logger.info(f"音频已分割为 {len(segments_to_process)} 段")
+            logger.info(f"{task_prefix}音频已分割为 {len(segments_to_process)} 段")
 
             results: List[ASRSegmentResult] = []
             all_texts: List[str] = []
 
             # 使用批处理推理
             batch_size = settings.ASR_BATCH_SIZE
-            logger.info(f"使用批处理推理，batch_size={batch_size}, word_timestamps={word_timestamps}")
+            logger.info(
+                f"{task_prefix}使用批处理推理，batch_size={batch_size}, "
+                f"word_timestamps={word_timestamps}"
+            )
 
             for batch_start in range(0, len(segments_to_process), batch_size):
                 batch_end = min(batch_start + batch_size, len(segments_to_process))
                 batch_segments = segments_to_process[batch_start:batch_end]
 
                 logger.info(
-                    f"推理批次 {batch_start//batch_size + 1}/{(len(segments_to_process) + batch_size - 1)//batch_size}: "
+                    f"{task_prefix}推理批次 "
+                    f"{batch_start//batch_size + 1}/{(len(segments_to_process) + batch_size - 1)//batch_size}: "
                     f"片段 {batch_start+1}-{batch_end}/{len(segments_to_process)}"
                 )
 
@@ -218,10 +227,13 @@ class BaseASREngine(ABC):
                             )
                             all_texts.append(result.text)
 
-                    logger.info(f"批次推理完成，有效片段: {len([r for r in batch_results if r and r.text])}")
+                    logger.info(
+                        f"{task_prefix}批次推理完成，有效片段: "
+                        f"{len([r for r in batch_results if r and r.text])}"
+                    )
 
                 except Exception as e:
-                    logger.error(f"批次推理失败: {e}, 跳过该批次")
+                    logger.error(f"{task_prefix}批次推理失败: {e}, 跳过该批次")
 
             # 清理临时文件（独立清理，避免条件遗漏）
             try:
@@ -259,9 +271,9 @@ class BaseASREngine(ABC):
                                     wt.start_time *= ts_scale
                                     wt.end_time *= ts_scale
                         duration *= ts_scale
-                        logger.info(f"Timestamp scaling applied: scale={ts_scale:.6f}")
+                    logger.info(f"{task_prefix}Timestamp scaling applied: scale={ts_scale:.6f}")
                 except Exception as e:
-                    logger.warning(f"Failed to apply timestamp scaling: {e}")
+                    logger.warning(f"{task_prefix}Failed to apply timestamp scaling: {e}")
 
             log_inference_metrics(
                 logger=logger,

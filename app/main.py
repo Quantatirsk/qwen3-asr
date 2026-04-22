@@ -21,6 +21,7 @@ from .core.exceptions import (
 from .core.logging import setup_logging, get_worker_id
 from .core.executor import shutdown_executor
 from .api.v1 import api_router
+from .utils.boot_events import emit_boot_event
 
 # 忽略 Pydantic V2 兼容性警告
 warnings.filterwarnings("ignore", message="Valid config keys have changed in V2")
@@ -68,6 +69,7 @@ async def lifespan(app: FastAPI):
 
     # 启动时
     logger.info(f"Worker [{worker_id}] 启动中...")
+    emit_boot_event("phase_start", phase="worker", total=1, message=f"Worker [{worker_id}] 启动中")
 
     # 清理旧的临时文件（仅主 Worker 执行）
     if worker_id == 0:
@@ -82,6 +84,7 @@ async def lifespan(app: FastAPI):
 
         integrity_result = verify_required_models_integrity()
         if integrity_result["invalid_models"]:
+            emit_boot_event("error", phase="integrity", message="required model integrity check failed")
             raise RuntimeError("required model integrity check failed")
 
         logger.info(f"Worker [{worker_id}] 正在加载模型...")
@@ -92,12 +95,22 @@ async def lifespan(app: FastAPI):
         loaded_count = sum(1 for r in asr_results.values() if r.get("loaded"))
         total_count = len(asr_results)
         logger.info(f"Worker [{worker_id}] 模型加载完成: {loaded_count}/{total_count}")
+        failed_asr_models = {
+            model_id: status.get("error")
+            for model_id, status in asr_results.items()
+            if not status.get("loaded") and status.get("error")
+        }
+        if failed_asr_models:
+            logger.error(f"Worker [{worker_id}] ASR模型预加载失败详情: {failed_asr_models}")
+            emit_boot_event("error", phase="preload", message=f"ASR模型预加载失败详情: {failed_asr_models}")
 
     except Exception as e:
         logger.error(f"Worker [{worker_id}] 模型预加载失败: {e}")
         logger.warning(f"Worker [{worker_id}] 模型将在首次使用时加载")
+        emit_boot_event("error", phase="worker", message=f"模型预加载失败: {e}")
 
     logger.info(f"Worker [{worker_id}] 已就绪")
+    emit_boot_event("ready", phase="worker", message=f"Worker [{worker_id}] 已就绪")
 
     yield
 
