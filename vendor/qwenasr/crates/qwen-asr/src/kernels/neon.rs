@@ -914,7 +914,7 @@ pub unsafe fn quantize_bf16_to_int8(
 }
 
 /// SDOT via inline assembly (stable Rust, avoids unstable vdotq_s32)
-#[cfg(target_arch = "aarch64")]
+#[cfg(all(target_arch = "aarch64", target_feature = "dotprod"))]
 #[inline(always)]
 unsafe fn sdot_s32(mut acc: int32x4_t, a: int8x16_t, b: int8x16_t) -> int32x4_t {
     core::arch::asm!(
@@ -925,6 +925,24 @@ unsafe fn sdot_s32(mut acc: int32x4_t, a: int8x16_t, b: int8x16_t) -> int32x4_t 
         options(pure, nomem, nostack, preserves_flags),
     );
     acc
+}
+
+/// Portable aarch64 fallback when dotprod is unavailable in the target.
+///
+/// This keeps the same call signature as the fast SDOT path, but collapses the
+/// accumulated value into lane 0 because current callers only consume the final
+/// sum via `vaddvq_s32(...)`.
+#[cfg(all(target_arch = "aarch64", not(target_feature = "dotprod")))]
+#[inline(always)]
+unsafe fn sdot_s32(acc: int32x4_t, a: int8x16_t, b: int8x16_t) -> int32x4_t {
+    let acc_sum = vaddvq_s32(acc);
+    let a_vals: [i8; 16] = core::mem::transmute(a);
+    let b_vals: [i8; 16] = core::mem::transmute(b);
+    let dot = a_vals
+        .iter()
+        .zip(b_vals.iter())
+        .fold(0i32, |sum, (&lhs, &rhs)| sum + lhs as i32 * rhs as i32);
+    vsetq_lane_s32(acc_sum + dot, vdupq_n_s32(0), 0)
 }
 
 /// INT8 matvec: y = W_int8 @ x_int8 * (x_scale * w_scales[row])
