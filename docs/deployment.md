@@ -79,7 +79,8 @@ docker run -d --name funasr-api \
 
 **注意：** CPU 版本不使用 GPU/vLLM 路径。
 当前 CPU 镜像已集成 QwenASR Rust backend，会自动选择 `qwen3-asr-0.6b`。
-CPU 镜像当前会在构建期使用 `RUSTFLAGS="-C target-cpu=native"` 编译 Rust backend，并默认限制
+CPU 镜像当前会在 `amd64/x86_64` 构建期使用 `RUSTFLAGS="-C target-cpu=native"` 编译 Rust backend；在 `arm64`
+上保持保守构建，以避免 CI/buildx 环境引入不可移植的可选指令。镜像默认限制
 `OPENBLAS_NUM_THREADS=1` / `OMP_NUM_THREADS=1` / `GOTO_NUM_THREADS=1`，以减少多 runtime 并发时的线程争抢。
 CUDA vLLM 与 CPU Rust 路径下，`word_timestamps=true` 会自动调用 forced aligner 返回字词级时间戳。
 当前运行时 / 设备默认值以主 README 为准：
