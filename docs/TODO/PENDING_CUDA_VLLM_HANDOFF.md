@@ -167,20 +167,20 @@ uvx pyright
 
 本轮实际联调时还处理了两个环境问题：
 
-- `uv sync --group gpu` 在当前项目配置下会把 Linux `torch` 解析到 CPU wheel，需要手动切到 CUDA wheel
+- 根目录默认 GPU 环境现已直接锁定 `cu126` wheels，`uv sync` 不再需要手动覆盖 CUDA `torch`
 - `numpy` 升到 `2.4.x` 后会导致 `numba` / `librosa` / CAM++ 音频链路失败，实际需要 `numpy<=2.2.x`
 
 ## 当前仍未完成的验证
 
 以下内容 **尚未在真实 NVIDIA 服务器上验证**：
 
-### 1. 官方 vLLM nightly 依赖可安装性
+### 1. 官方 vLLM 0.19.0 依赖可安装性
 
 待确认：
 
 - 服务器上的 Python / CUDA / torch / driver 版本
-- `vllm[audio]` nightly 是否能稳定安装
-- 是否需要额外 pin 某个具体 commit / nightly 版本
+- `vllm[audio]==0.19.0` 是否能稳定安装
+- 是否还需要额外 pin 更细粒度的 CUDA / Python 依赖版本
 
 ### 2. CUDA 离线推理可用性
 
@@ -265,7 +265,7 @@ nvidia-smi
 建议先单卡启动：
 
 ```bash
-DEVICE=cuda:0 uv run python start.py
+DEVICE=cuda:0 python start.py
 ```
 
 观察日志里是否出现：

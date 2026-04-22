@@ -6,12 +6,12 @@
 
 - [PENDING_CUDA_VLLM_HANDOFF.md](./TODO/PENDING_CUDA_VLLM_HANDOFF.md)
 
-依赖安装现已统一到 [pyproject.toml](/Users/quant/Documents/funasr-api/pyproject.toml)：
+依赖安装现在改成根目录默认 GPU，CPU 为单独特化环境：
 
 | 模式 | 命令 | 说明 |
 |------|------|------|
-| CPU | `uv sync --group cpu` | Linux/CPU 运行时 |
-| GPU | `uv sync --group gpu` | Linux/NVIDIA 运行时，官方 vLLM nightly |
+| GPU | `uv sync` | Linux/NVIDIA 运行时，锁定 CUDA `torch/torchaudio/torchvision` + `vllm[audio]==0.19.0` |
+| CPU | `./scripts/sync_cpu_env.sh` | Linux/CPU 运行时 |
 
 ## 快速部署
 
@@ -82,8 +82,8 @@ docker run -d --name funasr-api \
 CUDA vLLM 与 CPU Rust 路径下，`word_timestamps=true` 会自动调用 forced aligner 返回字词级时间戳。
 当前运行时 / 设备默认值以主 README 为准：
 
-- [README.md](/Users/quant/Documents/funasr-api/README.md)
-- [docs/README_zh.md](/Users/quant/Documents/funasr-api/docs/README_zh.md)
+- `README.md`
+- `docs/README_zh.md`
 设计背景与实现思路可参考：
 
 - 当前 Qwen3 后端：`CUDA -> vLLM`、`CPU/macOS -> vendored QwenASR Rust`
@@ -94,8 +94,9 @@ CUDA vLLM 与 CPU Rust 路径下，`word_timestamps=true` 会自动调用 forced
 适用于 M1/M2/M3/M4 机器上的本地 Qwen3-ASR 推理。当前 macOS 已统一走 vendored QwenASR Rust CPU backend。
 
 ```bash
-uv sync --group cpu
-uv run python start.py
+./scripts/sync_cpu_env.sh
+source .venv/bin/activate
+python start.py
 ```
 
 ### 验证部署
@@ -254,10 +255,9 @@ volumes:
 | `INFERENCE_THREAD_POOL_SIZE` | 自动 | 推理线程池大小；默认按 CPU 核数自动设置 |
 | `MAX_SEGMENT_SEC` | `30` | 音频分段最大时长（秒） |
 | `WS_MAX_BUFFER_SIZE` | `160000` | WebSocket 音频缓冲区大小（样本数） |
-| `QWEN_RUST_CPU_WORKERS` | `4` | CPU Rust backend worker 数；Rust ASR / forced align 默认 4 个 runtime |
+| `QWEN_RUST_CPU_WORKERS` | `4` | CPU Rust backend worker 数；Rust ASR / forced align 默认按该数量并行 |
 | `QWEN_RUST_ASR_CONCURRENCY` | `0` | Rust ASR 阶段批内并行度；`0` 表示跟随 `QWEN_RUST_CPU_WORKERS` |
 | `QWEN_RUST_ALIGN_CONCURRENCY` | `0` | Rust forced align 阶段批内并行度；`0` 表示跟随 `QWEN_RUST_CPU_WORKERS` |
-| `QWENASR_CPU_NUM_THREADS` | 自动 / 安全 `1` | 覆盖单个 Rust runtime 的 CPU 线程数 |
 | `QWENASR_LIBRARY_PATH` | 自动探测 | 覆盖 vendored Rust 动态库路径 |
 
 ### 远场过滤配置

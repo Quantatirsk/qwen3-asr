@@ -126,30 +126,40 @@ docker-compose up -d
 
 **安装步骤:**
 
-依赖现在统一收敛在 [pyproject.toml](/Users/quant/Documents/funasr-api/pyproject.toml) 中，并通过 `uv` 的三种模式安装：
+运行时依赖现在改成“根目录默认 GPU，CPU 单独特化环境”：
 
 | 模式 | 命令 | 说明 |
 |------|------|------|
-| CPU | `uv sync --group cpu` | Linux/CPU 运行时，包含 CPU 版 PyTorch |
-| GPU | `uv sync --group gpu` | Linux/NVIDIA 运行时，安装官方 vLLM nightly |
+| GPU（默认） | `uv sync` | 同步根目录 [pyproject.toml](/opt/funasr-api/pyproject.toml) 和 [uv.lock](/opt/funasr-api/uv.lock) 到 `.venv`，包含 CUDA `torch/torchaudio/torchvision` |
+| CPU（特化） | `./scripts/sync_cpu_env.sh` | 同步 [environments/cpu/pyproject.toml](/opt/funasr-api/environments/cpu/pyproject.toml) 对应的 CPU lock 到 `.venv` |
 
 ```bash
 # 克隆项目
 cd FunASR-API
 
 # 安装依赖（Linux/CUDA）
-uv sync --group gpu
+uv sync
 
 # 启动服务
-uv run python start.py
+source .venv/bin/activate
+python start.py
 ```
 
 macOS / Apple Silicon 本地开发：
 
 ```bash
-uv sync --group cpu
-uv run python start.py
+./scripts/sync_cpu_env.sh
+source .venv/bin/activate
+python start.py
 ```
+
+启动界面：
+
+- `FUNASR_STARTUP_UI=auto` 是默认值，单 worker 且当前终端为交互 TTY 时会自动启用
+- `auto` / `tui` 会启动 Textual 启动画面，由父进程接管终端；上方显示启动阶段进度，下方集中显示子进程日志
+- `plain` 会关闭该界面，回退到普通终端输出
+- 多 worker 模式始终回退为普通输出
+- Docker / `docker-compose logs -f` 场景始终使用普通输出，因为容器日志流不是交互式 TTY
 
 ## 当前运行时默认值
 
@@ -337,7 +347,7 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 
 | 运行环境 | 后端 | 离线转写 | WebSocket 流式 | 离线词级时间戳 | 流式词级时间戳 | 成熟度 |
 |---------|------|---------|----------------|----------------|----------------|--------|
-| Linux + NVIDIA GPU | 官方 vLLM nightly | ✅ | ✅ | ✅ | ❌ | 面向生产 |
+| Linux + NVIDIA GPU | 官方 vLLM 0.19.0 | ✅ | ✅ | ✅ | ❌ | 面向生产 |
 | CPU / macOS | QwenASR Rust | ✅ | ✅ | ✅（forced aligner） | ❌ | 推荐本地后端 |
 
 ## 支持离线的模型
@@ -386,7 +396,6 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 | --- | --- | --- |
 | `QWEN_RUST_CPU_WORKERS` | `4` | CPU Rust backend worker 数（Rust ASR / forced align 默认 4 个 runtime） |
 | `QWENASR_LIBRARY_PATH` | 自动探测 | 覆盖 vendored Rust 动态库路径 |
-| `QWENASR_CPU_NUM_THREADS` | 自动 / 安全 `1` | 覆盖单个 Rust runtime 的 CPU 线程数 |
 
 ## 资源需求
 

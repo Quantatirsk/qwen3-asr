@@ -15,7 +15,7 @@
 ## 安装依赖
 
 ```bash
-uv sync --group cpu
+./scripts/sync_cpu_env.sh
 ```
 
 ## 使用方法
@@ -24,36 +24,36 @@ uv sync --group cpu
 
 ```bash
 # 分析立体声音频（默认）
-uv run python scripts/analyze_audio_rms.py audio.wav
+.venv/bin/python scripts/analyze_audio_rms.py audio.wav
 
 # 仅分析左声道
-uv run python scripts/analyze_audio_rms.py audio.wav --channel left
+.venv/bin/python scripts/analyze_audio_rms.py audio.wav --channel left
 
 # 仅分析右声道
-uv run python scripts/analyze_audio_rms.py audio.wav --channel right
+.venv/bin/python scripts/analyze_audio_rms.py audio.wav --channel right
 ```
 
 ### 高级用法
 
 ```bash
 # 自定义阈值
-uv run python scripts/analyze_audio_rms.py audio.wav --threshold 0.015
+.venv/bin/python scripts/analyze_audio_rms.py audio.wav --threshold 0.015
 
 # 自定义分块大小（例如 160ms）
-uv run python scripts/analyze_audio_rms.py audio.wav --chunk-size 160
+.venv/bin/python scripts/analyze_audio_rms.py audio.wav --chunk-size 160
 
 # 保存图表到文件
-uv run python scripts/analyze_audio_rms.py audio.wav --output analysis.png
+.venv/bin/python scripts/analyze_audio_rms.py audio.wav --output analysis.png
 
 # 仅输出统计信息，不显示图表
-uv run python scripts/analyze_audio_rms.py audio.wav --no-plot
+.venv/bin/python scripts/analyze_audio_rms.py audio.wav --no-plot
 ```
 
 ### 完整示例
 
 ```bash
 # 分析右声道，使用 0.015 阈值，保存图表
-uv run python scripts/analyze_audio_rms.py recording.wav \
+.venv/bin/python scripts/analyze_audio_rms.py recording.wav \
   --channel right \
   --threshold 0.015 \
   --output rms_analysis.png
@@ -113,7 +113,7 @@ uv run python scripts/analyze_audio_rms.py recording.wav \
 录制一段包含近场说话和远场环境音的测试音频，然后：
 
 ```bash
-uv run python scripts/analyze_audio_rms.py test_audio.wav
+.venv/bin/python scripts/analyze_audio_rms.py test_audio.wav
 ```
 
 查看**建议的阈值**，选择合适的模式。
@@ -123,8 +123,8 @@ uv run python scripts/analyze_audio_rms.py test_audio.wav
 如果使用立体声麦克风，可以对比左右声道：
 
 ```bash
-uv run python scripts/analyze_audio_rms.py audio.wav --channel left --output left.png
-uv run python scripts/analyze_audio_rms.py audio.wav --channel right --output right.png
+.venv/bin/python scripts/analyze_audio_rms.py audio.wav --channel left --output left.png
+.venv/bin/python scripts/analyze_audio_rms.py audio.wav --channel right --output right.png
 ```
 
 ### 3. 验证阈值效果
@@ -133,13 +133,13 @@ uv run python scripts/analyze_audio_rms.py audio.wav --channel right --output ri
 
 ```bash
 # 测试宽松模式
-uv run python scripts/analyze_audio_rms.py audio.wav --threshold 0.01
+.venv/bin/python scripts/analyze_audio_rms.py audio.wav --threshold 0.01
 
 # 测试严格模式
-uv run python scripts/analyze_audio_rms.py audio.wav --threshold 0.015
+.venv/bin/python scripts/analyze_audio_rms.py audio.wav --threshold 0.015
 
 # 测试保守模式
-uv run python scripts/analyze_audio_rms.py audio.wav --threshold 0.005
+.venv/bin/python scripts/analyze_audio_rms.py audio.wav --threshold 0.005
 ```
 
 ### 4. 批量分析
@@ -150,7 +150,7 @@ uv run python scripts/analyze_audio_rms.py audio.wav --threshold 0.005
 #!/bin/bash
 for file in recordings/*.wav; do
     echo "Analyzing: $file"
-    uv run python scripts/analyze_audio_rms.py "$file" \
+    .venv/bin/python scripts/analyze_audio_rms.py "$file" \
       --threshold 0.01 \
       --no-plot \
       --output "analysis/$(basename "$file" .wav).png"
@@ -237,10 +237,10 @@ RMS 统计分析
 
 ```bash
 # 安装必要的库
-uv sync --group cpu
+./scripts/sync_cpu_env.sh
 
 # 对于 MP3 文件，可能还需要
-uv sync --group cpu
+./scripts/sync_cpu_env.sh
 ```
 
 ### 问题：中文显示乱码

@@ -128,30 +128,40 @@ docker-compose up -d
 
 **Installation:**
 
-Dependency modes are now unified in [pyproject.toml](/Users/quant/Documents/funasr-api/pyproject.toml) and installed with `uv`:
+Runtime dependency locks now default to the GPU stack at the repo root, with CPU kept as a specialized environment:
 
 | Mode | Command | Notes |
 |------|---------|-------|
-| CPU | `uv sync --group cpu` | Linux/CPU runtime, includes CPU PyTorch |
-| GPU | `uv sync --group gpu` | Linux/NVIDIA runtime, installs official vLLM nightly |
+| GPU (default) | `uv sync` | Syncs the root [pyproject.toml](/opt/funasr-api/pyproject.toml) and [uv.lock](/opt/funasr-api/uv.lock) into `.venv`, including CUDA `torch/torchaudio/torchvision` |
+| CPU (specialized) | `./scripts/sync_cpu_env.sh` | Syncs the dedicated CPU lock in [environments/cpu/pyproject.toml](/opt/funasr-api/environments/cpu/pyproject.toml) into `.venv` |
 
 ```bash
 # Clone project
 cd FunASR-API
 
 # Install dependencies (Linux/CUDA)
-uv sync --group gpu
+uv sync
 
 # Start service
-uv run python start.py
+source .venv/bin/activate
+python start.py
 ```
 
 macOS / Apple Silicon local development:
 
 ```bash
-uv sync --group cpu
-uv run python start.py
+./scripts/sync_cpu_env.sh
+source .venv/bin/activate
+python start.py
 ```
+
+Startup UI:
+
+- `FUNASR_STARTUP_UI=auto` is the default for single-worker interactive terminals
+- `auto` / `tui` starts a Textual dashboard that owns the terminal, captures child stdout/stderr, shows startup phase progress on top, and streams logs in a dedicated log pane
+- `plain` disables the dashboard and falls back to normal terminal output
+- multi-worker mode always falls back to plain output
+- Docker / `docker-compose logs -f` always use plain output because the container log stream is not an interactive TTY
 
 ## Runtime Defaults
 
@@ -337,7 +347,7 @@ Automatic long audio segmentation:
 
 | Runtime | Backend | Offline | WebSocket Streaming | Word Timestamps Offline | Word Timestamps Streaming | Maturity |
 |---------|---------|---------|---------------------|-------------------------|---------------------------|----------|
-| Linux + NVIDIA GPU | Official vLLM nightly | ✅ | ✅ | ✅ | ❌ | Production-oriented |
+| Linux + NVIDIA GPU | Official vLLM 0.19.0 | ✅ | ✅ | ✅ | ❌ | Production-oriented |
 | CPU / macOS | QwenASR Rust | ✅ | ✅ | ✅ (forced aligner) | ❌ | Recommended local fallback |
 
 ## Offline-Capable Models
@@ -386,7 +396,6 @@ Advanced backend-specific settings:
 |----------|---------|-------------|
 | `QWEN_RUST_CPU_WORKERS` | `4` | CPU Rust backend worker count (Rust ASR / forced align default to 4 runtimes) |
 | `QWENASR_LIBRARY_PATH` | auto-detect | Override vendored Rust dylib/so path |
-| `QWENASR_CPU_NUM_THREADS` | auto / safe `1` | Override per-runtime Rust CPU threads |
 
 ## Resource Requirements
 

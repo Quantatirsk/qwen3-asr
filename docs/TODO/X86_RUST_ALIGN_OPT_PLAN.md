@@ -29,7 +29,7 @@
 - `/opt/funasr-api/temp/test_assets/podcast_demo_2min_16k.wav`
 - duration: `120s`
 
-### decode 路径对照（4 workers）
+### decode 路径对照（runtime concurrency = 4）
 
 `INT8 decode`
 
@@ -40,7 +40,7 @@
 
 来源：
 
-- `/opt/funasr-api/temp/test_assets/qwen_rust_workers_2min_int8.json`
+- `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_int8.json`
 
 `BF16 decode`
 
@@ -51,7 +51,7 @@
 
 来源：
 
-- `/opt/funasr-api/temp/test_assets/qwen_rust_workers_2min_bf16.json`
+- `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_bf16.json`
 
 结论：
 
@@ -62,16 +62,16 @@
 
 来源：
 
-- `/opt/funasr-api/temp/test_assets/qwen_rust_workers_2min_default_after_converge.json`
+- `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_default_after_converge.json`
 
 结果：
 
-- `4 workers`
+- `runtime concurrency = 4`
   - total: `131.77s`
   - asr: `51.54s`
   - align: `80.23s`
   - rtf: `1.0981`
-- `14 workers`
+- `runtime concurrency = 14`
   - total: `128.25s`
   - asr: `57.12s`
   - align: `71.13s`
@@ -81,7 +81,7 @@
 
 - 当前主瓶颈仍然在 `align`
 - `align_sec` 明显大于或接近 `asr_sec`
-- `workers` 的最优值并不稳定，说明问题不在单纯线程数，而在具体阶段的访问模式和 kernel 行为
+- `runtime concurrency` 的最优值并不稳定，说明问题不在单纯线程数，而在具体阶段的访问模式和 kernel 行为
 
 ## 为什么不继续默认走 INT8
 
@@ -149,8 +149,8 @@
 实际结果：
 
 - 产物：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_workers_2min_align_profile.json`
-  - `/opt/funasr-api/temp/test_logs/qwen_rust_workers_2min_align_profile.stderr`
+  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_align_profile.json`
+  - `/opt/funasr-api/temp/test_logs/qwen_rust_runtime_concurrency_2min_align_profile.stderr`
 - 结论：
   - `align` 的主热点明确落在 `decoder_prefill_logits`
   - `final rms_norm` 和 `lm_head projection` 不是主矛盾
@@ -172,8 +172,8 @@
 实际结果：
 
 - 产物：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_workers_2min_align_breakdown.json`
-  - `/opt/funasr-api/temp/test_logs/qwen_rust_workers_2min_align_breakdown.stderr`
+  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_align_breakdown.json`
+  - `/opt/funasr-api/temp/test_logs/qwen_rust_runtime_concurrency_2min_align_breakdown.stderr`
 - 结论：
   - 真正的大头是 `decoder_prefill`
   - 长段（`seq_len=1801`）时，`attention_ms` 占 `decoder_prefill` 的绝大部分
@@ -245,10 +245,10 @@
 来源：
 
 - 优化后 benchmark：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_workers_2min_after_attention_opt.json`
+  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_attention_opt.json`
 - 优化后 profiling：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_workers_2min_attention_opt_profile.json`
-  - `/opt/funasr-api/temp/test_logs/qwen_rust_workers_2min_attention_opt_profile.stderr`
+  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_attention_opt_profile.json`
+  - `/opt/funasr-api/temp/test_logs/qwen_rust_runtime_concurrency_2min_attention_opt_profile.stderr`
 
 关键对比：
 
@@ -295,12 +295,12 @@ attention 热点变化：
 回归数据：
 
 - 不带 profiling：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_workers_2min_after_ffn_opt.json`
+  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_ffn_opt.json`
   - `total=58.61s`
   - `asr=29.50s`
   - `align=29.11s`
 - 带 profiling：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_workers_2min_ffn_opt_profile.json`
+  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_ffn_opt_profile.json`
   - `total=62.07s`
   - `asr=32.15s`
   - `align=29.92s`
@@ -342,7 +342,7 @@ attention 热点变化：
 回归数据：
 
 - 试验版本：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_workers_2min_after_qkv_opt.json`
+  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_qkv_opt.json`
   - `total=63.12s`
   - `align=30.07s`
 
@@ -363,7 +363,7 @@ attention 热点变化：
 
 结果：
 
-- `/opt/funasr-api/temp/test_assets/qwen_rust_workers_2min_after_attention_block_opt.json`
+- `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_attention_block_opt.json`
 - `total=79.18s`
 - `align=33.40s`
 
@@ -382,7 +382,7 @@ attention 热点变化：
 
 结果：
 
-- `/opt/funasr-api/temp/test_assets/qwen_rust_workers_2min_after_attention_threshold512.json`
+- `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_attention_threshold512.json`
 - `total=74.49s`
 - `align=30.42s`
 
@@ -410,7 +410,7 @@ attention 热点变化：
 
 结果：
 
-- `/opt/funasr-api/temp/test_assets/qwen_rust_workers_2min_after_kvblock_online_softmax.json`
+- `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_kvblock_online_softmax.json`
 - `total=74.11s`
 - `align=30.33s`
 
@@ -442,7 +442,7 @@ attention 热点变化：
 
 - 不再把 x86_64 默认路径改回 `INT8 decode`
 - 不继续做没有 profiling 支撑的 `align` 结构性改写
-- 不围绕 `workers` 数量盲调
+- 不围绕 `runtime concurrency` 数量盲调
 
 ## 下一步执行顺序
 
