@@ -28,7 +28,7 @@ load_dotenv()
 
 def _disable_third_party_progress_bars() -> None:
     try:
-        from huggingface_hub.utils import disable_progress_bars
+        from huggingface_hub.utils.tqdm import disable_progress_bars
 
         disable_progress_bars()
     except Exception:
