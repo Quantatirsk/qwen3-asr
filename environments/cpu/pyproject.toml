@@ -1,7 +1,7 @@
 [project]
-name = "funasr-api-cpu-env"
+name = "qwen3-asr-cpu-env"
 version = "1.0.0"
-description = "CPU runtime environment for funasr-api"
+description = "CPU runtime environment for qwen3-asr"
 requires-python = ">=3.10,<3.13"
 dependencies = [
   "fastapi==0.128.0",

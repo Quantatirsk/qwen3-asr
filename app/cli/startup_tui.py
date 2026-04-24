@@ -73,7 +73,7 @@ class StartupDashboard(App[int]):
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         yield Static(
-            f"FunASR-API | http://{settings.HOST}:{settings.PORT} | device={settings.DEVICE} | workers=1",
+            f"Qwen3-ASR | http://{settings.HOST}:{settings.PORT} | device={settings.DEVICE} | workers=1",
             id="summary",
         )
         yield Static("准备启动...", id="status")
@@ -82,7 +82,7 @@ class StartupDashboard(App[int]):
         yield Footer()
 
     async def on_mount(self) -> None:
-        self.title = "FunASR Startup"
+        self.title = "Qwen3-ASR Startup"
         self.sub_title = "Textual dashboard"
         self._runner = asyncio.create_task(self._run())
 

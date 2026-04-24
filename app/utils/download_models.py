@@ -172,7 +172,7 @@ def download_models(
         print(f"📦 检测到 {len(missing)} 个模型需要下载...")
     else:
         print("=" * 60)
-        print("FunASR-API 模型预下载")
+        print("Qwen3-ASR 模型预下载")
         print("=" * 60)
         print(f"ModelScope 缓存: {ms_cache_dir}")
         print(f"HuggingFace 缓存: {hf_cache_dir}")
@@ -308,7 +308,7 @@ def download_models(
 
 def main() -> int:
     """CLI entrypoint for model download and export."""
-    parser = argparse.ArgumentParser(description="Download or export FunASR-API models")
+    parser = argparse.ArgumentParser(description="Download or export Qwen3-ASR models")
     parser.add_argument(
         "--export-dir",
         default=None,

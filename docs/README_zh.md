@@ -1,8 +1,9 @@
 <div align="center">
 
+<h1>Qwen3-ASR</h1>
 <h3>开箱即用的本地私有化部署语音识别服务</h3>
 
-基于 [FunASR](https://github.com/alibaba-damo-academy/FunASR) 和 [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR) 的语音识别 API 服务，提供高精度中文语音识别(ASR)功能，兼容阿里云语音 API 和 OpenAI Audio API。
+以 [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR) 为核心的语音识别 API 服务，提供 CUDA vLLM 与 CPU Rust 两种后端，兼容阿里云语音 API 和 OpenAI Audio API，并保留 Paraformer realtime WebSocket 能力。
 
 ---
 
@@ -81,19 +82,19 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 docker-compose up -d
 
 ```bash
 # GPU 版本
-docker run -d --name funasr-api \
+docker run -d --name qwen3-asr \
   --gpus all \
   -p 17003:8000 \
   -e CUDA_VISIBLE_DEVICES=0,1,2,3 \
   -e API_KEY=your_api_key \
   -v ./models/modelscope:/root/.cache/modelscope \
   -v ./models/huggingface:/root/.cache/huggingface \
-  quantatrisk/funasr-api:gpu-latest
+  quantatrisk/qwen3-asr:gpu-latest
 
 # CPU 版本
-docker run -d --name funasr-api \
+docker run -d --name qwen3-asr \
   -p 17003:8000 \
-  quantatrisk/funasr-api:cpu-latest
+  quantatrisk/qwen3-asr:cpu-latest
 ```
 
 > **注意**: 当前 CPU 镜像已通过内置 QwenASR Rust backend 支持 `qwen3-asr-0.6b`。
@@ -107,10 +108,10 @@ docker run -d --name funasr-api \
 ./scripts/prepare-models.sh
 
 # 2. 复制到内网服务器
-scp funasr-models-*.tar.gz user@server:/opt/funasr-api/
+scp qwen3-asr-models-*.tar.gz user@server:/opt/qwen3-asr/
 
 # 3. 在内网服务器解压并启动
-tar -xzvf funasr-models-*.tar.gz
+tar -xzvf qwen3-asr-models-*.tar.gz
 docker-compose up -d
 ```
 
@@ -130,12 +131,12 @@ docker-compose up -d
 
 | 模式 | 命令 | 说明 |
 |------|------|------|
-| GPU（默认） | `uv sync` | 同步根目录 [pyproject.toml](/opt/funasr-api/pyproject.toml) 和 [uv.lock](/opt/funasr-api/uv.lock) 到 `.venv`，包含 CUDA `torch/torchaudio/torchvision` |
-| CPU（特化） | `./scripts/sync_cpu_env.sh` | 同步 [environments/cpu/pyproject.toml](/opt/funasr-api/environments/cpu/pyproject.toml) 对应的 CPU lock 到 `.venv` |
+| GPU（默认） | `uv sync` | 同步根目录 [pyproject.toml](/opt/qwen3-asr/pyproject.toml) 和 [uv.lock](/opt/qwen3-asr/uv.lock) 到 `.venv`，包含 CUDA `torch/torchaudio/torchvision` |
+| CPU（特化） | `./scripts/sync_cpu_env.sh` | 同步 [environments/cpu/pyproject.toml](/opt/qwen3-asr/environments/cpu/pyproject.toml) 对应的 CPU lock 到 `.venv` |
 
 ```bash
 # 克隆项目
-cd FunASR-API
+cd qwen3-asr
 
 # 安装依赖（Linux/CUDA）
 uv sync
@@ -422,6 +423,7 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 ## 相关链接
 
 - **部署指南**: [详细文档](./deployment.md)
+- **Qwen3-ASR**: [Qwen3-ASR GitHub](https://github.com/QwenLM/Qwen3-ASR)
 - **FunASR**: [FunASR GitHub](https://github.com/alibaba-damo-academy/FunASR)
 - **QwenASR**: [QwenASR GitHub](https://github.com/huanglizhuo/QwenASR)
 
@@ -431,7 +433,7 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 
 ## Star 历史
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Quantatirsk/funasr-api&type=Date)](https://star-history.com/#Quantatirsk/funasr-api&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Quantatirsk/qwen3-asr&type=Date)](https://star-history.com/#Quantatirsk/qwen3-asr&Date)
 
 ## 贡献
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-FunASR-API 并发性能测试主入口
+Qwen3-ASR 并发性能测试主入口
 
 使用方法:
     # 完整测试 (ASR + TTS)
@@ -309,7 +309,7 @@ class ConcurrentBenchmark:
 def parse_args():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(
-        description="FunASR-API 并发性能测试脚本",
+        description="Qwen3-ASR 并发性能测试脚本",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:

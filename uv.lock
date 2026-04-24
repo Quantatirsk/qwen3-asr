@@ -1042,7 +1042,7 @@ wheels = [
 ]
 
 [[package]]
-name = "funasr-api"
+name = "qwen3-asr"
 version = "1.0.0"
 source = { virtual = "." }
 dependencies = [

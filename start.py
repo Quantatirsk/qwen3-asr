@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""FunASR-API Server CLI entrypoint."""
+"""Qwen3-ASR server CLI entrypoint."""
 
 import sys
 import os
@@ -60,7 +60,7 @@ def _run_server(workers: int) -> None:
     from app.core.config import settings
     import uvicorn
 
-    print(f"🚀 FunASR-API | http://{settings.HOST}:{settings.PORT} | {settings.DEVICE}")
+    print(f"Qwen3-ASR | http://{settings.HOST}:{settings.PORT} | {settings.DEVICE}")
 
     if workers == 1 and os.getenv("FUNASR_TUI_CHILD") != "1":
         from app.bootstrap import run_cli_preflight

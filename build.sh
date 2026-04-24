@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# FunASR-API Docker Build Tool
+# Qwen3-ASR Docker Build Tool
 # Step-by-step interactive or CLI parameter mode.
 
 set -euo pipefail
@@ -10,7 +10,7 @@ set -euo pipefail
 # =============================================================================
 
 REGISTRY="quantatrisk"
-IMAGE_NAME="funasr-api"
+IMAGE_NAME="qwen3-asr"
 VERSION="latest"
 BUILD_TYPE="all"
 PLATFORM="linux/amd64"
@@ -32,7 +32,7 @@ _msg() {
   local k="$1" l; l="$(_resolve_lang)"
   if [[ "$l" == "zh" ]]; then
     case "$k" in
-      title)     echo "FunASR-API Docker 构建工具" ;;
+      title)     echo "Qwen3-ASR Docker 构建工具" ;;
       subtitle)  echo "按提示选择或直接回车使用默认值" ;;
       q_lang)    echo "界面语言" ;;
       q_type)    echo "构建目标" ;;
@@ -64,7 +64,7 @@ _msg() {
     esac
   else
     case "$k" in
-      title)     echo "FunASR-API Docker Build Tool" ;;
+      title)     echo "Qwen3-ASR Docker Build Tool" ;;
       subtitle)  echo "Select options or press Enter for defaults" ;;
       q_lang)    echo "Language" ;;
       q_type)    echo "Build target" ;;
@@ -127,11 +127,11 @@ arch_label() {
 
 ensure_buildx() {
   docker buildx version >/dev/null 2>&1 || die "$(_msg err_bx)"
-  if ! docker buildx inspect funasr-builder >/dev/null 2>&1; then
-    info "Creating buildx builder: funasr-builder"
-    docker buildx create --name funasr-builder --driver docker-container --use >/dev/null
+  if ! docker buildx inspect qwen3-asr-builder >/dev/null 2>&1; then
+    info "Creating buildx builder: qwen3-asr-builder"
+    docker buildx create --name qwen3-asr-builder --driver docker-container --use >/dev/null
   else
-    docker buildx use funasr-builder >/dev/null
+    docker buildx use qwen3-asr-builder >/dev/null
   fi
 }
 

@@ -1,7 +1,9 @@
+name: qwen3-asr
+
 services:
-  funasr-api:
-    image: quantatrisk/funasr-api:cpu-latest
-    container_name: funasr-api-cpu
+  qwen3-asr:
+    image: quantatrisk/qwen3-asr:cpu-latest
+    container_name: qwen3-asr-cpu
     ports:
       - "${NGINX_PORT:-17003}:8000"
     volumes:

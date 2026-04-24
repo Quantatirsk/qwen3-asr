@@ -88,7 +88,7 @@ class ModelObject(BaseModel):
     id: str
     object: str = "model"
     created: int = Field(default_factory=lambda: int(time.time()))
-    owned_by: str = "funasr-api"
+    owned_by: str = "qwen3-asr"
 
 
 class ModelsResponse(BaseModel):
@@ -363,7 +363,7 @@ async def list_models(request: Request):
         for model_id in model_ids:
             model_objects.append(ModelObject(
                 id=model_id,
-                owned_by="funasr-api",
+                owned_by="qwen3-asr",
             ))
 
         return ModelsResponse(data=model_objects)

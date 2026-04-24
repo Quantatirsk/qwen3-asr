@@ -13,9 +13,9 @@ class Settings:
     """统一应用配置类"""
 
     # 应用信息
-    APP_NAME: str = "FunASR-API Server"
+    APP_NAME: str = "Qwen3-ASR Server"
     APP_VERSION: str = "1.0.0"
-    APP_DESCRIPTION: str = "基于FunASR的语音识别API服务"
+    APP_DESCRIPTION: str = "Qwen3-ASR speech recognition API service"
 
     # 服务器配置
     HOST: str = "0.0.0.0"
@@ -36,7 +36,7 @@ class Settings:
 
     # 日志配置
     LOG_LEVEL: str = "INFO"
-    LOG_FILE: Optional[str] = str(BASE_DIR / "logs" / "funasr-api.log")
+    LOG_FILE: Optional[str] = str(BASE_DIR / "logs" / "qwen3-asr.log")
     LOG_MAX_BYTES: int = 20 * 1024 * 1024  # 20MB
     LOG_BACKUP_COUNT: int = 50  # 保留50个备份文件
 

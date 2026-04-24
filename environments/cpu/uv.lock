@@ -657,7 +657,7 @@ wheels = [
 ]
 
 [[package]]
-name = "funasr-api-cpu-env"
+name = "qwen3-asr-cpu-env"
 version = "1.0.0"
 source = { virtual = "." }
 dependencies = [

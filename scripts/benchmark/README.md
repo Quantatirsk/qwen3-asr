@@ -1,4 +1,4 @@
-# FunASR-API 并发性能测试脚本
+# Qwen3-ASR 并发性能测试脚本
 
 测试 ASR/TTS WebSocket 服务在不同并发级别下的性能表现。
 

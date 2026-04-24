@@ -276,7 +276,7 @@ def setup_logging(
     if log_file_path:
         log_path = Path(log_file_path)
     else:
-        log_path = Path("logs/funasr-api.log")
+        log_path = Path("logs/qwen3-asr.log")
 
     # 确保日志目录存在
     log_dir = log_path.parent
@@ -284,7 +284,7 @@ def setup_logging(
 
     # 多 Worker 模式下，每个 Worker 使用独立的日志文件
     if workers > 1:
-        # 生成 worker 专属日志文件名: funasr-api.log -> funasr-api.worker-12345.log
+        # Example: qwen3-asr.log -> qwen3-asr.worker-12345.log
         worker_log_path = log_dir / f"{log_path.stem}.{current_worker_id}{log_path.suffix}"
 
         # Worker 专属日志文件
@@ -340,4 +340,3 @@ def setup_logging(
     if workers > 1 and worker_log_path:
         logger = logging.getLogger(__name__)
         logger.info(f"Worker {current_worker_id} 日志系统已初始化，日志文件: {worker_log_path}")
-

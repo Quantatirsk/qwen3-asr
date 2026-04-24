@@ -26,7 +26,7 @@
 
 音频：
 
-- `/opt/funasr-api/temp/test_assets/podcast_demo_2min_16k.wav`
+- `/opt/qwen3-asr/temp/test_assets/podcast_demo_2min_16k.wav`
 - duration: `120s`
 
 ### decode 路径对照（runtime concurrency = 4）
@@ -40,7 +40,7 @@
 
 来源：
 
-- `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_int8.json`
+- `/opt/qwen3-asr/temp/test_assets/qwen_rust_runtime_concurrency_2min_int8.json`
 
 `BF16 decode`
 
@@ -51,7 +51,7 @@
 
 来源：
 
-- `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_bf16.json`
+- `/opt/qwen3-asr/temp/test_assets/qwen_rust_runtime_concurrency_2min_bf16.json`
 
 结论：
 
@@ -62,7 +62,7 @@
 
 来源：
 
-- `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_default_after_converge.json`
+- `/opt/qwen3-asr/temp/test_assets/qwen_rust_runtime_concurrency_2min_default_after_converge.json`
 
 结果：
 
@@ -98,7 +98,7 @@
 
 文件：
 
-- `/opt/funasr-api/vendor/qwenasr/crates/qwen-asr/src/context.rs`
+- `/opt/qwen3-asr/vendor/qwenasr/crates/qwen-asr/src/context.rs`
 
 目的：
 
@@ -109,9 +109,9 @@
 
 文件：
 
-- `/opt/funasr-api/vendor/qwenasr/crates/qwen-asr/Cargo.toml`
-- `/opt/funasr-api/vendor/qwenasr/crates/qwen-asr/src/lib.rs`
-- `/opt/funasr-api/Dockerfile.cpu`
+- `/opt/qwen3-asr/vendor/qwenasr/crates/qwen-asr/Cargo.toml`
+- `/opt/qwen3-asr/vendor/qwenasr/crates/qwen-asr/src/lib.rs`
+- `/opt/qwen3-asr/Dockerfile.cpu`
 
 目的：
 
@@ -130,8 +130,8 @@
 
 位置：
 
-- `/opt/funasr-api/vendor/qwenasr/crates/qwen-asr/src/align.rs`
-- `/opt/funasr-api/vendor/qwenasr/crates/qwen-asr/src/decoder.rs`
+- `/opt/qwen3-asr/vendor/qwenasr/crates/qwen-asr/src/align.rs`
+- `/opt/qwen3-asr/vendor/qwenasr/crates/qwen-asr/src/decoder.rs`
 
 需要拆出的阶段：
 
@@ -149,8 +149,8 @@
 实际结果：
 
 - 产物：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_align_profile.json`
-  - `/opt/funasr-api/temp/test_logs/qwen_rust_runtime_concurrency_2min_align_profile.stderr`
+  - `/opt/qwen3-asr/temp/test_assets/qwen_rust_runtime_concurrency_2min_align_profile.json`
+  - `/opt/qwen3-asr/temp/test_logs/qwen_rust_runtime_concurrency_2min_align_profile.stderr`
 - 结论：
   - `align` 的主热点明确落在 `decoder_prefill_logits`
   - `final rms_norm` 和 `lm_head projection` 不是主矛盾
@@ -172,8 +172,8 @@
 实际结果：
 
 - 产物：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_align_breakdown.json`
-  - `/opt/funasr-api/temp/test_logs/qwen_rust_runtime_concurrency_2min_align_breakdown.stderr`
+  - `/opt/qwen3-asr/temp/test_assets/qwen_rust_runtime_concurrency_2min_align_breakdown.json`
+  - `/opt/qwen3-asr/temp/test_logs/qwen_rust_runtime_concurrency_2min_align_breakdown.stderr`
 - 结论：
   - 真正的大头是 `decoder_prefill`
   - 长段（`seq_len=1801`）时，`attention_ms` 占 `decoder_prefill` 的绝大部分
@@ -231,7 +231,7 @@
 本轮实际落地的是：
 
 - 文件：
-  - `/opt/funasr-api/vendor/qwenasr/crates/qwen-asr/src/kernels/mod.rs`
+  - `/opt/qwen3-asr/vendor/qwenasr/crates/qwen-asr/src/kernels/mod.rs`
 - 改动：
   - 对 BLAS multi-token causal attention 增加长序列专用 batched 路径
   - 仅在 `seq_q >= 256` 时启用
@@ -245,10 +245,10 @@
 来源：
 
 - 优化后 benchmark：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_attention_opt.json`
+  - `/opt/qwen3-asr/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_attention_opt.json`
 - 优化后 profiling：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_attention_opt_profile.json`
-  - `/opt/funasr-api/temp/test_logs/qwen_rust_runtime_concurrency_2min_attention_opt_profile.stderr`
+  - `/opt/qwen3-asr/temp/test_assets/qwen_rust_runtime_concurrency_2min_attention_opt_profile.json`
+  - `/opt/qwen3-asr/temp/test_logs/qwen_rust_runtime_concurrency_2min_attention_opt_profile.stderr`
 
 关键对比：
 
@@ -284,7 +284,7 @@ attention 热点变化：
 本轮动作：
 
 - 文件：
-  - `/opt/funasr-api/vendor/qwenasr/crates/qwen-asr/src/decoder.rs`
+  - `/opt/qwen3-asr/vendor/qwenasr/crates/qwen-asr/src/decoder.rs`
 - 改动：
   - 仅对 x86_64 `BF16 prefill` 的 FFN 路径物化共享 F32 权重
   - 范围只包括：
@@ -295,12 +295,12 @@ attention 热点变化：
 回归数据：
 
 - 不带 profiling：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_ffn_opt.json`
+  - `/opt/qwen3-asr/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_ffn_opt.json`
   - `total=58.61s`
   - `asr=29.50s`
   - `align=29.11s`
 - 带 profiling：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_ffn_opt_profile.json`
+  - `/opt/qwen3-asr/temp/test_assets/qwen_rust_runtime_concurrency_2min_ffn_opt_profile.json`
   - `total=62.07s`
   - `asr=32.15s`
   - `align=29.92s`
@@ -342,7 +342,7 @@ attention 热点变化：
 回归数据：
 
 - 试验版本：
-  - `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_qkv_opt.json`
+  - `/opt/qwen3-asr/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_qkv_opt.json`
   - `total=63.12s`
   - `align=30.07s`
 
@@ -363,7 +363,7 @@ attention 热点变化：
 
 结果：
 
-- `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_attention_block_opt.json`
+- `/opt/qwen3-asr/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_attention_block_opt.json`
 - `total=79.18s`
 - `align=33.40s`
 
@@ -382,7 +382,7 @@ attention 热点变化：
 
 结果：
 
-- `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_attention_threshold512.json`
+- `/opt/qwen3-asr/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_attention_threshold512.json`
 - `total=74.49s`
 - `align=30.42s`
 
@@ -410,7 +410,7 @@ attention 热点变化：
 
 结果：
 
-- `/opt/funasr-api/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_kvblock_online_softmax.json`
+- `/opt/qwen3-asr/temp/test_assets/qwen_rust_runtime_concurrency_2min_after_kvblock_online_softmax.json`
 - `total=74.11s`
 - `align=30.33s`
 

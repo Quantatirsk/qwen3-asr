@@ -1,6 +1,6 @@
-# FunASR-API 部署指南
+# Qwen3-ASR 部署指南
 
-快速部署 FunASR-API 语音识别服务，支持 CPU/macOS 与 NVIDIA GPU 两种运行形态。
+快速部署 Qwen3-ASR 语音识别服务，支持 CPU/macOS 与 NVIDIA GPU 两种运行形态。
 
 如果你正在继续验证本轮 CUDA 官方 vLLM 迁移，请同时参考：
 
@@ -26,7 +26,7 @@
 
 ```bash
 # 使用 docker run（带模型挂载）
-docker run -d --name funasr-api \
+docker run -d --name qwen3-asr \
   --gpus all \
   -p 17003:8000 \
   -v ./models/modelscope:/root/.cache/modelscope \
@@ -34,7 +34,7 @@ docker run -d --name funasr-api \
   -v ./logs:/app/logs \
   -v ./temp:/app/temp \
   -e DEVICE=auto \
-  quantatrisk/funasr-api:gpu-latest
+  quantatrisk/qwen3-asr:gpu-latest
 
 # 或使用 docker-compose（推荐）
 docker-compose up -d
@@ -68,13 +68,13 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 docker-compose up -d
 适用于开发测试或无 GPU 环境：
 
 ```bash
-docker run -d --name funasr-api \
+docker run -d --name qwen3-asr \
   -p 17003:8000 \
   -v ./models/modelscope:/root/.cache/modelscope \
   -v ./logs:/app/logs \
   -v ./temp:/app/temp \
   -e DEVICE=cpu \
-  quantatrisk/funasr-api:cpu-latest
+  quantatrisk/qwen3-asr:cpu-latest
 ```
 
 **注意：** CPU 版本不使用 GPU/vLLM 路径。
@@ -160,10 +160,10 @@ curl -X POST "http://localhost:17003/v1/audio/transcriptions" \
 
 ```bash
 # 构建 CPU 版本
-docker build -t funasr-api:cpu-latest -f Dockerfile.cpu .
+docker build -t qwen3-asr:cpu-latest -f Dockerfile.cpu .
 
 # 构建 GPU 版本
-docker build -t funasr-api:gpu-latest -f Dockerfile.gpu .
+docker build -t qwen3-asr:gpu-latest -f Dockerfile.gpu .
 ```
 
 ### 模型说明
@@ -301,7 +301,7 @@ curl -H "Authorization: Bearer your_token" http://localhost:8000/v1/models
 | 环境变量 | 默认值 | 说明 |
 |----------|--------|------|
 | `LOG_LEVEL` | `INFO` | 日志级别：`DEBUG`, `INFO`, `WARNING` |
-| `LOG_FILE` | `logs/funasr-api.log` | 日志文件路径 |
+| `LOG_FILE` | `logs/qwen3-asr.log` | 日志文件路径 |
 | `LOG_MAX_BYTES` | `20971520` | 单个日志文件最大大小（20MB） |
 | `LOG_BACKUP_COUNT` | `50` | 日志备份文件数量 |
 
@@ -311,9 +311,9 @@ curl -H "Authorization: Bearer your_token" http://localhost:8000/v1/models
 
 ```yaml
 services:
-  funasr-api:
-    image: quantatrisk/funasr-api:gpu-latest
-    container_name: funasr-api
+  qwen3-asr:
+    image: quantatrisk/qwen3-asr:gpu-latest
+    container_name: qwen3-asr
     ports:
       - "17003:8000"
     volumes:
@@ -342,9 +342,9 @@ services:
 
 ```yaml
 services:
-  funasr-api:
-    image: quantatrisk/funasr-api:cpu-latest
-    container_name: funasr-api
+  qwen3-asr:
+    image: quantatrisk/qwen3-asr:cpu-latest
+    container_name: qwen3-asr
     ports:
       - "17003:8000"
     volumes:
@@ -364,9 +364,9 @@ services:
 
 ```yaml
 services:
-  funasr-api:
-    image: quantatrisk/funasr-api:gpu-latest
-    container_name: funasr-api
+  qwen3-asr:
+    image: quantatrisk/qwen3-asr:gpu-latest
+    container_name: qwen3-asr
     ports:
       - "17003:8000"
     volumes:
@@ -407,20 +407,20 @@ curl http://localhost:17003/stream/v1/asr/health
 
 ```bash
 # 实时查看日志
-docker logs -f funasr-api
+docker logs -f qwen3-asr
 
 # 查看错误日志
-docker logs funasr-api 2>&1 | grep -i error
+docker logs qwen3-asr 2>&1 | grep -i error
 ```
 
 ### 资源监控
 
 ```bash
 # 容器资源使用
-docker stats funasr-api
+docker stats qwen3-asr
 
 # GPU 使用情况
-docker exec -it funasr-api nvidia-smi
+docker exec -it qwen3-asr nvidia-smi
 ```
 
 ## 资源需求
@@ -456,17 +456,17 @@ docker exec -it funasr-api nvidia-smi
 docker run -e DEBUG=true -e LOG_LEVEL=DEBUG ...
 
 # 进入容器调试
-docker exec -it funasr-api /bin/bash
+docker exec -it qwen3-asr /bin/bash
 ```
 
 ## 更新服务
 
 ```bash
 # 拉取最新镜像（GPU 版本）
-docker pull quantatrisk/funasr-api:gpu-latest
+docker pull quantatrisk/qwen3-asr:gpu-latest
 
 # 拉取最新镜像（CPU 版本）
-docker pull quantatrisk/funasr-api:cpu-latest
+docker pull quantatrisk/qwen3-asr:cpu-latest
 
 # 重启服务
 docker-compose down && docker-compose up -d

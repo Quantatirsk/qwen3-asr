@@ -43,7 +43,7 @@ uv run python -m app.utils.download_models --export-dir "${OUTPUT_DIR}"
 
 info "Packaging..."
 
-PACKAGE="funasr-models-$(date +%Y%m%d-%H%M).tar.gz"
+PACKAGE="qwen3-asr-models-$(date +%Y%m%d-%H%M).tar.gz"
 
 # Use pigz for multi-threaded compression if available
 if command -v pigz &> /dev/null; then
@@ -69,6 +69,6 @@ info "Export complete"
 info "Package: ${PACKAGE}"
 info "Size: ${SIZE}"
 echo "To deploy on an offline server:"
-echo "1. Copy package:  scp ${PACKAGE} user@server:/opt/funasr-api/"
+echo "1. Copy package:  scp ${PACKAGE} user@server:/opt/qwen3-asr/"
 echo "2. Extract:       tar -xzvf ${PACKAGE}"
 echo "3. Start service: docker-compose up -d"

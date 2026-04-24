@@ -1,8 +1,9 @@
 <div align="center">
 
+<h1>Qwen3-ASR</h1>
 <h3>Ready-to-use Local Speech Recognition API Service</h3>
 
-Speech recognition API service powered by [FunASR](https://github.com/alibaba-damo-academy/FunASR) and [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR), supporting 52 languages, compatible with OpenAI API and Alibaba Cloud Speech API.
+Speech recognition API service centered on [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR), with CUDA vLLM and CPU Rust backends, OpenAI API compatibility, Alibaba Cloud Speech API compatibility, and a Paraformer realtime websocket capability.
 
 [简体中文](./docs/README_zh.md)
 
@@ -83,19 +84,19 @@ Optional built-in rate limit settings:
 
 ```bash
 # GPU version
-docker run -d --name funasr-api \
+docker run -d --name qwen3-asr \
   --gpus all \
   -p 17003:8000 \
   -e CUDA_VISIBLE_DEVICES=0,1,2,3 \
   -e API_KEY=your_api_key \
   -v ./models/modelscope:/root/.cache/modelscope \
   -v ./models/huggingface:/root/.cache/huggingface \
-  quantatrisk/funasr-api:gpu-latest
+  quantatrisk/qwen3-asr:gpu-latest
 
 # CPU version
-docker run -d --name funasr-api \
+docker run -d --name qwen3-asr \
   -p 17003:8000 \
-  quantatrisk/funasr-api:cpu-latest
+  quantatrisk/qwen3-asr:cpu-latest
 ```
 
 > **Note**: CPU images now support `qwen3-asr-0.6b` via the bundled QwenASR Rust backend.
@@ -109,10 +110,10 @@ docker run -d --name funasr-api \
 ./scripts/prepare-models.sh
 
 # 2. Copy the package to offline server
-scp funasr-models-*.tar.gz user@server:/opt/funasr-api/
+scp qwen3-asr-models-*.tar.gz user@server:/opt/qwen3-asr/
 
 # 3. On offline server, extract and start
-tar -xzvf funasr-models-*.tar.gz
+tar -xzvf qwen3-asr-models-*.tar.gz
 docker-compose up -d
 ```
 
@@ -132,12 +133,12 @@ Runtime dependency locks now default to the GPU stack at the repo root, with CPU
 
 | Mode | Command | Notes |
 |------|---------|-------|
-| GPU (default) | `uv sync` | Syncs the root [pyproject.toml](/opt/funasr-api/pyproject.toml) and [uv.lock](/opt/funasr-api/uv.lock) into `.venv`, including CUDA `torch/torchaudio/torchvision` |
-| CPU (specialized) | `./scripts/sync_cpu_env.sh` | Syncs the dedicated CPU lock in [environments/cpu/pyproject.toml](/opt/funasr-api/environments/cpu/pyproject.toml) into `.venv` |
+| GPU (default) | `uv sync` | Syncs the root [pyproject.toml](/opt/qwen3-asr/pyproject.toml) and [uv.lock](/opt/qwen3-asr/uv.lock) into `.venv`, including CUDA `torch/torchaudio/torchvision` |
+| CPU (specialized) | `./scripts/sync_cpu_env.sh` | Syncs the dedicated CPU lock in [environments/cpu/pyproject.toml](/opt/qwen3-asr/environments/cpu/pyproject.toml) into `.venv` |
 
 ```bash
 # Clone project
-cd FunASR-API
+cd qwen3-asr
 
 # Install dependencies (Linux/CUDA)
 uv sync
@@ -422,6 +423,7 @@ After starting the service:
 ## Links
 
 - **Deployment Guide**: [Detailed Docs](./docs/deployment.md)
+- **Qwen3-ASR**: [Qwen3-ASR GitHub](https://github.com/QwenLM/Qwen3-ASR)
 - **FunASR**: [FunASR GitHub](https://github.com/alibaba-damo-academy/FunASR)
 - **Chinese README**: [中文文档](./docs/README_zh.md)
 
@@ -431,7 +433,7 @@ This project uses the MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Quantatirsk/funasr-api&type=Date)](https://star-history.com/#Quantatirsk/funasr-api&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Quantatirsk/qwen3-asr&type=Date)](https://star-history.com/#Quantatirsk/qwen3-asr&Date)
 
 ## Contributing
 

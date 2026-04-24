@@ -92,7 +92,7 @@ start_internal_nginx_mode() {
   local backend_ports=()
   local backend_pids=()
   local idx=0
-  local default_log_file="${LOG_FILE:-/app/logs/funasr-api.log}"
+  local default_log_file="${LOG_FILE:-/app/logs/qwen3-asr.log}"
 
   if [[ ${#valid_devices[@]} -eq 0 ]]; then
     local single_port="$base_port"
@@ -153,7 +153,7 @@ start_internal_nginx_mode() {
     fi
   done
 
-  local nginx_conf="/tmp/funasr-internal-nginx.conf"
+  local nginx_conf="/tmp/qwen3-asr-internal-nginx.conf"
   {
     echo "worker_processes auto;"
     echo "events { worker_connections 1024; }"
@@ -164,7 +164,7 @@ start_internal_nginx_mode() {
       echo "    limit_req_zone \$server_name zone=api_rps:10m rate=${rate_limit_rps}r/s;"
     fi
     echo
-    echo "    upstream funasr_api_upstream {"
+    echo "    upstream qwen3_asr_upstream {"
     echo "        least_conn;"
     for port in "${backend_ports[@]}"; do
       echo "        server ${bind_host}:${port} max_fails=3 fail_timeout=10s;"
@@ -186,7 +186,7 @@ start_internal_nginx_mode() {
     if is_positive_integer "$rate_limit_rps"; then
       echo "            limit_req zone=api_rps burst=${rate_limit_burst} nodelay;"
     fi
-    echo "            proxy_pass http://funasr_api_upstream;"
+    echo "            proxy_pass http://qwen3_asr_upstream;"
     echo "            proxy_http_version 1.1;"
     echo "            proxy_set_header Host \$host;"
     echo "            proxy_set_header X-Real-IP \$remote_addr;"
