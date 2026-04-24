@@ -36,7 +36,7 @@ jobs:
       contents: read
       packages: write
     env:
-      IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/funasr-api
+      IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/qwen3-asr
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -74,7 +74,7 @@ jobs:
       contents: read
       packages: write
     env:
-      IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/funasr-api
+      IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/qwen3-asr
     steps:
       - name: Free up disk space
         run: |
