@@ -23,16 +23,11 @@ logger = logging.getLogger(__name__)
 
 
 def calculate_gpu_memory_utilization(model_path: str) -> float:
-    """Calculate optimal gpu_memory_utilization based on model size and available VRAM
+    """Calculate vLLM GPU memory utilization for the active model.
 
-    Model memory requirements (observed, including KV cache):
-    - 0.6B: ~7.0GB (model + KV cache)
-    - 1.7B: ~10.0GB (model + KV cache)
-
-    Examples:
-    - 8GB VRAM + 0.6B: 8/8 = 1.0 -> clamped to 0.95
-    - 24GB VRAM + 1.7B: 12/24 = 0.5
-    - 80GB VRAM + 1.7B: 12/80 = 0.15
+    vLLM uses this ratio as an allocation budget, not just model weights.
+    Keep the observed requirement slightly above the bare minimum so KV cache
+    and profiling have enough room.
     """
     # Check environment variable override first
     env_override = os.getenv("QWEN_GPU_MEMORY_UTILIZATION")
@@ -47,17 +42,16 @@ def calculate_gpu_memory_utilization(model_path: str) -> float:
         except ValueError:
             logger.warning(f"Invalid QWEN_GPU_MEMORY_UTILIZATION={env_override}, not a float")
 
-    model_memory_requirements = {
-        "0.6B": 7.0,
-        "1.7B": 10.0,
+    model_memory_profiles = {
+        "0.6B": 8,
+        "1.7B": 12.0,
     }
 
     if "0.6B" in model_path:
-        required_memory_gb = model_memory_requirements["0.6B"]
         model_size = "0.6B"
     else:
-        required_memory_gb = model_memory_requirements["1.7B"]
         model_size = "1.7B"
+    required_memory_gb = model_memory_profiles[model_size]
 
     try:
         if not torch.cuda.is_available():
