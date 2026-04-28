@@ -1,4 +1,13 @@
-FROM pytorch/pytorch:2.10.0-cuda12.6-cudnn9-runtime
+ARG PYTORCH_BASE_IMAGE=pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime
+FROM ${PYTORCH_BASE_IMAGE}
+
+ARG CUDA_NVCC_PACKAGE=cuda-nvcc-12-8
+ARG PYTORCH_CUDA_INDEX=https://download.pytorch.org/whl/cu128
+ARG TORCH_VERSION=2.10.0
+ARG TORCHAUDIO_VERSION=2.10.0
+ARG TORCHVISION_VERSION=0.25.0
+ARG VLLM_PACKAGE=vllm[audio]==0.19.0
+ARG TORCH_CUDA_ARCH_LIST=12.0+PTX
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
@@ -8,7 +17,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PIP_BREAK_SYSTEM_PACKAGES=1 \
     PATH=/opt/venv/bin:$PATH \
     VIRTUAL_ENV=/opt/venv \
-    UV_PROJECT_ENVIRONMENT=/opt/venv
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST}
 
 # Add NVIDIA apt repository for CUDA packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -20,7 +30,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get update
 
 # Install system packages required for audio processing
-# Note: cuda-nvcc-12-6 and build-essential are required for FlashInfer JIT compilation
+# Note: nvcc and build-essential are required for FlashInfer JIT compilation.
 RUN apt-get install -y --no-install-recommends \
         ffmpeg \
         sox \
@@ -28,16 +38,26 @@ RUN apt-get install -y --no-install-recommends \
         libsndfile1 \
         nginx \
         build-essential \
-        cuda-nvcc-12-6
+        ${CUDA_NVCC_PACKAGE}
 
 WORKDIR /app
 
-# Install uv and sync default GPU dependencies from root project lock
+# Install uv and sync default GPU dependencies from root project lock.
+# The image defaults to CUDA 12.8/cu128 for Blackwell-capable GPUs. Developers
+# can rebuild with a different PyTorch CUDA backend by overriding:
+#   PYTORCH_BASE_IMAGE, PYTORCH_CUDA_INDEX, CUDA_NVCC_PACKAGE, TORCH_CUDA_ARCH_LIST.
 # Ubuntu 24.04 的 Python 是 externally managed，必须使用 venv
 RUN pip install --no-cache-dir uv
 COPY pyproject.toml uv.lock* /app/
 RUN uv venv /opt/venv && \
-    uv sync --no-dev --no-install-project --frozen
+    uv sync --no-dev --no-install-project --frozen && \
+    uv pip install --reinstall \
+        --index-url "${PYTORCH_CUDA_INDEX}" \
+        --extra-index-url https://pypi.org/simple \
+        "torch==${TORCH_VERSION}" \
+        "torchaudio==${TORCHAUDIO_VERSION}" \
+        "torchvision==${TORCHVISION_VERSION}" && \
+    uv pip install --reinstall "${VLLM_PACKAGE}"
 
 # Fail the image build early if the runtime dependency chain is inconsistent.
 RUN /opt/venv/bin/python - <<'PY'
@@ -54,7 +74,7 @@ print("vllm", vllm.__version__)
 print("PreTrainedModel", PreTrainedModel)
 PY
 
-# Clean apt cache but keep build-essential and cuda-nvcc-12-6 for FlashInfer JIT compilation
+# Clean apt cache but keep build-essential and nvcc for FlashInfer JIT compilation.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy application code

@@ -10,7 +10,7 @@
 
 | 模式 | 命令 | 说明 |
 |------|------|------|
-| GPU | `uv sync` | Linux/NVIDIA 运行时，锁定 CUDA `torch/torchaudio/torchvision` + `vllm[audio]==0.19.0` |
+| GPU | `uv sync` | Linux/NVIDIA 运行时，默认锁定 CUDA 12.8/cu128 `torch/torchaudio/torchvision` + `vllm[audio]==0.19.0` |
 | CPU | `./scripts/sync_cpu_env.sh` | Linux/CPU 运行时 |
 
 ## 快速部署
@@ -20,7 +20,7 @@
 适用于生产环境，提供更快的推理速度：
 
 **前置要求：**
-- NVIDIA GPU (CUDA 12.6+)
+- NVIDIA GPU（默认镜像面向 CUDA 12.8+；CUDA 12.6 / 13.0 可通过构建参数覆盖）
 - 已安装 NVIDIA Container Toolkit
 - 显存 12GB+（推荐 16GB+ 以支持 Qwen3-ASR 1.7B）
 
@@ -162,9 +162,35 @@ curl -X POST "http://localhost:17003/v1/audio/transcriptions" \
 # 构建 CPU 版本
 docker build -t qwen3-asr:cpu-latest -f Dockerfile.cpu .
 
-# 构建 GPU 版本
+# 构建默认 GPU 版本（CUDA 12.8 / PyTorch cu128）
 docker build -t qwen3-asr:gpu-latest -f Dockerfile.gpu .
+
+# 构建 CUDA 12.6 版本
+docker build -t qwen3-asr:gpu-cu126 -f Dockerfile.gpu \
+  --build-arg PYTORCH_BASE_IMAGE=pytorch/pytorch:2.10.0-cuda12.6-cudnn9-runtime \
+  --build-arg PYTORCH_CUDA_INDEX=https://download.pytorch.org/whl/cu126 \
+  --build-arg CUDA_NVCC_PACKAGE=cuda-nvcc-12-6 \
+  --build-arg TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9" \
+  .
+
+# 构建 CUDA 13.0 版本
+docker build -t qwen3-asr:gpu-cu130 -f Dockerfile.gpu \
+  --build-arg PYTORCH_BASE_IMAGE=pytorch/pytorch:2.10.0-cuda13.0-cudnn9-runtime \
+  --build-arg PYTORCH_CUDA_INDEX=https://download.pytorch.org/whl/cu130 \
+  --build-arg CUDA_NVCC_PACKAGE=cuda-nvcc-13-0 \
+  --build-arg TORCH_CUDA_ARCH_LIST="12.0+PTX" \
+  .
 ```
+
+`Dockerfile.gpu` 可覆盖的 GPU 构建参数：
+
+| 参数 | 默认值 | 用途 |
+|------|--------|------|
+| `PYTORCH_BASE_IMAGE` | `pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime` | 选择 PyTorch/CUDA 基础镜像 |
+| `PYTORCH_CUDA_INDEX` | `https://download.pytorch.org/whl/cu128` | 选择 PyTorch wheel CUDA 后端 |
+| `CUDA_NVCC_PACKAGE` | `cuda-nvcc-12-8` | 安装匹配的 nvcc，用于 vLLM/FlashInfer JIT |
+| `TORCH_CUDA_ARCH_LIST` | `12.0+PTX` | 指定 JIT 编译目标架构 |
+| `VLLM_PACKAGE` | `vllm[audio]==0.19.0` | 覆盖 vLLM 包版本或来源 |
 
 ### 模型说明
 

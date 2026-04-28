@@ -8,8 +8,8 @@
 ---
 
 ![Static Badge](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
-![Static Badge](https://img.shields.io/badge/Torch-2.9.0-%23EE4C2C?logo=pytorch&logoColor=white)
-![Static Badge](https://img.shields.io/badge/CUDA-12.6+-%2376B900?logo=nvidia&logoColor=white)
+![Static Badge](https://img.shields.io/badge/Torch-2.10.0-%23EE4C2C?logo=pytorch&logoColor=white)
+![Static Badge](https://img.shields.io/badge/CUDA-12.8_default-%2376B900?logo=nvidia&logoColor=white)
 
 </div>
 
@@ -96,9 +96,34 @@ docker run -d --name qwen3-asr \
   quantatrisk/qwen3-asr:cpu-latest
 ```
 
-> **注意**: 当前 CPU 镜像已通过内置 QwenASR Rust backend 支持 `qwen3-asr-0.6b`。
+> **注意**: GPU 镜像默认使用 CUDA 12.8/cu128，以覆盖 Blackwell 等新架构 GPU。
+> 开发者可通过 Docker build args 自行构建 CUDA 12.6、CUDA 13.0 或其他后端组合。
+> 当前 CPU 镜像已通过内置 QwenASR Rust backend 支持 `qwen3-asr-0.6b`。
 > CUDA vLLM 与 CPU Rust 路径下，`word_timestamps=true` 都会自动调用 forced aligner；当前实际后端为 `CUDA -> vLLM`、`CPU/macOS -> vendored QwenASR Rust`。
 > Apple Silicon 上的 Qwen3-ASR 现已统一走 Rust CPU backend。
+
+**自定义 GPU 后端构建：**
+
+```bash
+# 默认 GPU 构建：CUDA 12.8 / PyTorch cu128
+docker build -t qwen3-asr:gpu-cu128 -f Dockerfile.gpu .
+
+# CUDA 12.6 构建，用于旧部署环境
+docker build -t qwen3-asr:gpu-cu126 -f Dockerfile.gpu \
+  --build-arg PYTORCH_BASE_IMAGE=pytorch/pytorch:2.10.0-cuda12.6-cudnn9-runtime \
+  --build-arg PYTORCH_CUDA_INDEX=https://download.pytorch.org/whl/cu126 \
+  --build-arg CUDA_NVCC_PACKAGE=cuda-nvcc-12-6 \
+  --build-arg TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9" \
+  .
+
+# CUDA 13.0 构建，用于需要 CUDA 13 工具链的环境
+docker build -t qwen3-asr:gpu-cu130 -f Dockerfile.gpu \
+  --build-arg PYTORCH_BASE_IMAGE=pytorch/pytorch:2.10.0-cuda13.0-cudnn9-runtime \
+  --build-arg PYTORCH_CUDA_INDEX=https://download.pytorch.org/whl/cu130 \
+  --build-arg CUDA_NVCC_PACKAGE=cuda-nvcc-13-0 \
+  --build-arg TORCH_CUDA_ARCH_LIST="12.0+PTX" \
+  .
+```
 
 **内网部署**：使用辅助脚本准备当前运行计划所需模型，然后复制到内网机器：
 
@@ -121,7 +146,7 @@ docker-compose up -d
 **系统要求:**
 
 - Python 3.10+
-- CUDA 12.6+ (可选，用于 GPU 加速)
+- 默认 GPU 镜像要求 CUDA 12.8+；CUDA 12.6 / 13.0 可通过 Docker build args 自行构建
 - FFmpeg (音频格式转换)
 
 **安装步骤:**
@@ -130,7 +155,7 @@ docker-compose up -d
 
 | 模式 | 命令 | 说明 |
 |------|------|------|
-| GPU（默认） | `uv sync` | 同步根目录 [pyproject.toml](/opt/qwen3-asr/pyproject.toml) 和 [uv.lock](/opt/qwen3-asr/uv.lock) 到 `.venv`，包含 CUDA `torch/torchaudio/torchvision` |
+| GPU（默认） | `uv sync` | 同步根目录 [pyproject.toml](/opt/qwen3-asr/pyproject.toml) 和 [uv.lock](/opt/qwen3-asr/uv.lock) 到 `.venv`，包含 CUDA 12.8/cu128 `torch/torchaudio/torchvision` |
 | CPU（特化） | `./scripts/sync_cpu_env.sh` | 同步 [environments/cpu/pyproject.toml](/opt/qwen3-asr/environments/cpu/pyproject.toml) 对应的 CPU lock 到 `.venv` |
 
 ```bash

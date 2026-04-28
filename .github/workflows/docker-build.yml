@@ -107,6 +107,11 @@ jobs:
           context: .
           file: ./Dockerfile.gpu
           platforms: linux/amd64
+          build-args: |
+            PYTORCH_BASE_IMAGE=pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime
+            PYTORCH_CUDA_INDEX=https://download.pytorch.org/whl/cu128
+            CUDA_NVCC_PACKAGE=cuda-nvcc-12-8
+            TORCH_CUDA_ARCH_LIST=12.0+PTX
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:gpu-latest
