@@ -14,6 +14,7 @@ import torch
 import numpy as np
 import subprocess
 import logging
+from dataclasses import dataclass
 from typing import Tuple, Optional, Any, cast
 from io import BytesIO
 
@@ -23,29 +24,13 @@ from ..core.exceptions import (
     InvalidMessageException,
     DefaultServerErrorException,
 )
-from ..models.common import SampleRate, AudioFormat
-
 logger = logging.getLogger(__name__)
 
 
-def validate_audio_format(format_str: Optional[str]) -> bool:
-    """验证音频格式是否支持"""
-    if not format_str:
-        return True  # 如果未指定格式，允许通过
-
-    # 统一转换为小写进行比较
-    format_lower = format_str.lower()
-    supported_formats = [fmt.lower() for fmt in AudioFormat.get_enums()]
-
-    return format_lower in supported_formats
-
-
-def validate_sample_rate(sample_rate: Optional[int]) -> bool:
-    """验证采样率是否支持"""
-    if not sample_rate:
-        return True  # 如果未指定采样率，允许通过
-
-    return sample_rate in SampleRate.get_enums()
+@dataclass(frozen=True)
+class NormalizedAudio:
+    path: str
+    timestamp_scale: float = 1.0
 
 
 def download_audio_from_url(url: str, max_size: Optional[int] = None) -> bytes:
@@ -126,10 +111,6 @@ def cleanup_temp_file(file_path: str) -> None:
     try:
         if file_path and os.path.exists(file_path):
             os.remove(file_path)
-            # Clean up sidecar timestamp scale file if exists
-            tsscale_path = file_path + ".tsscale"
-            if os.path.exists(tsscale_path):
-                os.remove(tsscale_path)
     except Exception:
         # 静默忽略清理错误
         pass
@@ -416,19 +397,15 @@ def convert_audio_to_wav(
             raise DefaultServerErrorException(f"音频格式转换失败: {str(e)}")
 
 
-def normalize_audio_for_asr(audio_path: str, target_sr: int = 16000) -> str:
-    """将音频文件标准化为ASR模型所需的格式
-
-    转换后会自动检测容器/解码时长不一致（常见于 m3u8/ts 合并的 m4a/AAC），
-    若检测到差异，将缩放系数写入 sidecar 文件 ``{normalized_path}.tsscale``，
-    下游 ``transcribe_long_audio`` 会自动读取并修正时间戳。
+def normalize_audio_for_asr(audio_path: str, target_sr: int = 16000) -> NormalizedAudio:
+    """Normalize audio and return explicit timestamp metadata.
 
     Args:
         audio_path: 输入音频文件路径
         target_sr: 目标采样率，默认16000Hz
 
     Returns:
-        标准化后的WAV文件路径
+        Normalized audio path and timestamp scale metadata.
     """
     try:
         # 检查文件扩展名
@@ -439,22 +416,18 @@ def normalize_audio_for_asr(audio_path: str, target_sr: int = 16000) -> str:
             # 检查采样率
             _, sr = librosa.load(audio_path, sr=None)
             if sr == target_sr:
-                return audio_path
+                return NormalizedAudio(path=audio_path)
 
         # 转换为标准WAV格式
         normalized_path = convert_audio_to_wav(audio_path, target_sr=target_sr)
         logger.debug(f"音频文件已标准化: {audio_path} -> {normalized_path}")
 
-        # Detect container/decoded duration mismatch and write sidecar
+        timestamp_scale = 1.0
         if normalized_path != audio_path:
             decoded_duration = get_audio_duration(normalized_path)
-            ts_scale = get_timestamp_scale(audio_path, decoded_duration)
-            if ts_scale != 1.0:
-                tsscale_path = normalized_path + ".tsscale"
-                with open(tsscale_path, "w") as f:
-                    f.write(str(ts_scale))
+            timestamp_scale = get_timestamp_scale(audio_path, decoded_duration)
 
-        return normalized_path
+        return NormalizedAudio(path=normalized_path, timestamp_scale=timestamp_scale)
 
     except Exception as e:
         raise DefaultServerErrorException(f"音频标准化失败: {str(e)}")

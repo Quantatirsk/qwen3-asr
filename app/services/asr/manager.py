@@ -68,15 +68,6 @@ class DeclaredEntryConfig:
         """是否有实时模型"""
         return bool(self.realtime_model_path)
 
-    def get_model_path(self, model_type: str = "offline") -> Optional[str]:
-        """根据模型类型获取模型路径"""
-        if model_type == "offline":
-            return self.offline_model_path
-        elif model_type == "realtime":
-            return self.realtime_model_path
-        return None
-
-
 class ModelManager:
     """Static model metadata plus engine construction."""
 

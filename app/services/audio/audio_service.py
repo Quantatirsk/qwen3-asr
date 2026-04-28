@@ -8,7 +8,8 @@ API层应该通过此服务层处理音频，而不是直接调用 utils/audio.p
 
 import logging
 import threading
-from typing import Optional, Tuple
+from dataclasses import dataclass
+from typing import Optional
 from fastapi import Request
 
 from ...core.config import settings
@@ -23,6 +24,14 @@ from ...utils.audio import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class AudioProcessingResult:
+    normalized_path: str
+    duration: float
+    original_path: str
+    timestamp_scale: float = 1.0
 
 
 class AudioProcessingService:
@@ -41,7 +50,7 @@ class AudioProcessingService:
         audio_address: Optional[str] = None,
         task_id: Optional[str] = None,
         sample_rate: Optional[int] = None,
-    ) -> Tuple[str, float, str]:
+    ) -> AudioProcessingResult:
         """从请求中处理音频
 
         支持两种方式：
@@ -58,7 +67,7 @@ class AudioProcessingService:
             sample_rate: 目标采样率（可选，默认16000）
 
         Returns:
-            Tuple[str, float, str]: (normalized_audio_path, duration_seconds, original_audio_path)
+            Processed audio path, duration, original path, and timestamp metadata.
 
         Raises:
             InvalidMessageException: 音频数据为空或文件太大
@@ -66,78 +75,43 @@ class AudioProcessingService:
         """
         task_id = task_id or "unknown"
         target_sr = sample_rate or 16000
-        audio_path = None
-        normalized_audio_path = None
 
+        # 优先读取请求体；若请求体为空，再回退到 audio_address。
+        # 注意：对于 FastAPI 已经解析过 form/multipart 的请求，
+        # 再次读取 body 可能抛出 "Stream consumed"。
         try:
-            # 优先读取请求体；若请求体为空，再回退到 audio_address。
-            # 注意：对于 FastAPI 已经解析过 form/multipart 的请求，
-            # 再次读取 body 可能抛出 "Stream consumed"。
-            try:
-                uploaded_data = await request.body()
-            except RuntimeError as exc:
-                if "Stream consumed" in str(exc):
-                    logger.info(f"[{task_id}] 请求体已被上游读取，跳过 request.body() 回退逻辑")
-                    uploaded_data = b""
-                else:
-                    raise
-
-            if uploaded_data:
-                if audio_address:
-                    logger.info(f"[{task_id}] 检测到同时提供上传内容和 audio_address，已忽略 audio_address")
-
-                logger.info(f"[{task_id}] 开始接收上传音频...")
-
-                if len(uploaded_data) > settings.MAX_AUDIO_SIZE:
-                    max_size_mb = settings.MAX_AUDIO_SIZE // 1024 // 1024
-                    raise InvalidMessageException(
-                        f"音频文件太大，最大支持{max_size_mb}MB", task_id
-                    )
-
-                logger.info(
-                    f"[{task_id}] 音频接收完成，大小: {len(uploaded_data) / 1024 / 1024:.2f}MB"
-                )
-
-                file_suffix = get_audio_file_suffix(audio_data=uploaded_data)
-                logger.info(f"[{task_id}] 识别文件格式: {file_suffix}")
-                audio_path = save_audio_to_temp_file(uploaded_data, file_suffix)
-
-            elif audio_address:
-                # 方式2: 从URL下载音频
-                logger.info(f"[{task_id}] 开始从URL下载音频: {audio_address}")
-                audio_data = download_audio_from_url(audio_address)
-                logger.info(
-                    f"[{task_id}] 音频下载完成，大小: {len(audio_data) / 1024 / 1024:.2f}MB"
-                )
-
-                # 自动从URL识别文件格式
-                file_suffix = get_audio_file_suffix(audio_address)
-                logger.info(f"[{task_id}] 识别文件格式: {file_suffix}")
-                audio_path = save_audio_to_temp_file(audio_data, file_suffix)
-
+            uploaded_data = await request.body()
+        except RuntimeError as exc:
+            if "Stream consumed" in str(exc):
+                logger.info(f"[{task_id}] 请求体已被上游读取，跳过 request.body() 回退逻辑")
+                uploaded_data = b""
             else:
-                raise InvalidMessageException("音频数据为空", task_id)
+                raise
 
-            logger.info(f"[{task_id}] 临时文件已保存: {audio_path}")
+        if uploaded_data:
+            if audio_address:
+                logger.info(f"[{task_id}] 检测到同时提供上传内容和 audio_address，已忽略 audio_address")
+            return self._process_audio_bytes(
+                audio_data=uploaded_data,
+                filename=None,
+                task_id=task_id,
+                target_sr=target_sr,
+            )
 
-            # 将音频标准化为ASR模型所需的格式
-            logger.info(f"[{task_id}] 开始音频格式转换...")
-            normalized_audio_path = normalize_audio_for_asr(audio_path, target_sr)
-            logger.info(f"[{task_id}] 音频格式转换完成: {normalized_audio_path}")
+        if audio_address:
+            logger.info(f"[{task_id}] 开始从URL下载音频: {audio_address}")
+            audio_data = download_audio_from_url(audio_address)
+            logger.info(
+                f"[{task_id}] 音频下载完成，大小: {len(audio_data) / 1024 / 1024:.2f}MB"
+            )
+            return self._process_audio_bytes(
+                audio_data=audio_data,
+                filename=audio_address,
+                task_id=task_id,
+                target_sr=target_sr,
+            )
 
-            # 获取音频时长
-            audio_duration = get_audio_duration(normalized_audio_path)
-            logger.info(f"[{task_id}] 音频时长: {audio_duration:.1f}秒")
-
-            return normalized_audio_path, audio_duration, audio_path
-
-        except Exception:
-            # 清理已创建的临时文件
-            if audio_path:
-                cleanup_temp_file(audio_path)
-            if normalized_audio_path and normalized_audio_path != audio_path:
-                cleanup_temp_file(normalized_audio_path)
-            raise
+        raise InvalidMessageException("音频数据为空", task_id)
 
     async def process_upload_file(
         self,
@@ -145,7 +119,7 @@ class AudioProcessingService:
         filename: Optional[str] = None,
         task_id: Optional[str] = None,
         sample_rate: Optional[int] = None,
-    ) -> Tuple[str, float, str]:
+    ) -> AudioProcessingResult:
         """处理上传的音频文件
 
         Args:
@@ -155,13 +129,29 @@ class AudioProcessingService:
             sample_rate: 目标采样率（可选，默认16000）
 
         Returns:
-            Tuple[str, float, str]: (normalized_audio_path, duration_seconds, original_audio_path)
+            Processed audio path, duration, original path, and timestamp metadata.
 
         Raises:
             InvalidMessageException: 音频数据为空或文件太大
         """
         task_id = task_id or "unknown"
         target_sr = sample_rate or 16000
+        return self._process_audio_bytes(
+            audio_data=audio_data,
+            filename=filename,
+            task_id=task_id,
+            target_sr=target_sr,
+        )
+
+    def _process_audio_bytes(
+        self,
+        *,
+        audio_data: bytes,
+        filename: Optional[str],
+        task_id: str,
+        target_sr: int,
+    ) -> AudioProcessingResult:
+        """Persist, normalize, and measure audio bytes."""
         audio_path = None
         normalized_audio_path = None
 
@@ -179,24 +169,31 @@ class AudioProcessingService:
                     f"音频文件太大，最大支持{max_mb}MB", task_id
                 )
 
-            # 检测音频格式并保存临时文件
             file_suffix = get_audio_file_suffix(
-                audio_address=filename, audio_data=audio_data
+                audio_address=filename,
+                audio_data=audio_data,
             )
+            logger.info(f"[{task_id}] 识别文件格式: {file_suffix}")
             audio_path = save_audio_to_temp_file(audio_data, file_suffix)
             logger.info(f"[{task_id}] 临时文件: {audio_path}")
 
-            # 标准化音频格式
-            normalized_audio_path = normalize_audio_for_asr(audio_path, target_sr)
+            logger.info(f"[{task_id}] 开始音频格式转换...")
+            normalized_audio = normalize_audio_for_asr(audio_path, target_sr)
+            normalized_audio_path = normalized_audio.path
+            logger.info(f"[{task_id}] 音频格式转换完成: {normalized_audio_path}")
 
-            # 获取音频时长
-            audio_duration = get_audio_duration(normalized_audio_path)
+            decoded_duration = get_audio_duration(normalized_audio_path)
+            audio_duration = decoded_duration * normalized_audio.timestamp_scale
             logger.info(f"[{task_id}] 音频时长: {audio_duration:.1f}s")
 
-            return normalized_audio_path, audio_duration, audio_path
+            return AudioProcessingResult(
+                normalized_path=normalized_audio_path,
+                duration=audio_duration,
+                original_path=audio_path,
+                timestamp_scale=normalized_audio.timestamp_scale,
+            )
 
         except Exception:
-            # 清理已创建的临时文件
             if audio_path:
                 cleanup_temp_file(audio_path)
             if normalized_audio_path and normalized_audio_path != audio_path:

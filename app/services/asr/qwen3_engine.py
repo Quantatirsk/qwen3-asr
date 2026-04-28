@@ -103,20 +103,6 @@ def _handle_asr_error(operation: str):
     return decorator
 
 
-def _get_word_tokens(result, word_level: bool) -> Optional[List[WordToken]]:
-    """提取字词级时间戳"""
-    if not word_level:
-        return None
-    ts = getattr(result, "time_stamps", None)
-    items = getattr(ts, "items", None)
-    if not items:
-        return None
-    return [
-        WordToken(text=item.text, start_time=round(item.start_time, 3), end_time=round(item.end_time, 3))
-        for item in items
-    ]
-
-
 @dataclass
 class Qwen3StreamingState:
     internal_state: Any
@@ -175,10 +161,6 @@ class Qwen3ASREngine(BaseASREngine):
                 )
             elif self._backend == "rust":
                 self.model = self._load_rust_backend(model_path, forced_aligner_path)
-            else:
-                raise DefaultServerErrorException(
-                    f"Qwen3-ASR is not available on device '{self._device}'"
-                )
             self._warmup_forced_aligner()
             logger.info("Qwen3-ASR model loaded successfully with backend=%s", self._backend)
         except Exception as e:
@@ -195,7 +177,10 @@ class Qwen3ASREngine(BaseASREngine):
             return "vllm"
         if self._device == "cpu" and is_qwenasr_rust_available():
             return "rust"
-        return "transformers"
+        raise DefaultServerErrorException(
+            f"Qwen3-ASR is not available on device '{self._device}'. "
+            "Supported backends are CUDA vLLM and CPU QwenASR Rust."
+        )
 
     def _load_rust_backend(
         self,
@@ -458,41 +443,9 @@ class Qwen3ASREngine(BaseASREngine):
                 word_timestamps=kwargs.get("word_timestamps", False),
             )
 
-        return ASRRawResult(
-            text="",
-            segments=[],
+        raise DefaultServerErrorException(
+            f"Qwen3 backend={self._backend} does not support VAD transcription"
         )
-
-    def _to_segments(self, text: str, time_stamps: Any, word_level: bool) -> List[ASRSegmentResult]:
-        """转换时间戳为分段"""
-        items: List[Any] = list(
-            getattr(getattr(time_stamps, "items", None), "__iter__", lambda: [])()
-        )
-
-        if not items:
-            return [ASRSegmentResult(text=text, start_time=0.0, end_time=0.0)] if text else []
-
-        segments = []
-        current, start, words = "", items[0].start_time, []
-        breaks = set("。！？；\n")
-
-        for i, item in enumerate(items):
-            current += item.text
-            words.append(WordToken(item.text, round(item.start_time, 3), round(item.end_time, 3))) if word_level else None
-
-            if item.text in breaks or i == len(items) - 1:
-                if current.strip():
-                    segments.append(ASRSegmentResult(
-                        text=current.strip(),
-                        start_time=round(start, 2),
-                        end_time=round(item.end_time, 2),
-                        word_tokens=words if word_level else None,
-                    ))
-                current, words = "", []
-                if i < len(items) - 1:
-                    start = items[i + 1].start_time
-
-        return segments
 
     @_handle_asr_error("批量推理")
     def _transcribe_batch(
@@ -560,53 +513,9 @@ class Qwen3ASREngine(BaseASREngine):
                 )
             return output
 
-        def _build_result(seg: Any, result: Any) -> ASRSegmentResult:
-            return ASRSegmentResult(
-                text=(getattr(result, "text", "") or ""),
-                start_time=round(seg.start_sec, 2),
-                end_time=round(seg.end_sec, 2),
-                speaker_id=getattr(seg, "speaker_id", None),
-                word_tokens=_get_word_tokens(result, word_timestamps),
-            )
-
-        indices, segs = zip(*valid)
-
-        try:
-            results = self.model.transcribe(
-                audio=[seg.temp_file for seg in segs],
-                context=hotwords or "",
-                return_time_stamps=word_timestamps,
-            )
-            if len(results) != len(segs):
-                raise DefaultServerErrorException(
-                    "Qwen3 批量结果数量不匹配: "
-                    f"expected={len(segs)}, got={len(results)}"
-                )
-
-            for idx, seg, result in zip(indices, segs, results):
-                output[idx] = _build_result(seg, result)
-            return output
-        except Exception as batch_error:
-            logger.warning(
-                "Qwen3 批量推理失败，降级为逐段推理: "
-                f"batch_size={len(segs)}, error={batch_error}"
-            )
-
-        for idx, seg in valid:
-            try:
-                single_results = self.model.transcribe(
-                    audio=seg.temp_file,
-                    context=hotwords or "",
-                    return_time_stamps=word_timestamps,
-                )
-                if single_results:
-                    output[idx] = _build_result(seg, single_results[0])
-                else:
-                    logger.warning(f"Qwen3 逐段推理返回空结果: segment={idx + 1}")
-            except Exception as single_error:
-                logger.error(f"Qwen3 逐段推理失败: segment={idx + 1}, error={single_error}")
-
-        return output
+        raise DefaultServerErrorException(
+            f"Qwen3 backend={self._backend} does not support batch transcription"
+        )
 
     @_handle_asr_error("初始化流式状态")
     def init_streaming_state(self, context: str = "", language: Optional[str] = None, **kwargs) -> Qwen3StreamingState:

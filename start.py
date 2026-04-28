@@ -2,12 +2,18 @@
 # -*- coding: utf-8 -*-
 """Qwen3-ASR server CLI entrypoint."""
 
-import sys
 import os
+import sys
 
-# 强制离线模式，必须在任何 HF/transformers 导入前设置
-# 注意：不要设置 HF_HUB_OFFLINE=1，否则 vLLM 会把 model_id 替换为绝对路径
-os.environ.setdefault("HF_HUB_LOCAL_FILES_ONLY", "1")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Keep HuggingFace downloads enabled by default. Operators can still set
+# HF_HUB_LOCAL_FILES_ONLY=1 for strictly offline deployments.
+os.environ.setdefault("HF_HUB_LOCAL_FILES_ONLY", "0")
 os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("TQDM_DISABLE", "1")
@@ -19,11 +25,6 @@ os.environ.setdefault("DISABLE_TQDM", "1")
 # values back to "unset" before any HF/transformers imports happen.
 if not (os.getenv("HF_ENDPOINT") or "").strip():
     os.environ.pop("HF_ENDPOINT", None)
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from dotenv import load_dotenv
-load_dotenv()
 
 
 def _disable_third_party_progress_bars() -> None:

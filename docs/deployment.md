@@ -182,14 +182,15 @@ docker build -t qwen3-asr:gpu-latest -f Dockerfile.gpu .
 - **显存 >= 32GB**: 自动加载 `qwen3-asr-1.7b`
 - **显存 < 32GB**: 自动加载 `qwen3-asr-0.6b`
 - **无 CUDA**: 自动加载基于 vendored Rust 的 `qwen3-asr-0.6b`
-- **macOS / Apple Silicon**: 无论内存大小多少，默认都加载 `qwen3-asr-0.6b`；只有调用方显式指定时才使用 `qwen3-asr-1.7b`
+- **macOS / Apple Silicon**: 无论内存大小多少，默认都加载 `qwen3-asr-0.6b`
+- **环境变量覆盖**: 设置 `QWEN3_ASR_MODEL=qwen3-asr-1.7b` 或 `QWEN3_ASR_MODEL=qwen3-asr-0.6b` 可硬覆盖自动选择
 
 `paraformer-large` realtime capability 会始终为 WebSocket 流式识别准备。
 
 ### 模型下载
 
-当前默认启用 `HF_HUB_LOCAL_FILES_ONLY=1`，推荐在启动前先准备模型缓存。
-推荐方式：
+启动时会先检测当前运行计划所需模型；如果本地缓存缺失，会自动下载。离线部署可显式设置 `HF_HUB_LOCAL_FILES_ONLY=1` 并提前准备模型缓存。
+手动准备方式：
 
 ```bash
 # 交互式导出当前运行计划所需模型

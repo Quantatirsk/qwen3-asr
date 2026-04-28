@@ -50,7 +50,7 @@ class _StartupProgress:
             and sys.stderr.isatty()
             and os.getenv("FUNASR_TUI_CHILD") != "1"
         )
-        self._console: Console | None = None
+        self._console: Any = None
         self._filter = _ProgressNoiseFilter()
         self._handlers: list[logging.Handler] = []
         self._current_step = 1
@@ -63,7 +63,7 @@ class _StartupProgress:
             total=self._total,
             message=self._title,
         )
-        if not self._enabled:
+        if not self._enabled or Console is None:
             return self
         self._console = Console(stderr=True)
         root_logger = logging.getLogger()
@@ -208,37 +208,6 @@ def _build_huggingface_spec(
         required_patterns=required_patterns,
         min_total_size_bytes=min_total_size_bytes,
     )
-def print_model_statistics(result: dict[str, Any], use_logger: bool = True) -> None:
-    """打印模型加载统计信息 - KISS版本：只显示已加载的模型"""
-    output = logger.info if use_logger else print
-
-    loaded_models = []
-
-    # 收集已加载的ASR模型
-    for model_id, status in result["asr_models"].items():
-        if status["loaded"]:
-            loaded_models.append(f"ASR模型({model_id})")
-
-    # 收集已加载的其他模型
-    other_models = [
-        ("vad_model", "语音活动检测模型(VAD)"),
-        ("speaker_diarization_model", "说话人分离模型(CAM++)"),
-    ]
-    for key, name in other_models:
-        if result[key]["loaded"]:
-            loaded_models.append(name)
-
-    # 简洁输出
-    output("=" * 50)
-    if loaded_models:
-        output(f"✅ 已加载 {len(loaded_models)} 个模型:")
-        for i, name in enumerate(loaded_models, 1):
-            output(f"   {i}. {name}")
-    else:
-        output("⚠️  没有模型被加载")
-    output("=" * 50)
-
-
 def _should_check_qwen_forced_aligner(
     resolved_device: str,
     using_cpu_qwen_rust: bool,
@@ -408,6 +377,9 @@ def preload_models() -> dict[str, Any]:
     model_manager = None
 
     # 1. 预加载所有配置的ASR模型（根据 ENABLE_* 配置过滤）
+    model_ids: list[str] = []
+    model_manager = None
+
     try:
         from ..services.asr.manager import get_model_manager
         from ..services.asr.model_plan import get_runtime_model_ids

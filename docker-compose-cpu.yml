@@ -14,7 +14,8 @@ services:
     environment:
       API_KEY: ${API_KEY:-}
       MODELSCOPE_PATH: /root/.cache/modelscope/hub/models
-      HF_HUB_LOCAL_FILES_ONLY: ${HF_HUB_LOCAL_FILES_ONLY:-1}
+      HF_HUB_LOCAL_FILES_ONLY: ${HF_HUB_LOCAL_FILES_ONLY:-0}
+      QWEN3_ASR_MODEL: ${QWEN3_ASR_MODEL:-}
       NGINX_RATE_LIMIT_RPS: ${NGINX_RATE_LIMIT_RPS:-0}
       NGINX_RATE_LIMIT_BURST: ${NGINX_RATE_LIMIT_BURST:-0}
     restart: unless-stopped

@@ -37,6 +37,7 @@ class OfflineASRRequest:
     sample_rate: int = 16000
     enable_speaker_diarization: bool = True
     word_timestamps: bool = False
+    timestamp_scale: float = 1.0
     task_id: Optional[str] = None
 
 
@@ -189,6 +190,7 @@ class RuntimeRouter:
                 sample_rate=request.sample_rate,
                 enable_speaker_diarization=request.enable_speaker_diarization,
                 word_timestamps=request.word_timestamps,
+                timestamp_scale=request.timestamp_scale,
                 task_id=request.task_id,
             )
 

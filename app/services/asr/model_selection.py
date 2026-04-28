@@ -20,13 +20,8 @@ def get_active_qwen_model_id() -> str:
     return active_qwen_model or "qwen3-asr-0.6b"
 
 
-def load_supported_model_list() -> List[str]:
-    """Load supported model ids declared by static config."""
-    return get_runtime_model_ids()
-
-
 def get_offline_model_ids() -> List[str]:
-    """Return enabled offline-capable models for docs and compatibility APIs."""
+    """Return enabled offline-capable models for docs and APIs."""
     manager = get_model_manager()
     runtime_models = get_runtime_model_ids()
 
@@ -53,11 +48,6 @@ def get_default_offline_model_id() -> str:
         except InvalidParameterException:
             pass
     return get_active_qwen_model_id()
-
-
-def resolve_offline_model_id(_ignored_model_id: Optional[str] = None) -> str:
-    """Resolve the single active offline model for all offline API calls."""
-    return get_default_offline_model_id()
 
 
 def validate_realtime_model_id(model_id: Optional[str]) -> str:

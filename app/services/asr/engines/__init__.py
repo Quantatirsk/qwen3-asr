@@ -8,7 +8,6 @@ ASR引擎模块
 from .base import (
     BaseASREngine,
     RealTimeASREngine,
-    ModelType,
     WordToken,
     ASRSegmentResult,
     ASRFullResult,
@@ -31,7 +30,6 @@ __all__ = [
     # 基础类
     "BaseASREngine",
     "RealTimeASREngine",
-    "ModelType",
     # 数据类
     "WordToken",
     "ASRSegmentResult",

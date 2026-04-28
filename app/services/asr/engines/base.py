@@ -4,12 +4,10 @@ ASR引擎基础模块
 包含抽象基类和数据类定义
 """
 
-import os
 import time
 import logging
 from typing import Optional, Dict, List, Any
 from abc import ABC, abstractmethod
-from enum import Enum
 from dataclasses import dataclass
 
 from app.core.config import settings
@@ -58,18 +56,8 @@ class ASRRawResult:
     segments: List[ASRSegmentResult]  # 分段结果（从 VAD 时间戳解析）
 
 
-class ModelType(Enum):
-    """模型类型枚举"""
-
-    OFFLINE = "offline"
-    REALTIME = "realtime"
-
-
 class BaseASREngine(ABC):
     """基础ASR引擎抽象基类"""
-
-    # 默认最大音频时长限制（秒）
-    MAX_AUDIO_DURATION_SEC = 60.0
 
     @abstractmethod
     def transcribe_file(
@@ -118,6 +106,7 @@ class BaseASREngine(ABC):
         sample_rate: int = 16000,
         enable_speaker_diarization: bool = True,
         word_timestamps: bool = False,
+        timestamp_scale: float = 1.0,
         task_id: Optional[str] = None,
     ) -> ASRFullResult:
         """转录长音频文件（自动分段）
@@ -130,6 +119,7 @@ class BaseASREngine(ABC):
             sample_rate: 采样率
             enable_speaker_diarization: 是否启用说话人分离
             word_timestamps: 是否返回字词级时间戳（仅部分模型支持）
+            timestamp_scale: Timestamp correction factor from audio normalization.
             task_id: 任务ID（用于日志追踪）
 
         Returns:
@@ -255,25 +245,18 @@ class BaseASREngine(ABC):
             # 计算性能指标
             total_duration_ms = (time.time() - start_time) * 1000
 
-            # 记录结构化日志
-            # Apply timestamp scaling if sidecar file exists
-            tsscale_path = audio_path + ".tsscale"
-            if os.path.exists(tsscale_path):
-                try:
-                    with open(tsscale_path, "r") as f:
-                        ts_scale = float(f.read().strip())
-                    if ts_scale != 1.0:
-                        for seg in results:
-                            seg.start_time *= ts_scale
-                            seg.end_time *= ts_scale
-                            if seg.word_tokens:
-                                for wt in seg.word_tokens:
-                                    wt.start_time *= ts_scale
-                                    wt.end_time *= ts_scale
-                        duration *= ts_scale
-                    logger.info(f"{task_prefix}Timestamp scaling applied: scale={ts_scale:.6f}")
-                except Exception as e:
-                    logger.warning(f"{task_prefix}Failed to apply timestamp scaling: {e}")
+            if timestamp_scale != 1.0:
+                for seg in results:
+                    seg.start_time *= timestamp_scale
+                    seg.end_time *= timestamp_scale
+                    if seg.word_tokens:
+                        for word_token in seg.word_tokens:
+                            word_token.start_time *= timestamp_scale
+                            word_token.end_time *= timestamp_scale
+                duration *= timestamp_scale
+                logger.info(
+                    f"{task_prefix}Timestamp scaling applied: scale={timestamp_scale:.6f}"
+                )
 
             log_inference_metrics(
                 logger=logger,

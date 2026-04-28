@@ -18,15 +18,17 @@ from pydantic import BaseModel, Field
 from ...core.config import settings
 from ...core.security import validate_openai_token
 from ...core.exceptions import (
-    InvalidParameterException,
     create_error_response,
 )
-from ...services.asr.runtime import OfflineASRRequest, get_runtime_router
 from ...services.asr.model_selection import (
     get_default_offline_model_id,
     get_offline_model_ids,
 )
-from ...services.audio import get_audio_service
+from ...services.asr.offline_transcription_service import (
+    OfflineTranscriptionOptions,
+    PreparedAudio,
+    get_offline_transcription_service,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -333,9 +335,8 @@ def _get_openai_model_description() -> str:
 {chr(10).join(table_rows)}
 
 **兼容性说明：**
-- `whisper-1` 等 OpenAI 模型 ID 会自动映射到默认模型
 - 支持 OpenAI SDK 和第三方客户端调用
-- 当前默认模型根据显存自动选择：<32GB 用 0.6b，>=32GB 用 1.7b
+- 当前默认模型根据显存自动选择；也可通过 `QWEN3_ASR_MODEL` 覆盖
 """
 
 
@@ -405,7 +406,7 @@ def _get_transcription_description() -> str:
 
 **模型选择：**
 - 离线路径固定使用当前服务启用的唯一 Qwen3-ASR 模型
-- 客户端兼容性字段 `model` 若继续上传，将被忽略
+- 通过 `QWEN3_ASR_MODEL` 控制服务端模型型号
 - `/v1/models` 仍可用于查看当前服务端实际在线模型
 
 **暂不支持的参数：**
@@ -471,13 +472,6 @@ async def create_transcription(
         description="音频/视频文件 URL（HTTP/HTTPS）。仅当 file 为空时使用；若同时上传 file，服务会忽略此参数",
         json_schema_extra={"example": "https://media.cdn.vect.one/podcast_demo.mp4"},
     ),
-    # 2. 兼容参数
-    model: Optional[str] = Form(
-        default=None,
-        description="兼容参数，将被忽略。离线路径固定使用服务当前启用的唯一 Qwen3-ASR 模型",
-        json_schema_extra={"deprecated": True},
-    ),
-    # 3. 音频属性
     language: Optional[str] = Form(
         None,
         description="音频语言代码（ISO-639-1），如 zh/en/ja，不填则自动检测",
@@ -511,15 +505,12 @@ async def create_transcription(
     # 标记暂不支持的参数（保留以兼容 OpenAI API）
     _ = (prompt, temperature, timestamp_granularities)
 
-    audio_path = None
-    normalized_audio_path = None
+    prepared_audio: Optional[PreparedAudio] = None
     response_cleanup_managed = False
 
     logger.info(f"[OpenAI API] 收到转写请求: format={response_format}, "
                 f"speaker_diarization={enable_speaker_diarization}, word_level={word_timestamps}, "
                 f"audio_address={'有' if audio_address else '无'}")
-    if model:
-        logger.info(f"[OpenAI API] 忽略客户端传入的离线 model={model}")
 
     # 验证输入：至少提供一种输入源；若二者同时存在，优先 file
     if not file and not audio_address:
@@ -529,8 +520,7 @@ async def create_transcription(
         )
         return JSONResponse(content=response_data, status_code=400)
 
-    # 获取音频处理服务
-    audio_service = get_audio_service()
+    transcription_service = get_offline_transcription_service()
 
     try:
         result, _ = validate_openai_token(request)
@@ -549,36 +539,30 @@ async def create_transcription(
             logger.info(f"[OpenAI API] 从上传文件读取音频: {file.filename}")
             audio_data = await file.read()
 
-            normalized_audio_path, audio_duration, audio_path = await audio_service.process_upload_file(
+            prepared_audio = await transcription_service.prepare_upload(
                 audio_data=audio_data,
                 filename=file.filename if file else None,
+                task_id=f"openai-{int(time.time() * 1000)}",
                 sample_rate=16000,
             )
         else:
             logger.info(f"[OpenAI API] 从 URL 下载音频: {audio_address}")
-            normalized_audio_path, audio_duration, audio_path = await audio_service.process_from_request(
+            prepared_audio = await transcription_service.prepare_from_request(
                 request=request,
                 audio_address=audio_address,
                 task_id=f"openai-{int(time.time() * 1000)}",
                 sample_rate=16000,
             )
 
-        resolved_model_id = get_default_offline_model_id()
-
-        runtime_router = get_runtime_router()
-
-        inference_coro = runtime_router.run_offline(
-            OfflineASRRequest(
-                model_id=resolved_model_id,
-                audio_path=normalized_audio_path,
-                hotwords="",
-                enable_punctuation=True,
-                enable_itn=True,
+        inference_coro = transcription_service.transcribe(
+            prepared_audio,
+            OfflineTranscriptionOptions(
                 sample_rate=16000,
                 enable_speaker_diarization=enable_speaker_diarization,
                 word_timestamps=word_timestamps,
-            )
+            ),
         )
+        audio_duration = prepared_audio.duration
 
         # 根据 response_format 返回不同格式
         if response_format == ResponseFormat.TEXT:
@@ -621,10 +605,7 @@ async def create_transcription(
                 inference_coro=inference_coro,
                 audio_duration=audio_duration,
                 language=language,
-                cleanup_callback=lambda: audio_service.cleanup(
-                    audio_path,
-                    normalized_audio_path,
-                ),
+                cleanup_callback=lambda: transcription_service.cleanup(prepared_audio),
             )
 
         else:
@@ -659,4 +640,4 @@ async def create_transcription(
 
     finally:
         if not response_cleanup_managed:
-            audio_service.cleanup(audio_path, normalized_audio_path)
+            transcription_service.cleanup(prepared_audio)

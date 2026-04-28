@@ -32,8 +32,7 @@ Speech recognition API service centered on [Qwen3-ASR](https://github.com/QwenLM
 > - Python dependency management is now `uv`-based (`pyproject.toml` + `uv.lock`); `requirements*.txt` are gone
 > - Runtime stack changed to `CUDA -> official vLLM`, `CPU/macOS -> vendored QwenASR Rust`
 > - `MLX` / Apple Silicon GPU path has been removed; `mps` is normalized to `cpu`
-> - macOS / Apple Silicon now defaults to `qwen3-asr-0.6b` unless the caller explicitly selects `qwen3-asr-1.7b`
-> - Offline `model` / `model_id` are now compatibility-only parameters and no longer switch the active offline model
+> - macOS / Apple Silicon now defaults to `qwen3-asr-0.6b`; set `QWEN3_ASR_MODEL` to override it
 > - `ENABLED_MODELS` has been removed
 
 ## Features
@@ -174,7 +173,7 @@ Current runtime behavior on the mainline codebase:
 - `Linux + CPU` uses vendored `QwenASR` Rust
 - `macOS / Apple Silicon` also uses vendored `QwenASR` Rust
 - macOS / Apple Silicon defaults to `qwen3-asr-0.6b`
-- `qwen3-asr-1.7b` on macOS is only used when the caller explicitly selects it
+- `qwen3-asr-1.7b` on macOS is only used when `QWEN3_ASR_MODEL=qwen3-asr-1.7b`
 - `word_timestamps=true` works on the current offline CUDA and CPU Rust paths
 - WebSocket streaming does not currently return word-level timestamps
 - CAM++ speaker diarization remains required and still follows `DEVICE`; on CPU its main hotspot is speaker verification embedding
@@ -194,7 +193,6 @@ Current runtime behavior on the mainline codebase:
 |-----------|------|---------|-------------|
 | `file` | file | Preferred when provided | Audio/video file |
 | `audio_address` | string | Optional | Audio/video URL (HTTP/HTTPS). Ignored when `file` is also provided |
-| `model` | string | ignored | Compatibility parameter; ignored for offline requests |
 | `language` | string | Auto-detect | Language code (zh/en/ja) |
 | `enable_speaker_diarization` | bool | `true` | Enable speaker diarization |
 | `word_timestamps` | bool | `false` | Return word-level timestamps when the backend supports them. Qwen CUDA vLLM and CPU Rust automatically use the forced aligner when enabled. |
@@ -217,7 +215,6 @@ client = OpenAI(base_url="http://localhost:8000/v1", api_key="your_api_key")
 
 with open("audio.wav", "rb") as f:
     transcript = client.audio.transcriptions.create(
-        model="whisper-1",  # Compatibility field; ignored by offline routing
         file=f,
         response_format="verbose_json"  # Get segments and speaker info
     )
@@ -251,7 +248,6 @@ curl -X POST "http://localhost:8000/v1/audio/transcriptions" \
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `model_id` | string | ignored | Compatibility parameter; ignored for offline requests |
 | `audio_address` | string | `https://media.cdn.vect.one/podcast_demo.mp4` (docs example) | Audio/video URL (optional; ignored when body content is uploaded) |
 | `sample_rate` | int | `16000` | Sample rate |
 | `enable_speaker_diarization` | bool | `true` | Enable speaker diarization |
@@ -368,8 +364,11 @@ Automatic long audio segmentation:
 - **VRAM >= 32GB**: Select `qwen3-asr-1.7b`
 - **VRAM < 32GB**: Select `qwen3-asr-0.6b`
 - **No CUDA**: Select the vendored Rust-backed `qwen3-asr-0.6b`
-- **macOS / Apple Silicon**: Always default to `qwen3-asr-0.6b`, regardless of memory size, unless a caller explicitly selects `qwen3-asr-1.7b`
+- **macOS / Apple Silicon**: Always default to `qwen3-asr-0.6b`, regardless of memory size
+- **Environment override**: Set `QWEN3_ASR_MODEL=qwen3-asr-1.7b` or `QWEN3_ASR_MODEL=qwen3-asr-0.6b` to bypass automatic selection
 - `paraformer-large` realtime capability is always prepared for websocket streaming
+
+At startup the service checks the current runtime model plan and downloads missing models by default. Set `HF_HUB_LOCAL_FILES_ONLY=1` only for strictly offline deployments with a prepared cache.
 
 ## Environment Variables
 
@@ -383,6 +382,7 @@ Recommended public settings:
 | `ASR_BATCH_SIZE` | `4` | ASR batch size for long-audio segment processing |
 | `MAX_SEGMENT_SEC` | `30` | Max audio segment duration (seconds) |
 | `ASR_ENABLE_NEARFIELD_FILTER` | `true` | Enable far-field sound filtering |
+| `QWEN3_ASR_MODEL` | auto | Force `qwen3-asr-1.7b` or `qwen3-asr-0.6b` instead of VRAM-based selection |
 
 Far-field filter notes:
 

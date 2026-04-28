@@ -30,8 +30,7 @@
 > - Python 依赖管理已经切到 `uv`（`pyproject.toml` + `uv.lock`），`requirements*.txt` 已移除
 > - 运行时栈改成 `CUDA -> official vLLM`、`CPU/macOS -> vendored QwenASR Rust`
 > - `MLX` / Apple Silicon GPU 路径已移除，`mps` 会归一化到 `cpu`
-> - macOS / Apple Silicon 现在默认总是 `qwen3-asr-0.6b`，除非调用方显式指定 `qwen3-asr-1.7b`
-> - 离线路径中的 `model` / `model_id` 现在仅为兼容参数，不再真正切换激活模型
+> - macOS / Apple Silicon 现在默认总是 `qwen3-asr-0.6b`，可通过 `QWEN3_ASR_MODEL` 覆盖
 > - `ENABLED_MODELS` 已移除
 
 ## 主要特性
@@ -174,7 +173,7 @@ python start.py
 - `Linux + CPU` 使用 vendored `QwenASR` Rust
 - `macOS / Apple Silicon` 也使用 vendored `QwenASR` Rust
 - macOS / Apple Silicon 默认总是 `qwen3-asr-0.6b`
-- 在 macOS 上，只有调用方显式指定时才会使用 `qwen3-asr-1.7b`
+- 在 macOS 上，只有设置 `QWEN3_ASR_MODEL=qwen3-asr-1.7b` 时才会使用 `qwen3-asr-1.7b`
 - `word_timestamps=true` 在当前离线 CUDA 与 CPU Rust 路径下可用
 - WebSocket 流式路径当前不返回词级时间戳
 - CAM++ 说话人分离仍然必须保留，并继续跟随 `DEVICE`；在 CPU 上的主要热点仍是 speaker verification embedding
@@ -194,7 +193,6 @@ python start.py
 | ------------------------------ | ------ | --------------------- | ------------------------------------- |
 | `file`                       | file   | 提供时优先使用         | 音频/视频文件                          |
 | `audio_address`              | string | 可选                  | 音频/视频文件 URL（HTTP/HTTPS）；若同时提供 `file`，则忽略 |
-| `model`                      | string | 忽略                  | 兼容参数；离线路径会直接忽略          |
 | `language`                   | string | 自动检测              | 语言代码 (zh/en/ja)                   |
 | `enable_speaker_diarization` | bool   | `true`              | 启用说话人分离                        |
 | `word_timestamps`            | bool   | `false`             | 返回后端支持的字词级时间戳；Qwen CUDA vLLM 与 CPU Rust 在启用时会自动调用 forced aligner |
@@ -217,7 +215,6 @@ client = OpenAI(base_url="http://localhost:8000/v1", api_key="your_api_key")
 
 with open("audio.wav", "rb") as f:
     transcript = client.audio.transcriptions.create(
-        model="whisper-1",  # 兼容字段；离线路径会忽略
         file=f,
         response_format="verbose_json"  # 获取分段和说话人信息
     )
@@ -251,7 +248,6 @@ curl -X POST "http://localhost:8000/v1/audio/transcriptions" \
 
 | 参数                           | 类型   | 默认值             | 说明                                  |
 | ------------------------------ | ------ | ------------------ | ------------------------------------- |
-| `model_id`                   | string | 忽略             | 兼容参数；离线路径会直接忽略          |
 | `audio_address`              | string | `https://media.cdn.vect.one/podcast_demo.mp4`（文档示例） | 音频/视频 URL（可选；若同时上传内容则忽略） |
 | `sample_rate`                | int    | `16000`          | 采样率                                |
 | `enable_speaker_diarization` | bool   | `true`           | 启用说话人分离                        |
@@ -368,8 +364,11 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 - **显存 >= 32GB**: 选择 `qwen3-asr-1.7b`
 - **显存 < 32GB**: 选择 `qwen3-asr-0.6b`
 - **无 CUDA**: 选择基于 vendored Rust 的 `qwen3-asr-0.6b`
-- **macOS / Apple Silicon**: 无论内存大小多少，默认都选择 `qwen3-asr-0.6b`；只有调用方显式指定时才使用 `qwen3-asr-1.7b`
+- **macOS / Apple Silicon**: 无论内存大小多少，默认都选择 `qwen3-asr-0.6b`
+- **环境变量覆盖**: 设置 `QWEN3_ASR_MODEL=qwen3-asr-1.7b` 或 `QWEN3_ASR_MODEL=qwen3-asr-0.6b` 可跳过自动选择
 - `paraformer-large` 实时能力始终为 WebSocket 流式准备
+
+启动时会先检测当前运行计划所需模型；如果本地缓存缺失，会自动下载。离线部署可显式设置 `HF_HUB_LOCAL_FILES_ONLY=1` 并提前准备模型缓存。
 
 ## 环境变量
 
@@ -383,6 +382,7 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 | `ASR_BATCH_SIZE`                 | `4`          | 长音频分段后的 ASR 批处理大小 |
 | `MAX_SEGMENT_SEC`                | `30`         | 音频分段最大时长（秒）                        |
 | `ASR_ENABLE_NEARFIELD_FILTER`    | `true`       | 启用远场声音过滤                              |
+| `QWEN3_ASR_MODEL`                | 自动选择      | 强制选择 `qwen3-asr-1.7b` 或 `qwen3-asr-0.6b` |
 
 远场过滤调优建议：
 

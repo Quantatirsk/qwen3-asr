@@ -75,39 +75,32 @@ async def lifespan(app: FastAPI):
     if worker_id == 0:
         cleanup_temp_directory()
 
-    # 所有 Worker 都需要预加载模型
-    try:
-        from .utils.model_loader import (
-            preload_models,
-            verify_required_models_integrity,
-        )
+    from .utils.model_loader import (
+        preload_models,
+        verify_required_models_integrity,
+    )
 
-        integrity_result = verify_required_models_integrity()
-        if integrity_result["invalid_models"]:
-            emit_boot_event("error", phase="integrity", message="required model integrity check failed")
-            raise RuntimeError("required model integrity check failed")
+    integrity_result = verify_required_models_integrity()
+    if integrity_result["invalid_models"]:
+        emit_boot_event("error", phase="integrity", message="required model integrity check failed")
+        raise RuntimeError("required model integrity check failed")
 
-        logger.info(f"Worker [{worker_id}] 正在加载模型...")
-        preload_result = preload_models()
+    logger.info(f"Worker [{worker_id}] 正在加载模型...")
+    preload_result = preload_models()
 
-        # 记录加载结果
-        asr_results = preload_result.get("asr_models", {})
-        loaded_count = sum(1 for r in asr_results.values() if r.get("loaded"))
-        total_count = len(asr_results)
-        logger.info(f"Worker [{worker_id}] 模型加载完成: {loaded_count}/{total_count}")
-        failed_asr_models = {
-            model_id: status.get("error")
-            for model_id, status in asr_results.items()
-            if not status.get("loaded") and status.get("error")
-        }
-        if failed_asr_models:
-            logger.error(f"Worker [{worker_id}] ASR模型预加载失败详情: {failed_asr_models}")
-            emit_boot_event("error", phase="preload", message=f"ASR模型预加载失败详情: {failed_asr_models}")
-
-    except Exception as e:
-        logger.error(f"Worker [{worker_id}] 模型预加载失败: {e}")
-        logger.warning(f"Worker [{worker_id}] 模型将在首次使用时加载")
-        emit_boot_event("error", phase="worker", message=f"模型预加载失败: {e}")
+    asr_results = preload_result.get("asr_models", {})
+    loaded_count = sum(1 for r in asr_results.values() if r.get("loaded"))
+    total_count = len(asr_results)
+    logger.info(f"Worker [{worker_id}] 模型加载完成: {loaded_count}/{total_count}")
+    failed_asr_models = {
+        model_id: status.get("error")
+        for model_id, status in asr_results.items()
+        if not status.get("loaded") and status.get("error")
+    }
+    if failed_asr_models:
+        logger.error(f"Worker [{worker_id}] ASR模型预加载失败详情: {failed_asr_models}")
+        emit_boot_event("error", phase="preload", message=f"ASR模型预加载失败详情: {failed_asr_models}")
+        raise RuntimeError(f"ASR model preload failed: {failed_asr_models}")
 
     logger.info(f"Worker [{worker_id}] 已就绪")
     emit_boot_event("ready", phase="worker", message=f"Worker [{worker_id}] 已就绪")

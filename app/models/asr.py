@@ -21,27 +21,17 @@ from .common import (
 class ASRQueryParams(BaseModel):
     """ASR接口查询参数模型"""
 
-    # 1. 兼容参数
-    model_id: Optional[str] = Field(
-        default=None,
-        description="兼容参数，将被忽略。离线路径固定使用服务当前启用的唯一 Qwen3-ASR 模型",
-        max_length=64,
-    )
-
-    # 2. 输入源
     audio_address: Optional[str] = Field(
         default=None,
         description="音频文件下载链接（HTTP/HTTPS），格式自动识别",
         max_length=512,
     )
 
-    # 3. 音频属性
     sample_rate: Optional[SampleRate] = Field(
         default=SampleRate.RATE_16000,
         description=f"音频采样率（Hz）。支持: {', '.join(map(str, SampleRate.get_enums()))}",
     )
 
-    # 4. 功能开关
     enable_speaker_diarization: Optional[bool] = Field(
         default=True,
         description="是否启用说话人分离。启用后响应会包含 speaker_id",
@@ -52,7 +42,6 @@ class ASRQueryParams(BaseModel):
         description="是否返回字词级时间戳（默认关闭；Qwen CUDA vLLM / CPU Rust 会在启用时自动调用 forced aligner）",
     )
 
-    # 5. 增强选项
     vocabulary_id: Optional[str] = Field(
         default=None,
         description="热词字符串，格式：热词1 权重1 热词2 权重2（如：阿里巴巴 20 腾讯 15）",

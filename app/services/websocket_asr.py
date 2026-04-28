@@ -1,39 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-WebSocket ASR 服务 - 阿里云实时语音识别协议实现
-
-本服务实现了阿里云WebSocket实时语音识别协议，使用FunASR开源模型替代阿里云官方API。
-
-【重要限制】
-由于FunASR开源模型的能力限制，以下字段未实现:
-- words字段: 词级别的时间戳信息
-- confidence字段: 识别结果的置信度
-
-【VAD与句子边界检测机制】
-1. VAD机制: 完全依赖FunASR模型内置的VAD能力
-2. SentenceBegin触发: 首次收到非空识别结果时
-3. SentenceEnd触发:
-   - 连续N次收到空识别结果(基于max_sentence_silence参数)
-   - 接收到静音帧（仅在正在识别的句子过程中）
-   - 收到StopTranscription指令
-4. 中间结果去重: 自动去除FunASR流式识别中的重复文本
-5. 缓存刷新: 句子结束时强制flush模型缓存，确保获取完整内容
-6. TranscriptionResultChanged结果: 返回当前句子从开始到现在的累计完整文本（去重拼接后的结果）
-
-【标点恢复机制】
-1. 流式识别中间结果：
-   - ASR_ENABLE_REALTIME_PUNC=True时，使用实时标点模型添加句内标点（逗号等）
-   - ASR_ENABLE_REALTIME_PUNC=False时（默认），中间结果不添加标点
-2. 句子结束时：始终使用离线标点模型对无标点文本添加完整标点（包括句末标点）
-3. 双轨处理：同时维护带标点版本（展示用）和无标点版本（最终标点恢复用）
-"""
+"""Aliyun-compatible FunASR websocket service."""
 
 import json
 import logging
 import numpy as np
 import soundfile as sf
 import io
-from typing import Optional, Dict, TYPE_CHECKING, cast
+from contextlib import suppress
+from typing import Any, Optional, Dict, TYPE_CHECKING, cast
 from enum import IntEnum
 
 from fastapi import WebSocketDisconnect
@@ -68,7 +42,6 @@ class ConnectionState(IntEnum):
 
     READY = 1
     STARTED = 2
-    COMPLETED = 3
 
 
 class AliyunWebSocketASRService:
@@ -152,26 +125,19 @@ class AliyunWebSocketASRService:
                                 transcription_params = self._parse_start_transcription(
                                     data, task_id
                                 )
-                                if transcription_params:
-                                    task_id = message_task_id or task_id
-                                    await self._send_transcription_started(
-                                        websocket, task_id, session_id
-                                    )
-                                    state = ConnectionState.STARTED
-                                    sentence_index = 0
-                                    audio_time = 0
-                                    sentence_active = False
-                                    sentence_start_time = 0
-                                    last_sentence_text = ""
-                                    sentence_texts = []
-                                    sentence_texts_raw = []
-                                    empty_result_count = 0
-                                else:
-                                    await self._send_task_failed(
-                                        websocket,
-                                        task_id,
-                                        "Invalid StartTranscription parameters",
-                                    )
+                                task_id = message_task_id or task_id
+                                await self._send_transcription_started(
+                                    websocket, task_id, session_id
+                                )
+                                state = ConnectionState.STARTED
+                                sentence_index = 0
+                                audio_time = 0
+                                sentence_active = False
+                                sentence_start_time = 0
+                                last_sentence_text = ""
+                                sentence_texts = []
+                                sentence_texts_raw = []
+                                empty_result_count = 0
                             else:
                                 await self._send_task_failed(
                                     websocket, task_id, "Connection already started"
@@ -219,7 +185,6 @@ class AliyunWebSocketASRService:
                                 await self._send_transcription_completed(
                                     websocket, task_id
                                 )
-                                state = ConnectionState.COMPLETED
                                 logger.info(f"[{task_id}] 识别完成")
                                 break
                             else:
@@ -265,67 +230,31 @@ class AliyunWebSocketASRService:
                                 audio_bytes, audio_format, sample_rate, task_id
                             )
 
-                            # 检查缓冲区大小限制
-                            if len(audio_buffer) + len(incoming_audio) > max_buffer_size:
-                                # 缓冲区超过限制，丢弃旧数据（保留最近的音频）
-                                excess_samples = len(audio_buffer) + len(incoming_audio) - max_buffer_size
-                                if excess_samples >= len(audio_buffer):
-                                    # 如果新数据已经超过限制，只保留最新的max_buffer_size样本
-                                    logger.warning(
-                                        f"[{task_id}] WebSocket音频缓冲区超过限制 ({max_buffer_size} samples)，"
-                                        f"丢弃所有旧数据"
-                                    )
-                                    audio_buffer = np.array([], dtype=np.float32)
-                                else:
-                                    # 丢弃旧数据，保留最近的音频
-                                    logger.warning(
-                                        f"[{task_id}] WebSocket音频缓冲区超过限制，丢弃 {excess_samples} samples 旧数据"
-                                    )
-                                    audio_buffer = audio_buffer[excess_samples:]
-
                             audio_buffer = np.concatenate([audio_buffer, incoming_audio])
-
-                            # 采样打印：每10次打印一次，避免高频日志
-                            if hasattr(self, '_audio_receive_counter'):
-                                self._audio_receive_counter += 1
-                            else:
-                                self._audio_receive_counter = 1
-                            if self._audio_receive_counter % 10 == 1:
-                                logger.debug(
-                                    f"[{task_id}] 收到音频 {len(incoming_audio)} samples, "
-                                    f"缓冲区共 {len(audio_buffer)} samples"
+                            if len(audio_buffer) > max_buffer_size:
+                                logger.warning(
+                                    f"[{task_id}] WebSocket音频缓冲区超过限制，保留最近 {max_buffer_size} samples"
                                 )
+                                audio_buffer = audio_buffer[-max_buffer_size:]
 
-                            # 定义标准chunk大小（支持多种，对应不同的chunk_stride）
-                            # 3840 samples = 240ms @ 16kHz (chunk_stride=4, 低延迟)
-                            # 9600 samples = 600ms @ 16kHz (chunk_stride=10, 高准确率)
                             standard_chunk_sizes = [3840, 9600]
-
-                            # 根据当前缓冲区大小选择最合适的chunk_size
-                            # 策略：选择能完整处理的最大chunk，减少缓冲区残留
                             selected_chunk_size = None
                             for chunk_size in sorted(standard_chunk_sizes, reverse=True):
                                 if len(audio_buffer) >= chunk_size:
                                     selected_chunk_size = chunk_size
                                     break
 
-                            # 如果缓冲区不足最小chunk，跳过本次处理（不打印日志，避免高频噪音）
                             if selected_chunk_size is None:
                                 continue
 
-                            # 处理缓冲区中所有完整的chunk
                             while len(audio_buffer) >= selected_chunk_size:
                                 chunk_start_time = audio_time
 
-                                # 提取标准大小的chunk
                                 audio_chunk = audio_buffer[:selected_chunk_size]
                                 audio_buffer = audio_buffer[selected_chunk_size:]
 
-                                # ========== 远场声音过滤 ==========
-                                # 动态阈值：句子活跃时降低阈值，避免句子中间音量波动导致丢帧
                                 effective_rms_threshold = settings.ASR_NEARFIELD_RMS_THRESHOLD
                                 if sentence_active:
-                                    # 句子进行中，降低阈值容忍音量波动
                                     effective_rms_threshold = settings.ASR_NEARFIELD_RMS_THRESHOLD * 0.6
 
                                 is_nearfield, filter_metrics = is_nearfield_voice(
@@ -335,58 +264,45 @@ class AliyunWebSocketASRService:
                                     enable_filter=settings.ASR_ENABLE_NEARFIELD_FILTER,
                                 )
 
-                                # 判断是否需要送入ASR处理
+                                is_sentence_end = False
                                 if not is_nearfield:
-                                    # 远场声音：跳过ASR，但如果当前有活跃句子，需要继续计数以触发句子结束
                                     if logger.isEnabledFor(logging.DEBUG):
                                         logger.debug(
                                             f"[{task_id}] 远场声音已过滤 - "
                                             f"RMS: {filter_metrics['rms_energy']:.6f} (阈值: {effective_rms_threshold:.6f})"
                                         )
 
-                                    # 更新音频时间
                                     chunk_duration_ms = int(len(audio_chunk) / sample_rate * 1000)
                                     audio_time += chunk_duration_ms
 
-                                    # 如果当前有活跃句子，将远场音频视为空结果进行计数
                                     if sentence_active:
                                         result_text = ""
                                         result_text_raw = ""
-                                        is_sentence_end = False
                                         is_silence_frame = False
-                                        # 不跳过，继续后续的句子结束判断
                                     else:
-                                        # 没有活跃句子，直接跳过
                                         continue
 
                                 else:
-                                    # 近场声音，正常送入ASR处理
                                     if logger.isEnabledFor(logging.DEBUG) and filter_metrics.get('enabled', True):
                                         logger.debug(
                                             f"[{task_id}] 近场声音检测通过 - "
                                             f"RMS: {filter_metrics['rms_energy']:.6f} (阈值: {effective_rms_threshold:.6f})"
                                         )
 
-                                    # 将float32数组转换为PCM bytes (int16)
-                                    audio_chunk_int16 = (audio_chunk * 32768.0).astype(np.int16)
-                                    audio_bytes_chunk = audio_chunk_int16.tobytes()
-
                                     (
                                         result_text,
                                         result_text_raw,
-                                        is_sentence_end,
                                         is_silence_frame,
                                         audio_cache,
                                         audio_time,
                                     ) = await self._process_audio_chunk(
-                                        audio_bytes_chunk,
+                                        audio_chunk,
                                         audio_cache,
                                         transcription_params,
                                         audio_time,
                                         task_id,
                                         is_final=False,
                                     )
-                                # ========== 远场过滤结束 ==========
 
                                 max_empty_count = max(
                                     3,
@@ -426,11 +342,10 @@ class AliyunWebSocketASRService:
                                         _,
                                         flush_result_text_raw,
                                         _,
-                                        _,
                                         audio_cache,
                                         audio_time,
                                     ) = await self._process_audio_chunk(
-                                        b"",
+                                        np.array([], dtype=np.float32),
                                         audio_cache,
                                         transcription_params,
                                         audio_time,
@@ -551,38 +466,28 @@ class AliyunWebSocketASRService:
                 logger.warning(f"[{task_id}] WebSocket连接已断开: {e}")
             else:
                 logger.error(f"[{task_id}] WebSocket ASR连接处理异常: {e}")
-                try:
+                with suppress(Exception):
                     await self._send_task_failed(websocket, task_id, str(e))
-                except:
-                    pass
 
-    def _parse_start_transcription(self, data: dict, task_id: str) -> Optional[dict]:
+    def _parse_start_transcription(self, data: dict, task_id: str) -> dict:
         """解析StartTranscription消息参数"""
-        try:
-            payload = data.get("payload", {})
-
-            params = {
-                "format": payload.get("format", "pcm"),
-                "sample_rate": payload.get("sample_rate", 16000),
-                "enable_intermediate_result": payload.get(
-                    "enable_intermediate_result", True
-                ),
-                "enable_punctuation_prediction": payload.get(
-                    "enable_punctuation_prediction", True
-                ),
-                "enable_inverse_text_normalization": payload.get(
-                    "enable_inverse_text_normalization", True
-                ),
-                "max_sentence_silence": payload.get("max_sentence_silence", 800),
-                "enable_words": payload.get("enable_words", False),
-            }
-
-            logger.info(f"[{task_id}] StartTranscription参数解析成功: {params}")
-            return params
-
-        except Exception as e:
-            logger.error(f"[{task_id}] 解析StartTranscription失败: {e}")
-            return None
+        payload = data.get("payload", {})
+        params = {
+            "format": payload.get("format", "pcm"),
+            "sample_rate": payload.get("sample_rate", 16000),
+            "enable_intermediate_result": payload.get(
+                "enable_intermediate_result", True
+            ),
+            "enable_punctuation_prediction": payload.get(
+                "enable_punctuation_prediction", True
+            ),
+            "enable_inverse_text_normalization": payload.get(
+                "enable_inverse_text_normalization", True
+            ),
+            "max_sentence_silence": payload.get("max_sentence_silence", 800),
+        }
+        logger.info(f"[{task_id}] StartTranscription参数解析成功: {params}")
+        return params
 
     def _is_silence_frame(
         self, audio_array: np.ndarray, threshold: float = 0.001
@@ -612,18 +517,17 @@ class AliyunWebSocketASRService:
 
     async def _process_audio_chunk(
         self,
-        audio_bytes: bytes,
+        audio_array: np.ndarray,
         cache: Dict,
         params: dict,
         current_audio_time: int,
         task_id: str,
         is_final: bool = False,
-    ) -> tuple[str, str, bool, bool, Dict, int]:
-        """处理音频块，返回带标点文本、无标点文本、是否句子结束、是否静音帧、缓存、音频时长"""
+    ) -> tuple[str, str, bool, Dict, int]:
+        """处理音频块，返回带标点文本、无标点文本、是否静音帧、缓存、音频时长"""
         try:
             asr_engine = self._ensure_asr_engine()
 
-            audio_format = params.get("format", "pcm").lower()
             sample_rate_value = params.get("sample_rate", 16000)
             if isinstance(sample_rate_value, (list, tuple)):
                 sample_rate_value = sample_rate_value[0] if sample_rate_value else 16000
@@ -637,19 +541,6 @@ class AliyunWebSocketASRService:
                 sample_rate = int(sample_rate_value)
             except (TypeError, ValueError):
                 raise Exception(f"无效的采样率类型: {sample_rate_value}")
-
-            if audio_format == "pcm":
-                audio_array = (
-                    np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32)
-                    / 32768.0
-                )
-            elif audio_format == "wav":
-                audio_io = io.BytesIO(audio_bytes)
-                audio_array, sr = sf.read(audio_io)
-                if sr != sample_rate:
-                    logger.warning(f"WAV采样率 {sr} 与配置 {sample_rate} 不一致")
-            else:
-                raise Exception(f"暂不支持的音频格式: {audio_format}")
 
             audio_array = np.asarray(audio_array, dtype=np.float32)
 
@@ -716,7 +607,6 @@ class AliyunWebSocketASRService:
 
             result_text_raw = ""
             result_text_with_punc = ""
-            is_sentence_end = False
 
             if result and len(result) > 0:
                 result_text_raw = result[0].get("text", "").strip()
@@ -751,19 +641,12 @@ class AliyunWebSocketASRService:
                         params["_disable_realtime_punc"] = True
                         logger.warning(f"[{task_id}] 实时标点恢复失败: {e}")
 
-                # 注释掉句末标点符号触发句子结束的逻辑，避免与静音帧检测冲突
-                # if result_text_with_punc and self._is_sentence_boundary(
-                #     result_text_with_punc
-                # ):
-                #     is_sentence_end = True
-
             if result_text_with_punc:
                 logger.debug(f"[{task_id}] 识别: '{result_text_with_punc}'")
 
             return (
                 result_text_with_punc,
                 result_text_raw,
-                is_sentence_end,
                 is_silence,
                 cache,
                 new_audio_time,
@@ -806,13 +689,6 @@ class AliyunWebSocketASRService:
             logger.warning(f"[{task_id}] 标点恢复失败: {e}")
             return text
 
-    def _is_sentence_boundary(self, text: str) -> bool:
-        """判断是否为句子边界（包含句末标点）"""
-        if not text:
-            return False
-        sentence_endings = ["。", "！", "？", ".", "!", "?", "…"]
-        return any(text.endswith(ending) for ending in sentence_endings)
-
     def _convert_audio_bytes_to_array(
         self, audio_bytes: bytes, audio_format: str, sample_rate: int, task_id: str
     ) -> np.ndarray:
@@ -842,77 +718,76 @@ class AliyunWebSocketASRService:
 
         return np.asarray(audio_array, dtype=np.float32)
 
-    async def _send_transcription_started(
-        self, websocket, task_id: str, session_id: str
-    ):
-        """发送TranscriptionStarted响应"""
+    def _build_event(
+        self,
+        task_id: str,
+        name: str,
+        payload: Optional[dict[str, Any]] = None,
+        status: int = AliyunASRStatus.SUCCESS,
+        status_text: Optional[str] = None,
+    ) -> dict[str, Any]:
         response = {
             "header": {
                 "message_id": AliyunASRWSHeader.generate_message_id(),
                 "task_id": task_id,
                 "namespace": AliyunASRNamespace.SPEECH_TRANSCRIBER,
-                "name": AliyunASRMessageName.TRANSCRIPTION_STARTED,
-                "status": AliyunASRStatus.SUCCESS,
-                "status_message": "GATEWAY|SUCCESS|Success.",
-            },
-            "payload": {
-                "session_id": session_id,
-            },
+                "name": name,
+                "status": status,
+            }
         }
+        if status == AliyunASRStatus.SUCCESS:
+            response["header"]["status_message"] = "GATEWAY|SUCCESS|Success."
+        elif status_text:
+            response["header"]["status_text"] = status_text
+        if payload is not None:
+            response["payload"] = payload
+        return response
+
+    async def _send_event(self, websocket, task_id: str, response: dict) -> None:
         try:
             await websocket.send_text(json.dumps(response, ensure_ascii=False))
         except Exception as e:
-            logger.debug(f"[{task_id}] 发送TranscriptionStarted失败，客户端可能已断开: {e}")
+            logger.debug(f"[{task_id}] 发送WebSocket事件失败，客户端可能已断开: {e}")
             raise WebSocketDisconnect()
+
+    async def _send_transcription_started(
+        self, websocket, task_id: str, session_id: str
+    ):
+        await self._send_event(
+            websocket,
+            task_id,
+            self._build_event(
+                task_id,
+                AliyunASRMessageName.TRANSCRIPTION_STARTED,
+                {"session_id": session_id},
+            ),
+        )
 
     async def _send_sentence_begin(
         self, websocket, task_id: str, index: int, time: int
     ):
-        """发送SentenceBegin响应"""
-        response = {
-            "header": {
-                "message_id": AliyunASRWSHeader.generate_message_id(),
-                "task_id": task_id,
-                "namespace": AliyunASRNamespace.SPEECH_TRANSCRIBER,
-                "name": AliyunASRMessageName.SENTENCE_BEGIN,
-                "status": AliyunASRStatus.SUCCESS,
-                "status_message": "GATEWAY|SUCCESS|Success.",
-            },
-            "payload": {
-                "index": index,
-                "time": time,
-            },
-        }
-        try:
-            await websocket.send_text(json.dumps(response, ensure_ascii=False))
-        except Exception as e:
-            logger.debug(f"[{task_id}] 发送SentenceBegin失败，客户端可能已断开: {e}")
-            raise WebSocketDisconnect()
+        await self._send_event(
+            websocket,
+            task_id,
+            self._build_event(
+                task_id,
+                AliyunASRMessageName.SENTENCE_BEGIN,
+                {"index": index, "time": time},
+            ),
+        )
 
     async def _send_transcription_result_changed(
         self, websocket, task_id: str, index: int, time: int, result: str
     ):
-        """发送TranscriptionResultChanged响应（中间结果）"""
-        response = {
-            "header": {
-                "message_id": AliyunASRWSHeader.generate_message_id(),
-                "task_id": task_id,
-                "namespace": AliyunASRNamespace.SPEECH_TRANSCRIBER,
-                "name": AliyunASRMessageName.TRANSCRIPTION_RESULT_CHANGED,
-                "status": AliyunASRStatus.SUCCESS,
-                "status_message": "GATEWAY|SUCCESS|Success.",
-            },
-            "payload": {
-                "index": index,
-                "time": time,
-                "result": result,
-            },
-        }
-        try:
-            await websocket.send_text(json.dumps(response, ensure_ascii=False))
-        except Exception as e:
-            logger.debug(f"[{task_id}] 发送TranscriptionResultChanged失败，客户端可能已断开: {e}")
-            raise WebSocketDisconnect()
+        await self._send_event(
+            websocket,
+            task_id,
+            self._build_event(
+                task_id,
+                AliyunASRMessageName.TRANSCRIPTION_RESULT_CHANGED,
+                {"index": index, "time": time, "result": result},
+            ),
+        )
 
     async def _send_sentence_end(
         self,
@@ -924,66 +799,44 @@ class AliyunWebSocketASRService:
         begin_time: int = 0,
         enable_itn: bool = False,
     ):
-        """发送SentenceEnd响应"""
         if enable_itn and result:
             logger.debug(f"[{task_id}] 应用ITN: {result}")
             result = apply_itn_to_text(result)
             logger.debug(f"[{task_id}] ITN结果: {result}")
 
-        response = {
-            "header": {
-                "message_id": AliyunASRWSHeader.generate_message_id(),
-                "task_id": task_id,
-                "namespace": AliyunASRNamespace.SPEECH_TRANSCRIBER,
-                "name": AliyunASRMessageName.SENTENCE_END,
-                "status": AliyunASRStatus.SUCCESS,
-                "status_message": "GATEWAY|SUCCESS|Success.",
-            },
-            "payload": {
-                "index": index,
-                "time": time,
-                "result": result,
-                "begin_time": begin_time,
-            },
-        }
-        try:
-            await websocket.send_text(json.dumps(response, ensure_ascii=False))
-        except Exception as e:
-            logger.debug(f"[{task_id}] 发送SentenceEnd失败，客户端可能已断开: {e}")
-            raise WebSocketDisconnect()
+        await self._send_event(
+            websocket,
+            task_id,
+            self._build_event(
+                task_id,
+                AliyunASRMessageName.SENTENCE_END,
+                {
+                    "index": index,
+                    "time": time,
+                    "result": result,
+                    "begin_time": begin_time,
+                },
+            ),
+        )
 
     async def _send_transcription_completed(self, websocket, task_id: str):
-        """发送TranscriptionCompleted响应"""
-        response = {
-            "header": {
-                "message_id": AliyunASRWSHeader.generate_message_id(),
-                "task_id": task_id,
-                "namespace": AliyunASRNamespace.SPEECH_TRANSCRIBER,
-                "name": AliyunASRMessageName.TRANSCRIPTION_COMPLETED,
-                "status": AliyunASRStatus.SUCCESS,
-                "status_message": "GATEWAY|SUCCESS|Success.",
-            },
-        }
-        try:
-            await websocket.send_text(json.dumps(response, ensure_ascii=False))
-        except Exception as e:
-            logger.debug(f"[{task_id}] 发送TranscriptionCompleted失败，客户端可能已断开: {e}")
-            raise WebSocketDisconnect()
+        await self._send_event(
+            websocket,
+            task_id,
+            self._build_event(task_id, AliyunASRMessageName.TRANSCRIPTION_COMPLETED),
+        )
 
     async def _send_task_failed(self, websocket, task_id: str, reason: str):
-        """发送TaskFailed响应"""
-        response = {
-            "header": {
-                "namespace": AliyunASRNamespace.SPEECH_TRANSCRIBER,
-                "name": AliyunASRMessageName.TASK_FAILED,
-                "status": AliyunASRStatus.TASK_FAILED,
-                "message_id": AliyunASRWSHeader.generate_message_id(),
-                "task_id": task_id,
-                "status_text": reason,
-            }
-        }
-        try:
-            await websocket.send_text(json.dumps(response, ensure_ascii=False))
+        with suppress(Exception):
+            await websocket.send_text(
+                json.dumps(
+                    self._build_event(
+                        task_id,
+                        AliyunASRMessageName.TASK_FAILED,
+                        status=AliyunASRStatus.TASK_FAILED,
+                        status_text=reason,
+                    ),
+                    ensure_ascii=False,
+                )
+            )
             logger.error(f"[{task_id}] 发送TaskFailed: {reason}")
-        except:
-            pass

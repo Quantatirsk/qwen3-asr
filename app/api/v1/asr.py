@@ -35,10 +35,13 @@ from ...models.asr import (
 )
 from ...utils.common import generate_task_id
 from ...services.asr.manager import get_model_manager
-from ...services.asr.runtime import OfflineASRRequest, get_runtime_router
+from ...services.asr.runtime import get_runtime_router
 from ...services.asr.audio_validation import validate_sample_rate
-from ...services.asr.model_selection import resolve_offline_model_id
-from ...services.audio import get_audio_service
+from ...services.asr.offline_transcription_service import (
+    OfflineTranscriptionOptions,
+    PreparedAudio,
+    get_offline_transcription_service,
+)
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -105,26 +108,12 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
 如果请求体和 `audio_address` 同时存在，服务会优先使用请求体，并忽略 `audio_address`。
 
 ## 注意事项
-- 离线路径固定使用服务当前启用的 Qwen3-ASR 模型；`model_id` 仅为兼容参数，传入后会被忽略
+- 离线路径固定使用服务当前启用的 Qwen3-ASR 模型；通过 `QWEN3_ASR_MODEL` 控制型号
 - `vocabulary_id` 参数用于传递热词，格式：`热词1 权重1 热词2 权重2`（如：`阿里巴巴 20 腾讯 15`）
 - 音频会自动转换为 16kHz 采样率进行识别
 """,
     openapi_extra={
         "parameters": [
-            # 1. 兼容参数
-            {
-                "name": "model_id",
-                "in": "query",
-                "required": False,
-                "schema": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "example": "qwen3-asr-0.6b",
-                },
-                "description": "兼容参数，将被忽略。离线路径固定使用服务当前启用的唯一 Qwen3-ASR 模型",
-                "deprecated": True,
-            },
-            # 2. 输入源
             {
                 "name": "audio_address",
                 "in": "query",
@@ -214,21 +203,16 @@ async def asr_transcribe(
 ) -> JSONResponse:
     """语音识别API端点"""
     task_id = generate_task_id()
-    audio_path = None
-    normalized_audio_path = None
+    prepared_audio: Optional[PreparedAudio] = None
 
     # 性能计时
     request_start_time = time.time()
 
     # 记录请求开始（此时文件已上传完成）
     content_length = request.headers.get("content-length", "unknown")
-    ignored_model_id = request.query_params.get("model_id")
     logger.info(f"[{task_id}] 收到ASR请求, content_length={content_length}")
-    if ignored_model_id:
-        logger.info(f"[{task_id}] 忽略客户端传入的离线 model_id={ignored_model_id}")
 
-    # 获取音频处理服务
-    audio_service = get_audio_service()
+    transcription_service = get_offline_transcription_service()
 
     try:
         # 验证请求头部（鉴权）
@@ -238,47 +222,23 @@ async def asr_transcribe(
 
         # 使用音频服务处理音频
         target_sample_rate = int(params.sample_rate) if params.sample_rate else 16000
-        normalized_audio_path, _audio_duration, audio_path = await audio_service.process_from_request(
+        prepared_audio = await transcription_service.prepare_from_request(
             request=request,
             audio_address=params.audio_address,
             task_id=task_id,
             sample_rate=target_sample_rate,
         )
 
-        # 执行语音识别
-        logger.info(f"[{task_id}] 正在加载离线ASR模型...")
-        runtime_router = get_runtime_router()
-        resolved_model_id = resolve_offline_model_id(ignored_model_id)
-        logger.info(f"[{task_id}] ASR模型加载完成: {resolved_model_id}")
-
-        # 准备热词（vocabulary_id 参数直接传递热词字符串）
-        hotwords = params.vocabulary_id or ""
-
-        # 使用线程池执行模型推理，避免阻塞事件循环
-        # 使用长音频识别方法，自动处理超过60秒的音频
-        # 默认开启：标点预测、ITN（数字转换）
         logger.info(f"[{task_id}] 开始调用 transcribe_long_audio (enable_speaker_diarization={params.enable_speaker_diarization})...")
-
-        asr_result = await runtime_router.run_offline(
-            OfflineASRRequest(
-                model_id=resolved_model_id,
-                audio_path=normalized_audio_path,
-                hotwords=hotwords,
-                enable_punctuation=True,
-                enable_itn=True,
+        asr_result = await transcription_service.transcribe(
+            prepared_audio,
+            OfflineTranscriptionOptions(
                 sample_rate=int(params.sample_rate or SampleRate.RATE_16000),
-                enable_speaker_diarization=(
-                    params.enable_speaker_diarization
-                    if params.enable_speaker_diarization is not None
-                    else True
-                ),
-                word_timestamps=(
-                    params.word_timestamps
-                    if params.word_timestamps is not None
-                    else False
-                ),
+                hotwords=params.vocabulary_id or "",
+                enable_speaker_diarization=params.enable_speaker_diarization is not False,
+                word_timestamps=params.word_timestamps is True,
                 task_id=task_id,
-            )
+            ),
         )
 
         logger.info(f"[{task_id}] 识别完成，共 {len(asr_result.segments)} 个分段，总字符: {len(asr_result.text)}")
@@ -352,8 +312,7 @@ async def asr_transcribe(
         return JSONResponse(content=response_data, headers={"task_id": task_id})
 
     finally:
-        # 清理临时文件
-        audio_service.cleanup(audio_path, normalized_audio_path)
+        transcription_service.cleanup(prepared_audio)
 
 
 @router.get(
