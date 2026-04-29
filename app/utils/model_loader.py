@@ -112,6 +112,7 @@ class ModelIntegritySpec:
     description: str
     path: Path
     required_patterns: tuple[str, ...]
+    alternative_required_patterns: tuple[tuple[str, ...], ...] = ()
     min_total_size_bytes: int = 0
 
 
@@ -129,13 +130,28 @@ def _find_pattern_matches(root: Path, pattern: str) -> list[Path]:
     return [path for path in root.glob(pattern) if path.is_file()]
 
 
+def _find_missing_patterns(root: Path, patterns: tuple[str, ...]) -> list[str]:
+    return [pattern for pattern in patterns if not _find_pattern_matches(root, pattern)]
+
+
+def _format_alternative_patterns(pattern_groups: tuple[tuple[str, ...], ...]) -> str:
+    return " OR ".join(" + ".join(group) for group in pattern_groups)
+
+
 def _check_model_integrity_spec(spec: ModelIntegritySpec) -> dict[str, Any]:
     if not spec.path.exists() or not spec.path.is_dir():
         return {
             "description": spec.description,
             "path": str(spec.path),
             "ok": False,
-            "missing_patterns": list(spec.required_patterns),
+            "missing_patterns": [
+                *spec.required_patterns,
+                *(
+                    [_format_alternative_patterns(spec.alternative_required_patterns)]
+                    if spec.alternative_required_patterns
+                    else []
+                ),
+            ],
             "total_size_bytes": 0,
             "reason": "directory_missing",
         }
@@ -143,10 +159,17 @@ def _check_model_integrity_spec(spec: ModelIntegritySpec) -> dict[str, Any]:
     files = [path for path in spec.path.rglob("*") if path.is_file()]
     total_size_bytes = sum(path.stat().st_size for path in files)
 
-    missing_patterns = [
-        pattern for pattern in spec.required_patterns
-        if not _find_pattern_matches(spec.path, pattern)
-    ]
+    missing_patterns = _find_missing_patterns(spec.path, spec.required_patterns)
+    if not missing_patterns and spec.alternative_required_patterns:
+        alternative_missing_patterns = [
+            _find_missing_patterns(spec.path, group)
+            for group in spec.alternative_required_patterns
+        ]
+        if all(alternative_missing_patterns):
+            missing_patterns = [
+                _format_alternative_patterns(spec.alternative_required_patterns)
+            ]
+
     if missing_patterns:
         return {
             "description": spec.description,
@@ -183,6 +206,7 @@ def _build_modelscope_spec(
     required_patterns: tuple[str, ...],
     *,
     min_total_size_bytes: int,
+    alternative_required_patterns: tuple[tuple[str, ...], ...] = (),
 ) -> ModelIntegritySpec:
     from ..core.config import settings
 
@@ -190,6 +214,7 @@ def _build_modelscope_spec(
         description=description,
         path=Path(settings.MODELSCOPE_PATH) / model_id,
         required_patterns=required_patterns,
+        alternative_required_patterns=alternative_required_patterns,
         min_total_size_bytes=min_total_size_bytes,
     )
 
@@ -200,14 +225,22 @@ def _build_huggingface_spec(
     required_patterns: tuple[str, ...],
     *,
     min_total_size_bytes: int,
+    alternative_required_patterns: tuple[tuple[str, ...], ...] = (),
 ) -> ModelIntegritySpec:
     org, model = model_id.split("/", 1)
     return ModelIntegritySpec(
         description=description,
-        path=Path.home() / ".cache" / "huggingface" / "hub" / f"models--{org}--{model}",
+        path=Path.home()
+        / ".cache"
+        / "huggingface"
+        / "hub"
+        / f"models--{org}--{model}",
         required_patterns=required_patterns,
+        alternative_required_patterns=alternative_required_patterns,
         min_total_size_bytes=min_total_size_bytes,
     )
+
+
 def _should_check_qwen_forced_aligner(
     resolved_device: str,
     using_cpu_qwen_rust: bool,
@@ -215,6 +248,7 @@ def _should_check_qwen_forced_aligner(
     """Return True when startup integrity should require Qwen forced aligner files."""
     _ = (resolved_device, using_cpu_qwen_rust)
     return True
+
 
 def _build_required_model_integrity_specs() -> list[ModelIntegritySpec]:
     from ..core.config import settings
@@ -243,6 +277,7 @@ def _build_required_model_integrity_specs() -> list[ModelIntegritySpec]:
                 asset.model_id,
                 asset.description,
                 asset.required_patterns,
+                alternative_required_patterns=asset.alternative_required_patterns,
                 min_total_size_bytes=asset.min_total_size_bytes,
             )
         )
@@ -258,6 +293,7 @@ def _build_required_model_integrity_specs() -> list[ModelIntegritySpec]:
                 asset.model_id,
                 asset.description,
                 asset.required_patterns,
+                alternative_required_patterns=asset.alternative_required_patterns,
                 min_total_size_bytes=asset.min_total_size_bytes,
             )
         )

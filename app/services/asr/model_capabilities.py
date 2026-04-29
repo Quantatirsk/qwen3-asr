@@ -21,6 +21,7 @@ class ModelAsset:
     description: str
     revision: Optional[str] = None
     required_patterns: tuple[str, ...] = ()
+    alternative_required_patterns: tuple[tuple[str, ...], ...] = ()
     min_total_size_bytes: int = 0
 
 
@@ -138,7 +139,14 @@ def get_enabled_qwen_huggingface_assets(
                 source="huggingface",
                 model_id=offline_model,
                 description=f"{model_config.name} Offline",
-                required_patterns=("snapshots/*/config.json", "snapshots/*/model.safetensors"),
+                required_patterns=("snapshots/*/config.json",),
+                alternative_required_patterns=(
+                    ("snapshots/*/model.safetensors",),
+                    (
+                        "snapshots/*/model.safetensors.index.json",
+                        "snapshots/*/model-*.safetensors",
+                    ),
+                ),
                 min_total_size_bytes=500_000_000,
             )
         )
