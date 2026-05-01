@@ -7,6 +7,7 @@ import ctypes
 import json
 import logging
 import os
+import platform
 import re
 import sys
 from pathlib import Path
@@ -88,11 +89,43 @@ def is_qwenasr_rust_available() -> bool:
     return resolve_qwenasr_library_path() is not None
 
 
+def validate_qwenasr_cpu_features() -> None:
+    if platform.machine().lower() not in {"amd64", "x86_64"}:
+        return
+
+    flags = _read_linux_cpu_flags()
+    if not flags:
+        return
+
+    missing = [flag for flag in ("avx2", "fma") if flag not in flags]
+    if missing:
+        raise RuntimeError(
+            "QwenASR Rust backend requires x86_64 CPU features: avx2, fma. "
+            f"Missing: {', '.join(missing)}. Use a newer CPU host or rebuild the "
+            "Rust backend with scalar x86 kernels."
+        )
+
+
 def pick_cpu_qwen_model(all_available_models: list[str]) -> Optional[str]:
     for model_id in ["qwen3-asr-0.6b", "qwen3-asr-1.7b"]:
         if model_id in all_available_models:
             return model_id
     return None
+
+
+def _read_linux_cpu_flags() -> set[str]:
+    cpuinfo = Path("/proc/cpuinfo")
+    if not cpuinfo.exists():
+        return set()
+
+    flags: set[str] = set()
+    for line in cpuinfo.read_text(encoding="utf-8", errors="ignore").splitlines():
+        key, _, value = line.partition(":")
+        if key.strip().lower() in {"flags", "features"}:
+            flags.update(value.strip().lower().split())
+            if flags:
+                break
+    return flags
 
 
 def _resolve_hf_snapshot_dir(model_ref: str, cache_root: Path) -> Optional[Path]:
@@ -286,6 +319,7 @@ class QwenASRRustBackend:
     """Thin Python wrapper around the QwenASR C API."""
 
     def __init__(self, model_path: str, num_threads: int = 0, verbosity: int = 0):
+        validate_qwenasr_cpu_features()
         self._lib = load_qwenasr_library()
         self.model_dir = resolve_qwenasr_model_path(model_path)
         self._engine = self._lib.qwen_asr_load_model(

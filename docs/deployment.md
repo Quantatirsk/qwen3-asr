@@ -79,8 +79,9 @@ docker run -d --name qwen3-asr \
 
 **注意：** CPU 版本不使用 GPU/vLLM 路径。
 当前 CPU 镜像已集成 QwenASR Rust backend，会自动选择 `qwen3-asr-0.6b`。
-CPU 镜像当前会在 `amd64/x86_64` 构建期使用 `RUSTFLAGS="-C target-cpu=native"` 编译 Rust backend；在 `arm64`
-上保持保守构建，以避免 CI/buildx 环境引入不可移植的可选指令。镜像默认限制
+CPU 镜像默认使用可分发的 `x86-64-v2` Rust 构建目标，避免把构建机的 native CPU 指令带入通用镜像。
+如果你确认构建机与部署机 CPU 指令集一致，可在自建镜像时设置 `QWENASR_RUST_TARGET_CPU=native` 换取更激进优化。
+当前 Rust backend 的 x86 kernel 需要 `avx2` 与 `fma`，不满足时启动会给出明确错误。镜像默认限制
 `OPENBLAS_NUM_THREADS=1` / `OMP_NUM_THREADS=1` / `GOTO_NUM_THREADS=1`，以减少多 runtime 并发时的线程争抢。
 CUDA vLLM 与 CPU Rust 路径下，`word_timestamps=true` 会自动调用 forced aligner 返回字词级时间戳。
 当前运行时 / 设备默认值以主 README 为准：
@@ -162,6 +163,11 @@ curl -X POST "http://localhost:17003/v1/audio/transcriptions" \
 # 构建 CPU 版本
 docker build -t qwen3-asr:cpu-latest -f Dockerfile.cpu .
 
+# 构建绑定当前机器指令集的 CPU 版本（仅适合同构部署）
+docker build -t qwen3-asr:cpu-native -f Dockerfile.cpu \
+  --build-arg QWENASR_RUST_TARGET_CPU=native \
+  .
+
 # 构建默认 GPU 版本（CUDA 12.8 / PyTorch cu128）
 docker build -t qwen3-asr:gpu-latest -f Dockerfile.gpu .
 
@@ -181,6 +187,12 @@ docker build -t qwen3-asr:gpu-cu130 -f Dockerfile.gpu \
   --build-arg TORCH_CUDA_ARCH_LIST="12.0+PTX" \
   .
 ```
+
+`Dockerfile.cpu` 可覆盖的 CPU 构建参数：
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `QWENASR_RUST_TARGET_CPU` | `x86-64-v2` | amd64 Rust backend 编译目标；可设为 `native` 构建绑定当前 CPU 的镜像 |
 
 `Dockerfile.gpu` 可覆盖的 GPU 构建参数：
 

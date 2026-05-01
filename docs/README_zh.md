@@ -98,7 +98,7 @@ docker run -d --name qwen3-asr \
 
 > **注意**: GPU 镜像默认使用 CUDA 12.8/cu128，以覆盖 Blackwell 等新架构 GPU。
 > 开发者可通过 Docker build args 自行构建 CUDA 12.6、CUDA 13.0 或其他后端组合。
-> 当前 CPU 镜像已通过内置 QwenASR Rust backend 支持 `qwen3-asr-0.6b`。
+> 当前 CPU 镜像已通过内置 QwenASR Rust backend 支持 `qwen3-asr-0.6b`。默认 CPU 镜像使用可分发 Rust 构建目标；只有自建且构建机/部署机 CPU 同构时才建议设置 `QWENASR_RUST_TARGET_CPU=native`。
 > CUDA vLLM 与 CPU Rust 路径下，`word_timestamps=true` 都会自动调用 forced aligner；当前实际后端为 `CUDA -> vLLM`、`CPU/macOS -> vendored QwenASR Rust`。
 > Apple Silicon 上的 Qwen3-ASR 现已统一走 Rust CPU backend。
 

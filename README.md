@@ -100,7 +100,7 @@ docker run -d --name qwen3-asr \
 
 > **Note**: GPU images default to CUDA 12.8/cu128 for Blackwell-capable GPUs.
 > Developers can rebuild `Dockerfile.gpu` for CUDA 12.6, CUDA 13.0, or another backend by overriding Docker build args.
-> CPU images now support `qwen3-asr-0.6b` via the bundled QwenASR Rust backend.
+> CPU images now support `qwen3-asr-0.6b` via the bundled QwenASR Rust backend. The default CPU image uses a portable Rust target; set `QWENASR_RUST_TARGET_CPU=native` only for self-built, host-specific images.
 > On CUDA vLLM and CPU Rust, `word_timestamps=true` now triggers the forced aligner automatically.
 > On macOS / Apple Silicon, Qwen3-ASR now runs through the Rust CPU backend.
 

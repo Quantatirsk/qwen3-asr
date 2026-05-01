@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 ARG TARGETARCH
+ARG QWENASR_RUST_TARGET_CPU=x86-64-v2
 
 COPY vendor/qwenasr /tmp/qwenasr
 
@@ -40,12 +41,10 @@ RUN uv venv /opt/venv
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-# Build QwenASR Rust shared library for CPU Qwen3-ASR inference.
-# Keep BLAS single-threaded because higher-level Rust runtime concurrency is
-# already used. Only enable native CPU tuning on x86_64; on arm64, native can
-# pull in optional instructions such as dotprod that are not guaranteed in
-# portable CI/buildx environments.
-RUN if [ "$TARGETARCH" = "amd64" ]; then export RUSTFLAGS="-C target-cpu=native"; fi \
+# Build QwenASR Rust shared library for CPU Qwen3-ASR inference. The default
+# amd64 target stays portable across common AVX2-era servers; set
+# QWENASR_RUST_TARGET_CPU=native only for self-built, host-specific images.
+RUN if [ "$TARGETARCH" = "amd64" ]; then export RUSTFLAGS="-C target-cpu=${QWENASR_RUST_TARGET_CPU}"; fi \
     && cargo build --release -p qwen-asr --features ffi --manifest-path /tmp/qwenasr/Cargo.toml \
     && mkdir -p /opt/qwenasr/lib \
     && cp /tmp/qwenasr/target/release/libqwen_asr.so /opt/qwenasr/lib/libqwen_asr.so
