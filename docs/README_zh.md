@@ -21,9 +21,9 @@
 
 [![演示](../demo/demo.png)](https://media.cdn.vect.one/qwenasr_client_demo.mp4)
 
-## Release 1.0
+## Release 1.0.1
 
-> `v1.0.0` 相对于当前 `main` 分支是一轮大规模 breaking refactor。
+> `v1.0.1` 是当前补丁版本。`v1.0.0` 相对于早期 `main` 分支引入了一轮大规模 breaking refactor。
 > 如果你是从 `main` 升级过来，请先阅读 release 说明，再决定是否沿用旧的部署与运行时假设。
 >
 > 关键 breaking changes：

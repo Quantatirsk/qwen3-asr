@@ -138,7 +138,7 @@ curl -X POST "http://localhost:17003/v1/audio/transcriptions" \
 ./build.sh -t gpu
 
 # 构建指定版本并推送
-./build.sh -t all -v 1.0.0 -p
+./build.sh -t all -v 1.0.1 -p
 
 # 查看帮助
 ./build.sh -h

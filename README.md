@@ -23,9 +23,9 @@ Speech recognition API service centered on [Qwen3-ASR](https://github.com/QwenLM
 
 [![Demo](./demo/demo.png)](https://media.cdn.vect.one/qwenasr_client_demo.mp4)
 
-## Release 1.0
+## Release 1.0.1
 
-> `v1.0.0` is a large breaking refactor relative to the current `main` branch.
+> `v1.0.1` is the current patch release. `v1.0.0` introduced a large breaking refactor relative to the earlier `main` branch.
 > If you are upgrading from `main`, read the release notes before reusing old deployment assumptions.
 >
 > Key breaking changes:

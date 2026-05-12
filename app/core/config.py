@@ -14,7 +14,7 @@ class Settings:
 
     # 应用信息
     APP_NAME: str = "Qwen3-ASR Server"
-    APP_VERSION: str = "1.0.0"
+    APP_VERSION: str = "1.0.1"
     APP_DESCRIPTION: str = "Qwen3-ASR speech recognition API service"
 
     # 服务器配置

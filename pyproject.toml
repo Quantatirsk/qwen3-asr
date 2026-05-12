@@ -1,6 +1,6 @@
 [project]
 name = "qwen3-asr"
-version = "1.0.0"
+version = "1.0.1"
 description = "Qwen3-ASR API service with CUDA vLLM and CPU Rust backends"
 requires-python = ">=3.10,<3.13"
 dependencies = [
