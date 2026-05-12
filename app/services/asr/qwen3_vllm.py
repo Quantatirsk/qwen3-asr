@@ -14,6 +14,8 @@ from typing import Any, Optional
 import librosa
 import numpy as np
 
+from app.utils.text_processing import normalize_asr_text
+
 from .engines import ASRRawResult, ASRSegmentResult, WordToken
 
 logger = logging.getLogger(__name__)
@@ -268,9 +270,10 @@ class Qwen3VLLMBackend:
         audio_path: str,
         context: str = "",
         language: Optional[str] = None,
+        enable_itn: bool = False,
     ) -> str:
         transcript = self._run_generate([(_load_audio(audio_path), context, language)])[0]
-        return transcript.text
+        return normalize_asr_text(transcript.text, enable_itn=enable_itn)
 
     def transcribe_raw(
         self,
@@ -278,16 +281,18 @@ class Qwen3VLLMBackend:
         context: str = "",
         language: Optional[str] = None,
         word_timestamps: bool = False,
+        enable_itn: bool = False,
     ) -> ASRRawResult:
         audio = _load_audio(audio_path)
         transcript = self._run_generate([(audio, context, language)])[0]
+        text = normalize_asr_text(transcript.text, enable_itn=enable_itn)
         if not word_timestamps:
             return ASRRawResult(
-                text=transcript.text,
-                segments=[ASRSegmentResult(text=transcript.text, start_time=0.0, end_time=0.0)] if transcript.text else [],
+                text=text,
+                segments=[ASRSegmentResult(text=text, start_time=0.0, end_time=0.0)] if text else [],
             )
 
-        aligned = self.align_transcript(audio_path=audio_path, text=transcript.text, language=language, audio=audio)
+        aligned = self.align_transcript(audio_path=audio_path, text=text, language=language, audio=audio)
         word_tokens = [
             WordToken(
                 text=str(item["text"]),
@@ -298,14 +303,14 @@ class Qwen3VLLMBackend:
         ]
         if not word_tokens:
             return ASRRawResult(
-                text=transcript.text,
-                segments=[ASRSegmentResult(text=transcript.text, start_time=0.0, end_time=0.0)] if transcript.text else [],
+                text=text,
+                segments=[ASRSegmentResult(text=text, start_time=0.0, end_time=0.0)] if text else [],
             )
         return ASRRawResult(
-            text=transcript.text,
+            text=text,
             segments=[
                 ASRSegmentResult(
-                    text=transcript.text,
+                    text=text,
                     start_time=word_tokens[0].start_time,
                     end_time=word_tokens[-1].end_time,
                     word_tokens=word_tokens,
@@ -319,6 +324,7 @@ class Qwen3VLLMBackend:
         context: str = "",
         language: Optional[str] = None,
         word_timestamps: bool = False,
+        enable_itn: bool = False,
     ) -> list[ASRSegmentResult]:
         audios = [_load_audio(path) for path in audio_paths]
         results: list[ASRSegmentResult] = []
@@ -326,12 +332,13 @@ class Qwen3VLLMBackend:
             chunk = audios[start:start + self._max_inference_batch_size]
             transcripts = self._run_generate([(audio, context, language) for audio in chunk])
             for audio_path, audio, transcript in zip(audio_paths[start:start + len(chunk)], chunk, transcripts):
+                text = normalize_asr_text(transcript.text, enable_itn=enable_itn)
                 if not word_timestamps:
-                    results.append(ASRSegmentResult(text=transcript.text, start_time=0.0, end_time=0.0))
+                    results.append(ASRSegmentResult(text=text, start_time=0.0, end_time=0.0))
                     continue
                 aligned = self.align_transcript(
                     audio_path=audio_path,
-                    text=transcript.text,
+                    text=text,
                     language=language,
                     audio=audio,
                 )
@@ -345,7 +352,7 @@ class Qwen3VLLMBackend:
                 ]
                 results.append(
                     ASRSegmentResult(
-                        text=transcript.text,
+                        text=text,
                         start_time=word_tokens[0].start_time if word_tokens else 0.0,
                         end_time=word_tokens[-1].end_time if word_tokens else 0.0,
                         word_tokens=word_tokens or None,

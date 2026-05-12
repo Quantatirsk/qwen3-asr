@@ -18,6 +18,7 @@ from .qwenasr_rust import (
 from .qwen3_vllm import Qwen3VLLMBackend, is_vllm_available
 from ...core.exceptions import DefaultServerErrorException
 from ...core.config import settings
+from ...utils.text_processing import normalize_asr_text
 
 logger = logging.getLogger(__name__)
 
@@ -243,8 +244,9 @@ class Qwen3ASREngine(BaseASREngine):
         enable_itn: bool,
         sample_rate: int,
     ) -> str:
-        _ = (hotwords, enable_punctuation, enable_itn, sample_rate)
-        return runtime.transcribe_file(seg.temp_file) or ""
+        _ = (hotwords, enable_punctuation, sample_rate)
+        text = runtime.transcribe_file(seg.temp_file) or ""
+        return normalize_asr_text(text, enable_itn=enable_itn)
 
     def _rust_align_word_tokens(
         self,
@@ -374,11 +376,13 @@ class Qwen3ASREngine(BaseASREngine):
         sample_rate: int = 16000,
     ) -> str:
         if self._backend == "rust":
-            return self.model.transcribe_file(audio_path)
+            text = self.model.transcribe_file(audio_path)
+            return normalize_asr_text(text, enable_itn=enable_itn)
         if self._backend == "vllm":
             return self.model.transcribe_text(
                 audio_path,
                 context=hotwords or "",
+                enable_itn=enable_itn,
             )
         raise DefaultServerErrorException(f"Qwen3 backend={self._backend} does not support offline transcription")
 
@@ -435,6 +439,7 @@ class Qwen3ASREngine(BaseASREngine):
                 context=hotwords or "",
                 language=kwargs.get("language"),
                 word_timestamps=kwargs.get("word_timestamps", False),
+                enable_itn=enable_itn,
             )
 
         raise DefaultServerErrorException(
@@ -496,6 +501,7 @@ class Qwen3ASREngine(BaseASREngine):
                 [seg.temp_file for _, seg in valid],
                 context=hotwords or "",
                 word_timestamps=word_timestamps,
+                enable_itn=enable_itn,
             )
             for (idx, seg), result in zip(valid, vllm_results):
                 output[idx] = ASRSegmentResult(

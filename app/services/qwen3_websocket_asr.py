@@ -17,6 +17,7 @@ from app.core.executor import run_sync
 from app.services.asr.model_selection import validate_realtime_model_id
 from app.services.asr.qwen3_engine import Qwen3ASREngine, Qwen3StreamingState
 from app.services.asr.runtime import RuntimeEngineLease, get_runtime_router
+from app.utils.text_processing import normalize_asr_text
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,12 @@ class Qwen3ASRService:
             or ctx.silence_samples >= ctx.SILENCE_THRESHOLD
         )
 
+    def _normalize_output_text(self, text: str, ctx: ConnectionContext) -> str:
+        return normalize_asr_text(
+            text,
+            enable_itn=bool(ctx.params.get("enable_inverse_text_normalization", True)),
+        )
+
     async def _truncate(
         self,
         websocket: WebSocket,
@@ -122,7 +129,10 @@ class Qwen3ASRService:
                 ctx.streaming_state,
             )
 
-            segment_text = ctx.streaming_state.last_text or ""
+            segment_text = self._normalize_output_text(
+                ctx.streaming_state.last_text or "",
+                ctx,
+            )
             is_valid = len(segment_text.strip()) >= 3
 
             if is_valid:
@@ -223,6 +233,10 @@ class Qwen3ASRService:
                             "sample_rate": payload.get("sample_rate", 16000),
                             "language": payload.get("language"),
                             "context": payload.get("context", ""),
+                            "enable_inverse_text_normalization": payload.get(
+                                "enable_inverse_text_normalization",
+                                True,
+                            ),
                             "chunk_size_sec": payload.get("chunk_size_sec", 2.0),
                             "unfixed_chunk_num": payload.get("unfixed_chunk_num", 2),
                             "unfixed_token_num": payload.get("unfixed_token_num", 5),
@@ -304,7 +318,10 @@ class Qwen3ASRService:
                             ctx.streaming_state,
                         )
 
-                        current = ctx.streaming_state.last_text or ""
+                        current = self._normalize_output_text(
+                            ctx.streaming_state.last_text or "",
+                            ctx,
+                        )
                         confirmed = "\n".join(
                             [segment["text"] for segment in ctx.confirmed_segments]
                         )
@@ -369,7 +386,7 @@ class Qwen3ASRService:
                 ctx.streaming_state,
             )
 
-            final = ctx.streaming_state.last_text or ""
+            final = self._normalize_output_text(ctx.streaming_state.last_text or "", ctx)
             if final.strip():
                 ctx.confirmed_segments.append(
                     {

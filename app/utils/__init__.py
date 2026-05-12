@@ -6,7 +6,7 @@
 
 from .common import generate_task_id, validate_text_input, parse_language_code
 from .audio import save_audio_array, load_audio_file, generate_temp_audio_path, cleanup_temp_file
-from .text_processing import apply_itn_to_text
+from .text_processing import apply_itn_to_text, normalize_asr_text
 
 __all__ = [
     # 通用工具函数
@@ -20,4 +20,5 @@ __all__ = [
     "cleanup_temp_file",
     # ITN（逆文本标准化）功能 - 基于WeText
     "apply_itn_to_text",
+    "normalize_asr_text",
 ]

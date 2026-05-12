@@ -51,3 +51,9 @@ def apply_itn_to_text(text: str) -> str:
     except Exception as e:
         logger.warning(f"ITN处理失败: {text}, 错误: {str(e)}")
         return text
+
+
+def normalize_asr_text(text: str, enable_itn: bool) -> str:
+    if not enable_itn:
+        return text
+    return apply_itn_to_text(text)
