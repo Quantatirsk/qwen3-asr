@@ -251,6 +251,9 @@ class SpeakerDiarizer:
 
     DEFAULT_MIN_SEGMENT_SEC = 1.0
     DEFAULT_SAMPLE_RATE = 16000
+    LOW_ENERGY_SEARCH_WINDOW_MS = 10000
+    LOW_ENERGY_CONTEXT_MS = 160
+    LOW_ENERGY_STEP_MS = 20
 
     def __init__(
         self,
@@ -392,6 +395,8 @@ class SpeakerDiarizer:
         if not segments:
             return []
 
+        max_segment_sec = settings.MAX_SEGMENT_SEC
+
         # 按开始时间排序
         sorted_segments = sorted(segments, key=lambda x: x.start_ms)
 
@@ -419,7 +424,7 @@ class SpeakerDiarizer:
                 if next_seg.speaker_id != seg.speaker_id:
                     break
                 new_duration = (next_seg.end_ms - current_start_ms) / 1000.0
-                if new_duration > 60.0:  # 不能超过60s上限
+                if new_duration > max_segment_sec:
                     break
                 current_end_ms = next_seg.end_ms
                 current_duration_sec = new_duration
@@ -455,7 +460,7 @@ class SpeakerDiarizer:
                 if next_seg.speaker_id != seg.speaker_id:
                     break
                 new_duration = (next_seg.end_ms - current_start_ms) / 1000.0
-                if new_duration > 60.0:
+                if new_duration > max_segment_sec:
                     break
                 current_end_ms = next_seg.end_ms
                 j += 1
@@ -475,6 +480,108 @@ class SpeakerDiarizer:
             i = j
 
         return final_merged
+
+    def _find_low_energy_boundary_ms(
+        self,
+        audio_data: np.ndarray,
+        sample_rate: int,
+        lower_ms: int,
+        upper_ms: int,
+    ) -> int:
+        lower_ms = max(0, lower_ms)
+        upper_ms = max(lower_ms, upper_ms)
+        if sample_rate <= 0 or audio_data.size == 0:
+            return upper_ms
+
+        context_samples = max(
+            1, int(sample_rate * self.LOW_ENERGY_CONTEXT_MS / 1000)
+        )
+        candidate_points = list(
+            range(lower_ms, upper_ms + 1, self.LOW_ENERGY_STEP_MS)
+        )
+        if not candidate_points or candidate_points[-1] != upper_ms:
+            candidate_points.append(upper_ms)
+
+        best_ms = upper_ms
+        best_energy = float("inf")
+        audio_length = int(audio_data.shape[0])
+
+        for candidate_ms in candidate_points:
+            center_sample = int(candidate_ms * sample_rate / 1000)
+            start_sample = max(0, center_sample - context_samples // 2)
+            end_sample = min(audio_length, center_sample + context_samples // 2)
+            if start_sample >= end_sample:
+                continue
+
+            window = audio_data[start_sample:end_sample]
+            energy = float(np.mean(np.square(window)))
+            if energy <= best_energy:
+                best_energy = energy
+                best_ms = candidate_ms
+
+        return best_ms
+
+    def split_long_segments(
+        self,
+        segments: List[SpeakerSegment],
+        audio_data: np.ndarray,
+        sample_rate: int,
+    ) -> List[SpeakerSegment]:
+        max_segment_ms = int(settings.MAX_SEGMENT_SEC * 1000)
+        if max_segment_ms <= 0:
+            return segments
+
+        split_segments: List[SpeakerSegment] = []
+        for seg in segments:
+            if seg.duration_ms <= max_segment_ms:
+                split_segments.append(seg)
+                continue
+
+            current_start_ms = seg.start_ms
+            while seg.end_ms - current_start_ms > max_segment_ms:
+                hard_boundary_ms = current_start_ms + max_segment_ms
+                lower_boundary_ms = max(
+                    current_start_ms + self.min_segment_ms,
+                    hard_boundary_ms - self.LOW_ENERGY_SEARCH_WINDOW_MS,
+                )
+                boundary_ms = self._find_low_energy_boundary_ms(
+                    audio_data=audio_data,
+                    sample_rate=sample_rate,
+                    lower_ms=lower_boundary_ms,
+                    upper_ms=hard_boundary_ms,
+                )
+                if boundary_ms <= current_start_ms:
+                    boundary_ms = hard_boundary_ms
+
+                split_segments.append(
+                    SpeakerSegment(
+                        start_ms=current_start_ms,
+                        end_ms=boundary_ms,
+                        speaker_id=seg.speaker_id,
+                    )
+                )
+                current_start_ms = boundary_ms
+
+            remaining_ms = seg.end_ms - current_start_ms
+            if remaining_ms >= self.min_segment_ms:
+                split_segments.append(
+                    SpeakerSegment(
+                        start_ms=current_start_ms,
+                        end_ms=seg.end_ms,
+                        speaker_id=seg.speaker_id,
+                    )
+                )
+            elif split_segments:
+                split_segments[-1].end_ms = seg.end_ms
+
+        if len(split_segments) != len(segments):
+            logger.info(
+                "Split long speaker segments by low energy: {} -> {}, max={}s",
+                len(segments),
+                len(split_segments),
+                settings.MAX_SEGMENT_SEC,
+            )
+        return split_segments
 
     def split_audio_by_speakers(
         self,
@@ -507,18 +614,25 @@ class SpeakerDiarizer:
 
             # 2. 智能合并短片段（第一个<10s的同说话人片段向后合并）
             final_segments = self.merge_short_segments(raw_segments)
-            logger.info(f"智能合并完成: {len(raw_segments)} → {len(final_segments)} 个片段")
 
-            # 4. 加载音频并提取片段
+            # 3. Load audio before low-energy splitting and segment extraction.
             logger.info("加载音频并提取片段...")
             audio_data, sr = librosa.load(audio_path, sr=self.DEFAULT_SAMPLE_RATE)
+            sample_rate = int(sr)
+
+            final_segments = self.split_long_segments(
+                final_segments,
+                audio_data,
+                sample_rate,
+            )
+            logger.info(f"智能合并完成: {len(raw_segments)} → {len(final_segments)} 个片段")
 
             output_dir = output_dir or settings.TEMP_DIR
             os.makedirs(output_dir, exist_ok=True)
 
             for idx, seg in enumerate(final_segments):
-                start_sample = int(seg.start_ms / 1000 * sr)
-                end_sample = int(seg.end_ms / 1000 * sr)
+                start_sample = int(seg.start_ms / 1000 * sample_rate)
+                end_sample = int(seg.end_ms / 1000 * sample_rate)
 
                 seg.audio_data = audio_data[start_sample:end_sample]
 
@@ -532,7 +646,7 @@ class SpeakerDiarizer:
                 temp_path = temp_file.name
                 temp_file.close()
 
-                sf.write(temp_path, seg.audio_data, sr)
+                sf.write(temp_path, seg.audio_data, sample_rate)
                 seg.temp_file = temp_path
 
             # 统计

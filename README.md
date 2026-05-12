@@ -348,7 +348,7 @@ Disable speaker diarization:
 Automatic long audio segmentation:
 
 1. **VAD Voice Detection** - Detect voice boundaries, filter silence
-2. **Greedy Merge** - Accumulate voice segments, ensure each segment does not exceed `MAX_SEGMENT_SEC` (default 30s)
+2. **Greedy Merge** - Accumulate voice segments, ensure each segment does not exceed `MAX_SEGMENT_SEC` (default 60s)
 3. **Silence Split** - Force split when silence between voice segments exceeds 3 seconds
 4. **Batch Inference** - Multi-segment parallel processing, 2-3x performance improvement in GPU mode
 
@@ -405,7 +405,7 @@ Recommended public settings:
 | `LOG_LEVEL` | `INFO` | Log level (DEBUG/INFO/WARNING/ERROR) |
 | `MAX_AUDIO_SIZE` | `2048` | Max audio file size (MB, supports units like 2GB) |
 | `ASR_BATCH_SIZE` | `4` | ASR batch size for long-audio segment processing |
-| `MAX_SEGMENT_SEC` | `30` | Max audio segment duration (seconds) |
+| `MAX_SEGMENT_SEC` | `60` | Max audio segment duration (seconds) |
 | `ASR_ENABLE_NEARFIELD_FILTER` | `true` | Enable far-field sound filtering |
 | `QWEN3_ASR_MODEL` | auto | Force `qwen3-asr-1.7b` or `qwen3-asr-0.6b` instead of VRAM-based selection |
 

@@ -348,7 +348,7 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 长音频自动分段处理：
 
 1. **VAD 语音检测** - 检测语音边界，过滤静音
-2. **贪婪合并** - 累积语音段，确保每段不超过 `MAX_SEGMENT_SEC`（默认30秒）
+2. **贪婪合并** - 累积语音段，确保每段不超过 `MAX_SEGMENT_SEC`（默认60秒）
 3. **静音切分** - 语音段间静音超过3秒时强制切分，避免包含过长静音
 4. **批处理推理** - 多片段并行处理，GPU 模式下性能提升 2-3 倍
 
@@ -405,7 +405,7 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 | `LOG_LEVEL`                      | `INFO`       | 日志级别（DEBUG/INFO/WARNING/ERROR）          |
 | `MAX_AUDIO_SIZE`                 | `2048`       | 最大音频文件大小（MB，支持单位如 2GB）        |
 | `ASR_BATCH_SIZE`                 | `4`          | 长音频分段后的 ASR 批处理大小 |
-| `MAX_SEGMENT_SEC`                | `30`         | 音频分段最大时长（秒）                        |
+| `MAX_SEGMENT_SEC`                | `60`         | 音频分段最大时长（秒）                        |
 | `ASR_ENABLE_NEARFIELD_FILTER`    | `true`       | 启用远场声音过滤                              |
 | `QWEN3_ASR_MODEL`                | 自动选择      | 强制选择 `qwen3-asr-1.7b` 或 `qwen3-asr-0.6b` |
 

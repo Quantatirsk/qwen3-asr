@@ -295,7 +295,7 @@ volumes:
 |----------|--------|------|
 | `ASR_BATCH_SIZE` | `4` | 长音频分段后的 ASR 批处理大小 |
 | `INFERENCE_THREAD_POOL_SIZE` | 自动 | 推理线程池大小；默认按 CPU 核数自动设置 |
-| `MAX_SEGMENT_SEC` | `30` | 音频分段最大时长（秒） |
+| `MAX_SEGMENT_SEC` | `60` | 音频分段最大时长（秒） |
 | `WS_MAX_BUFFER_SIZE` | `160000` | WebSocket 音频缓冲区大小（样本数） |
 | `QWEN_RUST_CPU_WORKERS` | `4` | CPU Rust backend worker 数；Rust ASR / forced align 默认按该数量并行 |
 | `QWEN_RUST_ASR_CONCURRENCY` | `0` | Rust ASR 阶段批内并行度；`0` 表示跟随 `QWEN_RUST_CPU_WORKERS` |

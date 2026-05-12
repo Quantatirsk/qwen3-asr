@@ -68,7 +68,7 @@ class Settings:
     ASR_BATCH_SIZE: int = 4  # ASR 批处理大小（同时推理的片段数），建议 2-8
 
     # 音频分段配置
-    MAX_SEGMENT_SEC: float = 30.0  # 长音频触发 VAD 分割阈值（秒）
+    MAX_SEGMENT_SEC: float = 60.0  # Max offline ASR segment duration in seconds.
 
     # Runtime 并发配置（按 backend 独立控制）
     QWEN_RUST_CPU_WORKERS: int = 4
