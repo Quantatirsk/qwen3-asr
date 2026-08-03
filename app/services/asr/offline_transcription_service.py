@@ -8,9 +8,10 @@ from typing import Optional
 
 from fastapi import Request
 
+from app.core.exceptions import InvalidParameterException
 from app.models.common import SampleRate
+from app.services.asr.manager import ASCEND_MODEL_ID
 from app.services.asr.results import ASRFullResult
-from app.services.asr.model_selection import get_default_offline_model_id
 from app.services.asr.runtime import OfflineASRRequest, get_runtime_router
 from app.services.asr.uniform_alignment import apply_uniform_word_timestamps
 
@@ -92,13 +93,14 @@ class OfflineTranscriptionService:
         prepared_audio: PreparedAudio,
         options: OfflineTranscriptionOptions,
     ) -> ASRFullResult:
-        model_id = get_default_offline_model_id()
+        if options.hotwords.strip():
+            raise InvalidParameterException(
+                "vocabulary_id is not supported by the Ascend offline runtime"
+            )
         result = await get_runtime_router().run_offline(
             OfflineASRRequest(
-                model_id=model_id,
+                model_id=ASCEND_MODEL_ID,
                 audio_path=prepared_audio.normalized_path,
-                hotwords=options.hotwords,
-                enable_punctuation=True,
                 enable_itn=True,
                 sample_rate=options.sample_rate or int(SampleRate.RATE_16000),
                 enable_speaker_diarization=options.enable_speaker_diarization,

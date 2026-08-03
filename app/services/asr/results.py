@@ -26,9 +26,3 @@ class ASRFullResult:
     segments: list[ASRSegmentResult]
     duration: float
     word_timestamp_method: Optional[str] = None
-
-
-@dataclass
-class ASRRawResult:
-    text: str
-    segments: list[ASRSegmentResult]

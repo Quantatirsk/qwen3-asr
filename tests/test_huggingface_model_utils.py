@@ -39,7 +39,7 @@ def patched_env(**updates: str | None) -> Iterator[None]:
 def test_huggingface_cache_priority_and_snapshot_resolution() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         cache_root = Path(temp_dir) / "hub"
-        model_dir = cache_root / "models--Qwen--Qwen3-ASR-0.6B"
+        model_dir = cache_root / "models--Qwen--Qwen3-ASR-1.7B"
         snapshot_dir = model_dir / "snapshots" / "abc123"
         (model_dir / "refs").mkdir(parents=True)
         snapshot_dir.mkdir(parents=True)
@@ -54,15 +54,15 @@ def test_huggingface_cache_priority_and_snapshot_resolution() -> None:
         ):
             assert get_huggingface_cache_root() == cache_root
             assert (
-                get_huggingface_model_cache_dir("Qwen/Qwen3-ASR-0.6B")
+                get_huggingface_model_cache_dir("Qwen/Qwen3-ASR-1.7B")
                 == model_dir
             )
             assert (
-                find_huggingface_snapshot_dir("Qwen/Qwen3-ASR-0.6B")
+                find_huggingface_snapshot_dir("Qwen/Qwen3-ASR-1.7B")
                 == snapshot_dir.resolve()
             )
             assert (
-                resolve_huggingface_snapshot_dir("Qwen/Qwen3-ASR-0.6B")
+                resolve_huggingface_snapshot_dir("Qwen/Qwen3-ASR-1.7B")
                 == snapshot_dir.resolve()
             )
 

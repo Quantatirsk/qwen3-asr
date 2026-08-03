@@ -20,10 +20,7 @@ from ...core.security import validate_openai_token
 from ...core.exceptions import (
     create_error_response,
 )
-from ...services.asr.model_selection import (
-    get_default_offline_model_id,
-    get_offline_model_ids,
-)
+from ...services.asr.manager import ASCEND_MODEL_ID
 from ...services.asr.offline_transcription_service import (
     OfflineTranscriptionOptions,
     PreparedAudio,
@@ -190,8 +187,8 @@ def build_transcription_payload(
                 words.append(
                     TranscriptionWord(
                         word=wt.text,
-                        start=round(wt.start_time, 3),
-                        end=round(wt.end_time, 3),
+                        start=round(wt.start_time, 6),
+                        end=round(wt.end_time, 6),
                     )
                 )
 
@@ -311,8 +308,8 @@ def create_heartbeat_streaming_response(
 
 def _get_openai_model_description() -> str:
     """获取动态的模型描述"""
-    available_models = get_offline_model_ids()
-    default_model = get_default_offline_model_id()
+    available_models = [ASCEND_MODEL_ID]
+    default_model = ASCEND_MODEL_ID
 
     model_descriptions = {
         "qwen3-asr-1.7b": "Qwen3-ASR 1.7B，Ascend vLLM 离线推理",
@@ -358,7 +355,7 @@ async def list_models(request: Request):
 
     try:
         # 使用动态模型列表
-        model_ids = get_offline_model_ids()
+        model_ids = [ASCEND_MODEL_ID]
 
         model_objects = []
         for model_id in model_ids:
@@ -406,7 +403,6 @@ def _get_transcription_description() -> str:
 
 **模型选择：**
 - 离线路径固定使用当前服务启用的唯一 Qwen3-ASR 模型
-- 通过 `QWEN3_ASR_MODEL` 控制服务端模型型号
 - `/v1/models` 仍可用于查看当前服务端实际在线模型
 
 **暂不支持的参数：**

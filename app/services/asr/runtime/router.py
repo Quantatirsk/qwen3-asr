@@ -21,8 +21,6 @@ _REMOTE_CONCURRENCY = 8
 class OfflineASRRequest:
     model_id: str
     audio_path: str
-    hotwords: str = ""
-    enable_punctuation: bool = True
     enable_itn: bool = True
     sample_rate: int = 16000
     enable_speaker_diarization: bool = True
@@ -84,8 +82,6 @@ class RuntimeRouter:
             return await run_sync(
                 engine.transcribe_long_audio,
                 audio_path=request.audio_path,
-                hotwords=request.hotwords,
-                enable_punctuation=request.enable_punctuation,
                 enable_itn=request.enable_itn,
                 sample_rate=request.sample_rate,
                 enable_speaker_diarization=request.enable_speaker_diarization,

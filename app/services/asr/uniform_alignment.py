@@ -71,11 +71,11 @@ def apply_uniform_word_timestamps(result: ASRFullResult) -> ASRFullResult:
         segment.word_tokens = [
             WordToken(
                 text=unit,
-                start_time=round(segment.start_time + index * step, 3),
+                start_time=segment.start_time + index * step,
                 end_time=(
-                    round(segment.end_time, 3)
+                    segment.end_time
                     if index == len(units) - 1
-                    else round(segment.start_time + (index + 1) * step, 3)
+                    else segment.start_time + (index + 1) * step
                 ),
             )
             for index, unit in enumerate(units)

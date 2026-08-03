@@ -109,8 +109,8 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
 如果请求体和 `audio_address` 同时存在，服务会优先使用请求体，并忽略 `audio_address`。
 
 ## 注意事项
-- 离线路径固定使用服务当前启用的 Qwen3-ASR 模型；通过 `QWEN3_ASR_MODEL` 控制型号
-- `vocabulary_id` 参数用于传递无权重热词上下文（如：`阿里巴巴 腾讯`）。[Deprecated] 数字权重语法不受支持，传入时会被忽略
+- 离线路径固定使用 `qwen3-asr-1.7b`
+- Ascend 运行时不支持 `vocabulary_id`；传入非空值会返回参数错误
 - 音频会自动转换为 16kHz 采样率进行识别
 """,
     openapi_extra={
@@ -172,7 +172,7 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
                     "maxLength": 512,
                     "example": "阿里巴巴 腾讯",
                 },
-                "description": "无权重热词上下文，例如：`阿里巴巴 腾讯`。[Deprecated] 数字权重语法不受支持，传入时会被忽略",
+                "description": "Ascend 运行时不支持该兼容参数；传入非空值会返回参数错误",
             },
             # 6. 认证参数
             {
@@ -259,8 +259,8 @@ async def asr_transcribe(
                 seg_dict["word_tokens"] = [
                     {
                         "text": wt.text,
-                        "start_time": round(wt.start_time, 3),
-                        "end_time": round(wt.end_time, 3),
+                        "start_time": round(wt.start_time, 6),
+                        "end_time": round(wt.end_time, 6),
                     }
                     for wt in seg.word_tokens
                 ]

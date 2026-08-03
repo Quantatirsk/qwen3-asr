@@ -23,8 +23,6 @@ class BaseASREngine(ABC):
     def transcribe_file(
         self,
         audio_path: str,
-        hotwords: str = "",
-        enable_punctuation: bool = True,
         enable_itn: bool = True,
         sample_rate: int = 16000,
     ) -> str:
@@ -34,8 +32,6 @@ class BaseASREngine(ABC):
     def _transcribe_batch(
         self,
         segments: list[Any],
-        hotwords: str = "",
-        enable_punctuation: bool = True,
         enable_itn: bool = True,
         sample_rate: int = 16000,
     ) -> list[ASRSegmentResult]:
@@ -44,8 +40,6 @@ class BaseASREngine(ABC):
     def transcribe_long_audio(
         self,
         audio_path: str,
-        hotwords: str = "",
-        enable_punctuation: bool = True,
         enable_itn: bool = True,
         sample_rate: int = 16000,
         enable_speaker_diarization: bool = True,
@@ -83,8 +77,6 @@ class BaseASREngine(ABC):
                 ]
                 batch_results = self._transcribe_batch(
                     batch,
-                    hotwords=hotwords,
-                    enable_punctuation=enable_punctuation,
                     enable_itn=enable_itn,
                     sample_rate=sample_rate,
                 )

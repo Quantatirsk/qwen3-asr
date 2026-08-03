@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 
+from app.core.exceptions import InvalidParameterException
 from app.services.asr.offline_transcription_service import (
     OfflineTranscriptionOptions,
     OfflineTranscriptionService,
@@ -23,6 +24,22 @@ class _RuntimeRouter:
 
 
 class OfflineTranscriptionServiceTest(unittest.IsolatedAsyncioTestCase):
+    async def test_hotwords_fail_before_runtime_inference(self) -> None:
+        router = _RuntimeRouter()
+        service = OfflineTranscriptionService()
+
+        with patch(
+            "app.services.asr.offline_transcription_service.get_runtime_router",
+            return_value=router,
+        ):
+            with self.assertRaisesRegex(InvalidParameterException, "vocabulary_id"):
+                await service.transcribe(
+                    PreparedAudio("audio.wav", 4.0, "audio.wav"),
+                    OfflineTranscriptionOptions(hotwords="产品名"),
+                )
+
+        self.assertIsNone(router.request)
+
     async def test_word_timestamps_use_service_level_uniform_fallback(self) -> None:
         router = _RuntimeRouter()
         service = OfflineTranscriptionService()

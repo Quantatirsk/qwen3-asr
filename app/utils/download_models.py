@@ -62,7 +62,9 @@ def check_model_exists(model_id: str, source: str = "modelscope") -> tuple[bool,
     return False, ""
 
 
-def check_all_models() -> list[tuple[str, str, str, Optional[str]]]:
+def check_all_models(
+    *, include_qwen: bool = True
+) -> list[tuple[str, str, str, Optional[str]]]:
     """检查所有模型是否存在
 
     Returns:
@@ -70,7 +72,7 @@ def check_all_models() -> list[tuple[str, str, str, Optional[str]]]:
     """
     missing = []
     ms_assets = get_download_modelscope_assets()
-    hf_assets = _get_huggingface_assets()
+    hf_assets = _get_huggingface_assets() if include_qwen else []
 
     # Check ModelScope models.
     for asset in ms_assets:
@@ -141,12 +143,14 @@ def fix_camplusplus_config() -> bool:
 def download_models(
     auto_mode: bool = False,
     export_dir: Optional[str] = None,
+    include_qwen: bool = True,
 ) -> bool:
     """下载所有需要的模型
 
     Args:
         auto_mode: 如果为True，表示自动模式（从start.py调用），会简化输出
         export_dir: 如果指定，将下载的模型导出到该目录（用于离线部署）
+        include_qwen: 是否包含由 NPU vLLM 使用的 Qwen 权重
 
     Returns:
         是否全部下载成功
@@ -154,9 +158,9 @@ def download_models(
     import shutil
 
     # Check missing models.
-    missing = check_all_models()
+    missing = check_all_models(include_qwen=include_qwen)
     ms_assets = get_download_modelscope_assets()
-    hf_assets = _get_huggingface_assets()
+    hf_assets = _get_huggingface_assets() if include_qwen else []
 
     export_path = Path(export_dir) if export_dir else None
 

@@ -38,27 +38,22 @@ class Qwen3ASREngine(BaseASREngine):
     def transcribe_file(
         self,
         audio_path: str,
-        hotwords: str = "",
-        enable_punctuation: bool = True,
         enable_itn: bool = True,
         sample_rate: int = 16000,
     ) -> str:
-        _ = (enable_punctuation, sample_rate)
+        _ = sample_rate
         return self.model.transcribe_text(
             audio_path,
-            context=hotwords,
             enable_itn=enable_itn,
         )
 
     def _transcribe_batch(
         self,
         segments: list[Any],
-        hotwords: str = "",
-        enable_punctuation: bool = True,
         enable_itn: bool = True,
         sample_rate: int = 16000,
     ) -> list[ASRSegmentResult]:
-        _ = (enable_punctuation, sample_rate)
+        _ = sample_rate
         output = [ASRSegmentResult(text="", start_time=0.0, end_time=0.0) for _ in segments]
         valid = [
             (index, segment)
@@ -71,7 +66,6 @@ class Qwen3ASREngine(BaseASREngine):
 
         transcribed = self.model.transcribe_batch(
             [segment.temp_file for _, segment in valid],
-            context=hotwords,
             enable_itn=enable_itn,
         )
         for (index, _segment), result in zip(valid, transcribed):

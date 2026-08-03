@@ -5,6 +5,21 @@ from app.services.asr.uniform_alignment import apply_uniform_word_timestamps
 
 
 class UniformAlignmentTest(unittest.TestCase):
+    def test_preserves_strict_boundaries_for_dense_short_segments(self) -> None:
+        result = ASRFullResult(
+            text="测试词",
+            segments=[ASRSegmentResult(text="测试词", start_time=0.0, end_time=0.001)],
+            duration=0.001,
+        )
+
+        apply_uniform_word_timestamps(result)
+
+        tokens = result.segments[0].word_tokens or []
+        self.assertTrue(all(token.start_time < token.end_time for token in tokens))
+        self.assertTrue(
+            all(left.end_time == right.start_time for left, right in zip(tokens, tokens[1:]))
+        )
+
     def test_distributes_mixed_text_within_each_segment(self) -> None:
         result = ASRFullResult(
             text="你好，OpenAI 2026!",

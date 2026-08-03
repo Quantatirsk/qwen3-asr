@@ -12,7 +12,7 @@ def ensure_models_downloaded(interactive: bool) -> bool:
         from app.infrastructure import is_huggingface_offline
         from app.utils.download_models import check_all_models, download_models
 
-        missing = check_all_models()
+        missing = check_all_models(include_qwen=False)
         if not missing:
             return True
 
@@ -26,7 +26,7 @@ def ensure_models_downloaded(interactive: bool) -> bool:
             return False
 
         print("\n将自动下载缺失模型后继续启动。")
-        if download_models(auto_mode=True):
+        if download_models(auto_mode=True, include_qwen=False):
             return True
 
         print("\n模型自动下载失败。")
