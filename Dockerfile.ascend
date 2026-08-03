@@ -1,4 +1,4 @@
-ARG VLLM_ASCEND_IMAGE=quay.io/ascend/vllm-ascend:v0.22.1rc1
+ARG VLLM_ASCEND_IMAGE=quay.io/ascend/vllm-ascend@sha256:9008b47081282612abfe4d28069ce34436752c980fd06f7599343213205ce64d
 FROM ${VLLM_ASCEND_IMAGE}
 
 ENV HF_HOME=/root/.cache/huggingface \

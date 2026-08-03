@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 import requests
 
 from app.core.config import settings
+from app.core.exceptions import InvalidParameterException
 from app.services.asr.manager import _supports_qwen_realtime_on_device
 from app.services.asr.model_capabilities import get_enabled_qwen_huggingface_assets
 from app.services.asr.qwen3_engine import Qwen3ASREngine
@@ -35,7 +36,6 @@ class Qwen3RemoteVLLMBackendTest(unittest.TestCase):
             audio_path.write_bytes(b"RIFF")
             text = self.backend.transcribe_text(
                 str(audio_path),
-                context="product names",
                 language="en",
                 enable_itn=False,
             )
@@ -45,12 +45,39 @@ class Qwen3RemoteVLLMBackendTest(unittest.TestCase):
             post.call_args.args[0], "http://qwen-npu:8000/v1/audio/transcriptions"
         )
         self.assertEqual(post.call_args.kwargs["data"]["model"], "qwen3-asr")
-        self.assertEqual(post.call_args.kwargs["data"]["prompt"], "product names")
-        self.assertEqual(post.call_args.kwargs["data"]["language"], "en")
+        self.assertEqual(post.call_args.kwargs["data"]["to_language"], "en")
         self.assertEqual(
             post.call_args.kwargs["headers"], {"Authorization": "Bearer secret"}
         )
         self.assertEqual(post.call_args.kwargs["timeout"], 30.0)
+        response.raise_for_status.assert_called_once_with()
+
+    @patch("app.services.asr.qwen3_remote_vllm.requests.post")
+    def test_context_hints_fail_instead_of_being_ignored(self, post: Mock) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            audio_path = Path(temp_dir) / "sample.wav"
+            audio_path.write_bytes(b"RIFF")
+
+            with self.assertRaisesRegex(RuntimeError, "context hints"):
+                self.backend.transcribe_text(
+                    str(audio_path),
+                    context="product names",
+                )
+
+        post.assert_not_called()
+
+    @patch("app.services.asr.qwen3_remote_vllm.requests.get")
+    def test_readiness_probes_remote_health_endpoint(self, get: Mock) -> None:
+        response = Mock()
+        get.return_value = response
+
+        self.backend.ensure_ready()
+
+        get.assert_called_once_with(
+            "http://qwen-npu:8000/health",
+            headers={"Authorization": "Bearer secret"},
+            timeout=10.0,
+        )
         response.raise_for_status.assert_called_once_with()
 
     def test_word_timestamps_fail_explicitly(self) -> None:
@@ -95,6 +122,13 @@ class Qwen3RemoteVLLMBackendTest(unittest.TestCase):
         self.assertFalse(engine.supports_realtime)
         self.assertIs(engine.model, backend)
         backend_class.assert_called_once()
+        backend.ensure_ready.assert_called_once_with()
+
+        backend.is_ready.return_value = False
+        self.assertFalse(engine.is_model_loaded())
+
+        with self.assertRaisesRegex(InvalidParameterException, "word_timestamps"):
+            engine.transcribe_long_audio("missing.wav", word_timestamps=True)
 
     def test_remote_runtime_is_not_advertised_as_realtime(self) -> None:
         with patch.object(

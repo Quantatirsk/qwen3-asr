@@ -53,7 +53,7 @@ class SpeakerSegment:
 
 
 def _resolve_modelscope_device() -> str:
-    """根据配置和硬件自动选择 modelscope pipeline 设备"""
+    """Resolve the ModelScope pipeline device from runtime settings."""
     from ..core.device import detect_device
 
     configured_device = settings.SPEAKER_DIARIZATION_DEVICE or settings.DEVICE

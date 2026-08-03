@@ -12,6 +12,7 @@
 
 - Qwen WebSocket 实时增量识别；
 - Qwen3 Forced Aligner 和词级时间戳；
+- Qwen context/hotword hints；
 - Paraformer、VAD、PUNC 或 CAM++ 在 NPU 上运行。
 
 请求 `word_timestamps=true` 时会显式返回错误，不会静默生成伪时间戳。Qwen 实时能力也不会出现在模型能力声明中。
@@ -25,7 +26,7 @@
 - 与所选 vLLM Ascend 镜像匹配的商用 CANN/HDK 支持包；
 - `/dev/davinci0`、管理设备、DCMI 和 driver 文件可由容器读取。
 
-默认 PoC 镜像为 `quay.io/ascend/vllm-ascend:v0.22.1rc1`。生产环境必须冻结镜像 digest，并使用客户实际取得的商用软件版本重新闭合兼容矩阵。
+默认 PoC 镜像固定为 `v0.22.1rc1` 对应的多架构 manifest digest。生产环境仍需记录客户实际拉取的平台镜像 digest，并使用客户取得的商用软件版本重新闭合兼容矩阵。
 
 ## 模型准备
 
@@ -41,7 +42,19 @@ Qwen 容器内模型路径可通过 `QWEN_ASCEND_MODEL_PATH` 覆盖。若使用 
 
 ```dotenv
 QWEN_ASCEND_MODEL_PATH=Qwen/Qwen3-ASR-1.7B
+QWEN_ASCEND_MODEL_REVISION=7278e1e70fe206f11671096ffdd38061171dd6e5
 HF_HUB_OFFLINE=1
+```
+
+联网准备机可按固定 revision 下载 Qwen 权重；CPU 辅助模型继续使用项目现有模型准备流程：
+
+```bash
+QWEN_VLLM_BASE_URL=http://qwen-npu:8000 \
+  uv run --project environments/cpu python -m app.utils.download_models \
+  --export-dir models
+uv run --project environments/cpu hf download Qwen/Qwen3-ASR-1.7B \
+  --revision 7278e1e70fe206f11671096ffdd38061171dd6e5 \
+  --cache-dir models/huggingface/hub
 ```
 
 ## 启动
@@ -62,8 +75,9 @@ docker compose -f docker-compose-ascend.yml logs -f qwen-npu api
 
 | 变量 | 默认值 | 说明 |
 |---|---|---|
-| `VLLM_ASCEND_IMAGE` | `quay.io/ascend/vllm-ascend:v0.22.1rc1` | 必须按完整兼容行和 digest 冻结 |
+| `VLLM_ASCEND_IMAGE` | `quay.io/ascend/vllm-ascend@sha256:9008...` | `v0.22.1rc1` 多架构 manifest digest |
 | `QWEN_ASCEND_MODEL_PATH` | `Qwen/Qwen3-ASR-1.7B` | 容器可读取的模型 ID 或本地路径 |
+| `QWEN_ASCEND_MODEL_REVISION` | `7278e1e...` | 固定的 Hugging Face 模型 revision |
 | `QWEN_ASCEND_MAX_MODEL_LEN` | `4096` | 首轮按官方保守值启动 |
 | `QWEN_ASCEND_MEMORY_UTILIZATION` | `0.9` | vLLM 设备内存预算 |
 | `QWEN_VLLM_TIMEOUT_SEC` | `3600` | API 调用 NPU 服务的超时 |

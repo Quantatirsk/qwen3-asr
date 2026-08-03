@@ -314,7 +314,6 @@ async def asr_transcribe(
     finally:
         transcription_service.cleanup(prepared_audio)
 
-
 @router.get(
     "/asr/health",
     response_model=ASRHealthCheckResponse,
@@ -343,7 +342,7 @@ async def health_check(request: Request):
             runtime_router = get_runtime_router()
             default_model = runtime_router.resolve_model_id(None)
             async with await runtime_router.acquire_engine(default_model) as engine:
-                model_loaded = True
+                model_loaded = engine.is_model_loaded()
                 device = engine.device
         except Exception:
             model_loaded = False
@@ -374,6 +373,7 @@ async def health_check(request: Request):
             "version": settings.APP_VERSION,
             "message": str(e),
         }
+
 
 @router.get(
     "/asr/models",

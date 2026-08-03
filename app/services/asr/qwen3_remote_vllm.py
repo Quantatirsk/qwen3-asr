@@ -26,13 +26,39 @@ class Qwen3RemoteVLLMBackend:
     ) -> None:
         normalized_base_url = base_url.rstrip("/")
         if normalized_base_url.endswith("/v1"):
+            server_base_url = normalized_base_url[: -len("/v1")]
             self._transcriptions_url = f"{normalized_base_url}/audio/transcriptions"
         else:
+            server_base_url = normalized_base_url
             self._transcriptions_url = f"{normalized_base_url}/v1/audio/transcriptions"
+        self._health_url = f"{server_base_url}/health"
         self._model = model
         self._api_key = api_key
         self._timeout_sec = timeout_sec
         self._max_inference_batch_size = max(1, max_inference_batch_size)
+
+    def ensure_ready(self) -> None:
+        """Raise when the remote vLLM server is not ready."""
+        headers = {"Authorization": f"Bearer {self._api_key}"} if self._api_key else {}
+        try:
+            response = requests.get(
+                self._health_url,
+                headers=headers,
+                timeout=max(1.0, min(self._timeout_sec, 10.0)),
+            )
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            raise RuntimeError(
+                f"Remote vLLM health check failed at {self._health_url}: {exc}"
+            ) from exc
+
+    def is_ready(self) -> bool:
+        """Return whether the remote vLLM server passes its readiness probe."""
+        try:
+            self.ensure_ready()
+        except RuntimeError:
+            return False
+        return True
 
     def _transcribe(
         self,
@@ -44,15 +70,18 @@ class Qwen3RemoteVLLMBackend:
         path = Path(audio_path)
         if not path.is_file():
             raise FileNotFoundError(f"Audio file does not exist: {path}")
+        if context.strip():
+            raise RuntimeError(
+                "Remote Ascend vLLM context hints are not supported by the "
+                "Qwen3-ASR transcription adapter"
+            )
 
         data = {
             "model": self._model,
             "response_format": "json",
         }
-        if context.strip():
-            data["prompt"] = context.strip()
         if language:
-            data["language"] = language
+            data["to_language"] = language
 
         headers = {"Authorization": f"Bearer {self._api_key}"} if self._api_key else {}
         content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"

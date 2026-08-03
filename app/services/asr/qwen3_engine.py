@@ -10,14 +10,20 @@ from dataclasses import dataclass
 import torch
 import numpy as np
 
-from .engines import BaseASREngine, ASRRawResult, ASRSegmentResult, WordToken
+from .engines import (
+    ASRFullResult,
+    ASRRawResult,
+    ASRSegmentResult,
+    BaseASREngine,
+    WordToken,
+)
 from .qwenasr_rust import (
     QwenASRRustRuntime,
     is_qwenasr_rust_available,
 )
 from .qwen3_vllm import Qwen3VLLMBackend, is_vllm_available
 from .qwen3_remote_vllm import Qwen3RemoteVLLMBackend
-from ...core.exceptions import DefaultServerErrorException
+from ...core.exceptions import DefaultServerErrorException, InvalidParameterException
 from ...core.config import settings
 from ...utils.text_processing import normalize_asr_text
 
@@ -210,12 +216,42 @@ class Qwen3ASREngine(BaseASREngine):
             settings.QWEN_VLLM_BASE_URL,
             settings.QWEN_VLLM_SERVED_MODEL,
         )
-        return Qwen3RemoteVLLMBackend(
+        backend = Qwen3RemoteVLLMBackend(
             base_url=settings.QWEN_VLLM_BASE_URL,
             model=settings.QWEN_VLLM_SERVED_MODEL,
             api_key=settings.QWEN_VLLM_API_KEY,
             timeout_sec=settings.QWEN_VLLM_TIMEOUT_SEC,
             max_inference_batch_size=max_inference_batch_size,
+        )
+        backend.ensure_ready()
+        return backend
+
+    def transcribe_long_audio(
+        self,
+        audio_path: str,
+        hotwords: str = "",
+        enable_punctuation: bool = False,
+        enable_itn: bool = False,
+        sample_rate: int = 16000,
+        enable_speaker_diarization: bool = True,
+        word_timestamps: bool = False,
+        timestamp_scale: float = 1.0,
+        task_id: Optional[str] = None,
+    ) -> ASRFullResult:
+        if self._backend == "remote_vllm" and word_timestamps:
+            raise InvalidParameterException(
+                "word_timestamps is not supported by the Ascend vLLM runtime"
+            )
+        return super().transcribe_long_audio(
+            audio_path=audio_path,
+            hotwords=hotwords,
+            enable_punctuation=enable_punctuation,
+            enable_itn=enable_itn,
+            sample_rate=sample_rate,
+            enable_speaker_diarization=enable_speaker_diarization,
+            word_timestamps=word_timestamps,
+            timestamp_scale=timestamp_scale,
+            task_id=task_id,
         )
 
     def _load_rust_backend(
@@ -566,7 +602,10 @@ class Qwen3ASREngine(BaseASREngine):
 
     @_handle_asr_error("初始化流式状态")
     def init_streaming_state(
-        self, context: str = "", language: Optional[str] = None, **kwargs
+        self,
+        context: str = "",
+        language: Optional[str] = None,
+        **kwargs: Any,
     ) -> Qwen3StreamingState:
         if self._backend not in {"vllm", "rust"}:
             raise DefaultServerErrorException(
@@ -677,6 +716,8 @@ class Qwen3ASREngine(BaseASREngine):
         return state
 
     def is_model_loaded(self) -> bool:
+        if self._backend == "remote_vllm":
+            return self.model.is_ready()
         return self.model is not None
 
     @property

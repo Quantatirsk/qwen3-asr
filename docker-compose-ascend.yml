@@ -35,7 +35,7 @@ services:
       context: .
       dockerfile: Dockerfile.ascend
       args:
-        VLLM_ASCEND_IMAGE: ${VLLM_ASCEND_IMAGE:-quay.io/ascend/vllm-ascend:v0.22.1rc1}
+        VLLM_ASCEND_IMAGE: ${VLLM_ASCEND_IMAGE:-quay.io/ascend/vllm-ascend@sha256:9008b47081282612abfe4d28069ce34436752c980fd06f7599343213205ce64d}
     image: qwen3-asr:ascend-vllm
     container_name: qwen3-asr-ascend-vllm
     shm_size: 1g
@@ -58,6 +58,8 @@ services:
       - ${QWEN_ASCEND_MODEL_PATH:-Qwen/Qwen3-ASR-1.7B}
       - --served-model-name
       - qwen3-asr
+      - --revision
+      - ${QWEN_ASCEND_MODEL_REVISION:-7278e1e70fe206f11671096ffdd38061171dd6e5}
       - --tensor-parallel-size
       - "1"
       - --max-model-len
