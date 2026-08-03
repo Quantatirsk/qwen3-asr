@@ -1,11 +1,13 @@
 # Qwen3-ASR for Ascend 910B
 
-Offline speech transcription service specialized for Huawei Ascend 910B. The deployment has two processes:
+Offline speech transcription service packaged as one manually operated Ascend container.
 
-- `api`: FastAPI plus CPU audio decoding, FSMN VAD, CAM++ speaker diarization, and ITN.
-- `qwen-npu`: pinned vLLM Ascend image serving `Qwen/Qwen3-ASR-1.7B`.
+The single image contains two isolated Python environments:
 
-The repository intentionally contains no realtime WebSocket, Paraformer, punctuation-model, local CUDA, or Rust Qwen runtime.
+- the base image environment runs Ascend vLLM and `Qwen/Qwen3-ASR-1.7B`;
+- `/opt/qwen3-asr-venv` runs FastAPI, audio decoding, FSMN VAD, CAM++ speaker diarization, and ITN on CPU.
+
+Both processes run in the same container and communicate over `127.0.0.1`. The image starts in `/bin/bash`; it never starts a service automatically. The repository contains no realtime WebSocket, Paraformer, punctuation-model, local CUDA, or Rust Qwen runtime.
 
 ## Capabilities
 
@@ -14,30 +16,36 @@ The repository intentionally contains no realtime WebSocket, Paraformer, punctua
 - long-audio segmentation with FSMN VAD
 - optional CAM++ speaker diarization
 - JSON, text, SRT, and VTT responses
-- optional estimated word timestamps
+- estimated compatibility word timestamps
 
-When `word_timestamps=true`, tokens are distributed uniformly inside each effective VAD/diarization segment. Responses include `word_timestamp_method: "uniform_fallback"`; these values are compatibility estimates, not acoustic forced alignment.
+When `word_timestamps=true`, tokens are distributed uniformly inside each effective VAD or diarization segment. Responses include `word_timestamp_method: "uniform_fallback"`; these values are not acoustic forced alignment.
 
-## Start
+## Image Build
 
-Prepare the pinned Qwen model and CPU support models:
-
-```bash
-uv sync --frozen
-./scripts/prepare-models.sh
-```
-
-On an Ascend host with the matching driver, firmware, CANN, and container runtime:
+The image build downloads and embeds the CPU support models. Qwen weights remain outside the image and are supplied by the customer platform.
 
 ```bash
-npu-smi info
-docker compose config
-docker compose build
-docker compose up -d
-docker compose logs -f qwen-npu api
+docker build -f Dockerfile.ascend -t qwen3-asr:ascend-910b .
 ```
 
-The API listens on port `17003` by default. See [Ascend deployment](docs/deployment-ascend.md) for the compatibility boundary and acceptance checks.
+## Manual Container Start
+
+After the customer platform starts the image and opens its shell, stage the preloaded Qwen snapshot:
+
+```bash
+SRC=/root/.cache/huggingface/hub/models--Qwen--Qwen3-ASR-1.7B/snapshots/7278e1e70fe206f11671096ffdd38061171dd6e5
+/workspace/qwen3-asr/scripts/stage-qwen-model.sh "$SRC"
+```
+
+Then start vLLM and the API in the foreground:
+
+```bash
+export API_KEY=replace-me
+export QWEN_ASCEND_TENSOR_PARALLEL_SIZE=1
+/workspace/qwen3-asr/scripts/start-ascend-services.sh
+```
+
+The public API listens on `0.0.0.0:17003`. Ascend vLLM listens only on `127.0.0.1:17004`. See [Ascend deployment](docs/deployment-ascend.md) for the complete operating procedure.
 
 ## Example
 

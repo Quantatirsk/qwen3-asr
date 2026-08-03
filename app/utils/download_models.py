@@ -328,11 +328,17 @@ def main() -> int:
         action="store_true",
         help="Reduce output for startup/bootstrap usage",
     )
+    parser.add_argument(
+        "--exclude-qwen",
+        action="store_true",
+        help="Download only the CPU support models used by the API runtime",
+    )
     args = parser.parse_args()
 
     success = download_models(
         auto_mode=args.auto_mode,
         export_dir=args.export_dir,
+        include_qwen=not args.exclude_qwen,
     )
     return 0 if success else 1
 

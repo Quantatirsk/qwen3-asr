@@ -1,10 +1,63 @@
 ARG VLLM_ASCEND_IMAGE=quay.io/ascend/vllm-ascend@sha256:9008b47081282612abfe4d28069ce34436752c980fd06f7599343213205ce64d
 FROM ${VLLM_ASCEND_IMAGE}
 
-ENV HF_HOME=/root/.cache/huggingface \
+USER root
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    HF_HOME=/root/.cache/huggingface \
     HF_HUB_CACHE=/root/.cache/huggingface/hub \
     HF_HUB_DISABLE_SYMLINKS_WARNING=1 \
-    PYTHONUNBUFFERED=1
+    HF_HUB_DISABLE_PROGRESS_BARS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    OMP_NUM_THREADS=1 \
+    GOTO_NUM_THREADS=1 \
+    UV_PROJECT_ENVIRONMENT=/opt/qwen3-asr-venv \
+    QWEN3_ASR_PROJECT_ROOT=/workspace/qwen3-asr \
+    QWEN3_ASR_API_PYTHON=/opt/qwen3-asr-venv/bin/python
 
-ENTRYPOINT ["vllm", "serve"]
-CMD ["Qwen/Qwen3-ASR-1.7B", "--served-model-name", "qwen3-asr", "--tensor-parallel-size", "1", "--max-model-len", "4096", "--gpu-memory-utilization", "0.9", "--enforce-eager", "--host", "0.0.0.0", "--port", "8000"]
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        curl \
+        ffmpeg \
+        libopenblas-dev \
+        libsndfile1 \
+        libsox-dev \
+        sox \
+    && python3 -m pip install --no-cache-dir uv \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace/qwen3-asr
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --no-dev --no-install-project --frozen
+
+COPY . .
+
+RUN chmod +x \
+        scripts/stage-qwen-model.sh \
+        scripts/start-ascend-services.sh \
+    && HF_HUB_OFFLINE=0 /opt/qwen3-asr-venv/bin/python \
+        -m app.utils.download_models --auto-mode --exclude-qwen \
+    && /opt/qwen3-asr-venv/bin/python -c \
+        "from app.utils.model_loader import verify_required_models_integrity; result = verify_required_models_integrity(use_logger=False); raise SystemExit(1 if result['invalid_models'] else 0)" \
+    && mkdir -p /workspace/hf_models temp data logs
+
+ENV HF_HUB_OFFLINE=1 \
+    DEVICE=cpu \
+    SPEAKER_DIARIZATION_DEVICE=cpu \
+    QWEN_ASCEND_MODEL_PATH=/workspace/hf_models/Qwen3-ASR-1.7B \
+    QWEN_VLLM_HOST=127.0.0.1 \
+    QWEN_VLLM_PORT=17004 \
+    QWEN_VLLM_SERVED_MODEL=qwen3-asr \
+    QWEN_VLLM_TIMEOUT_SEC=3600 \
+    QWEN3_ASR_API_HOST=0.0.0.0 \
+    QWEN3_ASR_API_PORT=17003
+
+EXPOSE 17003
+
+CMD ["/bin/bash"]

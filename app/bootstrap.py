@@ -22,7 +22,7 @@ def ensure_models_downloaded(interactive: bool) -> bool:
 
         if is_huggingface_offline():
             print("\nHF_HUB_OFFLINE=1, startup will not download models.")
-            print("Run ./scripts/prepare-models.sh online first and copy models/.")
+            print("The image is missing its embedded support models; rebuild it.")
             return False
 
         print("\n将自动下载缺失模型后继续启动。")
@@ -31,9 +31,8 @@ def ensure_models_downloaded(interactive: bool) -> bool:
 
         print("\n模型自动下载失败。")
         if interactive:
-            print("可手动运行以下命令排查：")
-            print("  uv run python -m app.utils.download_models")
-            print("  ./scripts/prepare-models.sh")
+            print("Run this command to diagnose the support model download:")
+            print("  uv run python -m app.utils.download_models --exclude-qwen")
         else:
             print("非交互式终端下请确认网络可用，或预先准备模型缓存。")
         return False

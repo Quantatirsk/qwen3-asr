@@ -16,5 +16,5 @@ jobs:
       - run: uv sync --frozen
       - run: uv run python -m unittest discover -s tests -v
       - run: uv run python -m compileall -q app tests
-      - run: docker compose config
-      - run: docker build -f Dockerfile.ascend-api -t qwen3-asr:ascend-api-test .
+      - run: bash -n scripts/stage-qwen-model.sh scripts/start-ascend-services.sh
+      - run: docker build --check -f Dockerfile.ascend .

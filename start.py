@@ -16,7 +16,7 @@ os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("TQDM_DISABLE", "1")
 os.environ.setdefault("DISABLE_TQDM", "1")
 
-# docker-compose commonly injects HF_ENDPOINT="" when the variable is unset.
+# Some container launchers inject HF_ENDPOINT="" when the variable is unset.
 # huggingface_hub treats the empty string as an explicit endpoint and later
 # builds invalid relative URLs such as "/api/models/...". Normalize blank
 # values back to "unset" before any HF/transformers imports happen.

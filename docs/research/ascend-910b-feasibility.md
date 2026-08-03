@@ -8,6 +8,8 @@
 >
 > 验证边界：本文没有运行 NPU 测试；所有性能、精度和稳定性结论都必须通过目标硬件 PoC
 
+> 后续部署决策：客户平台只允许启动一个镜像，并只向维护者提供容器 shell。当前实现因此改为单容器、双 Python 环境：基础环境运行 Ascend vLLM，隔离的 CPU venv 运行 API 与辅助模型，两者通过 loopback 通信。本文后续出现的双容器建议和旧仓库基线仅保留为研究过程记录，不代表当前交付方式。
+
 ## 1. 结论摘要
 
 **结论：部署可行，但不是现有 CUDA 镜像的原位替换。**
@@ -23,7 +25,7 @@ BF16 权重可部署在一张 64 GB Ascend 910B 上，教程给出了 A2 镜像�
 3. FunASR 当前锁定 `1.3.1`，该安装版本没有 NPU 可用性处理；FunASR `v1.3.2` 已有正式 NPU 入口，但 Paraformer、FSMN VAD 和标点仍需按本项目语料与流式语义做 PoC。
 4. Qwen3 Forced Aligner、项目自定义实时流式语义没有 910B 官方端到端验证；CAM++ 更早被当前 ModelScope pipeline 的设备校验阻断，不能随核心 Qwen3-ASR 一并宣称支持。
 
-**推荐路线：**拆成两个独立容器/工作负载：`api-cpu` 承载 FastAPI、音频前处理和 CPU 辅助链，`qwen-npu` 基于官方 `vllm-ascend` A2 镜像并独占一张 910B。两者通过内网 HTTP 通信。先恢复完整 API，再逐个评估是否把 FunASR 组件迁到独立的 NPU worker。这是最短的可验证路径，也从进程、依赖和设备所有权上隔离了 Qwen、FunASR、ONNX/ATC 与两套 CANN 版本链。
+**当前路线：**从官方 `vllm-ascend` A2 镜像派生唯一交付镜像。系统 Python 环境只运行 vLLM Ascend，独立 CPU venv 运行 FastAPI、音频前处理和辅助模型，两个进程通过 `127.0.0.1` 通信。该方案满足单镜像限制，同时避免 CPU PyTorch 覆盖基础镜像中的 `torch_npu`。原双容器方案在平台允许多工作负载时隔离性更强，但已不符合本客户的硬约束。
 
 **生产发布状态：有条件可行。**Qwen3-ASR 的直接模型证据来自 `vllm-ascend 0.22.1rc1 + CANN 9.0.0`，但 CANN 官方下载页把 9.0.0 社区版定义为面向开发者的新特性 PoC 版本。华为同时公开了 CANN 9.0.0 商用版文档，但公开文档不等于目标 Atlas SKU 已获得相应软件包、HDK 配套与生产支持权益。生产 Go 的前置条件是客户取得与所选 vLLM 发布行精确匹配的商用 CANN 9.0.x/HDK/driver/firmware 支持包，并通过本文 PoC 门槛；社区 PoC 镜像不能直接批准为生产基线。
 

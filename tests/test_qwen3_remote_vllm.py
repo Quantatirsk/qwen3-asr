@@ -18,7 +18,7 @@ from app.services.asr.qwen3_remote_vllm import Qwen3RemoteVLLMBackend
 class Qwen3RemoteVLLMBackendTest(unittest.TestCase):
     def setUp(self) -> None:
         self.backend = Qwen3RemoteVLLMBackend(
-            base_url="http://qwen-npu:8000",
+            base_url="http://127.0.0.1:17004",
             model="qwen3-asr",
             api_key="secret",
             timeout_sec=30.0,
@@ -37,7 +37,7 @@ class Qwen3RemoteVLLMBackendTest(unittest.TestCase):
 
         self.assertEqual(text, "hello world")
         self.assertEqual(
-            post.call_args.args[0], "http://qwen-npu:8000/v1/audio/transcriptions"
+            post.call_args.args[0], "http://127.0.0.1:17004/v1/audio/transcriptions"
         )
         self.assertEqual(post.call_args.kwargs["data"]["model"], "qwen3-asr")
         self.assertEqual(post.call_args.kwargs["data"]["to_language"], "en")
@@ -60,7 +60,7 @@ class Qwen3RemoteVLLMBackendTest(unittest.TestCase):
         get.return_value = Mock()
         self.backend.ensure_ready()
         get.assert_called_once_with(
-            "http://qwen-npu:8000/health",
+            "http://127.0.0.1:17004/health",
             headers={"Authorization": "Bearer secret"},
             timeout=10.0,
         )
@@ -79,7 +79,7 @@ class Qwen3RemoteVLLMBackendTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             audio_path = Path(temp_dir) / "sample.wav"
             audio_path.write_bytes(b"RIFF")
-            with self.assertRaisesRegex(RuntimeError, "qwen-npu:8000"):
+            with self.assertRaisesRegex(RuntimeError, "127.0.0.1:17004"):
                 self.backend.transcribe_text(str(audio_path))
 
     @patch("app.services.asr.qwen3_remote_vllm.requests.post")
@@ -90,7 +90,7 @@ class Qwen3RemoteVLLMBackendTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             audio_path = Path(temp_dir) / "sample.wav"
             audio_path.write_bytes(b"RIFF")
-            with self.assertRaisesRegex(RuntimeError, "qwen-npu:8000"):
+            with self.assertRaisesRegex(RuntimeError, "127.0.0.1:17004"):
                 self.backend.transcribe_text(str(audio_path))
 
 

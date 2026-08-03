@@ -1,9 +1,10 @@
-# Scripts
+# Single-container Operations
 
-`prepare-models.sh` downloads and exports the complete offline model set:
+`stage-qwen-model.sh` copies a customer-provided Hugging Face snapshot into `/workspace/hf_models/Qwen3-ASR-1.7B`. It dereferences cache symlinks, reports progress, validates the copied files, and publishes the destination atomically.
 
-- Qwen3-ASR-1.7B at the pinned Ascend revision
-- FSMN VAD
-- CAM++ diarization, speaker verification, and change-locator assets
+`start-ascend-services.sh` starts Ascend vLLM, waits for its health endpoint, then starts the API from the isolated CPU environment. It keeps both processes under one foreground shell and cleans them up together.
 
-Run it from the repository root after `uv sync --frozen`.
+```bash
+/workspace/qwen3-asr/scripts/stage-qwen-model.sh /path/to/Qwen3-ASR-1.7B
+/workspace/qwen3-asr/scripts/start-ascend-services.sh
+```
