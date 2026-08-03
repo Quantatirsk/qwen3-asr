@@ -4,6 +4,8 @@ set -Eeuo pipefail
 
 PROJECT_ROOT="${QWEN3_ASR_PROJECT_ROOT:-/workspace/qwen3-asr}"
 API_PYTHON="${QWEN3_ASR_API_PYTHON:-/opt/qwen3-asr-venv/bin/python}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MODEL_VALIDATOR="${SCRIPT_DIR}/validate-qwen-model.py"
 MODEL_PATH="${QWEN_ASCEND_MODEL_PATH:-/workspace/hf_models/Qwen3-ASR-1.7B}"
 SERVED_MODEL="${QWEN_VLLM_SERVED_MODEL:-qwen3-asr}"
 VLLM_HOST="${QWEN_VLLM_HOST:-127.0.0.1}"
@@ -59,12 +61,9 @@ require_positive_integer "QWEN_ASCEND_TENSOR_PARALLEL_SIZE" "${TENSOR_PARALLEL_S
 require_positive_integer "QWEN_ASCEND_MAX_MODEL_LEN" "${MAX_MODEL_LEN}"
 [[ -x "${API_PYTHON}" ]] || die "API Python is unavailable: ${API_PYTHON}"
 [[ -f "${PROJECT_ROOT}/start.py" ]] || die "API entrypoint is unavailable: ${PROJECT_ROOT}/start.py"
-[[ -f "${MODEL_PATH}/config.json" ]] || die "staged model is unavailable: ${MODEL_PATH}"
-
-shopt -s nullglob
-MODEL_WEIGHTS=("${MODEL_PATH}"/*.safetensors "${MODEL_PATH}"/*.safetensors.index.json)
-shopt -u nullglob
-(( ${#MODEL_WEIGHTS[@]} > 0 )) || die "staged model has no safetensors weights: ${MODEL_PATH}"
+[[ -f "${MODEL_VALIDATOR}" ]] || die "model validator is unavailable: ${MODEL_VALIDATOR}"
+python3 "${MODEL_VALIDATOR}" "${MODEL_PATH}" >/dev/null 2>&1 \
+    || die "staged model is incomplete: ${MODEL_PATH}"
 
 mkdir -p "$(dirname "${VLLM_LOG}")" "${PROJECT_ROOT}/temp" "${PROJECT_ROOT}/data" "${PROJECT_ROOT}/logs"
 

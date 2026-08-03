@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -31,12 +32,17 @@ class SingleContainerDeploymentTest(unittest.TestCase):
             root = Path(temp_dir)
             source = root / "snapshot"
             destination = root / "hf_models" / "Qwen3-ASR-1.7B"
-            blob = root / "blobs" / "model.safetensors"
+            shard_name = "model-00001-of-00001.safetensors"
+            blob = root / "blobs" / shard_name
             source.mkdir()
             blob.parent.mkdir()
             blob.write_bytes(b"weights")
             (source / "config.json").write_text("{}", encoding="utf-8")
-            (source / "model.safetensors").symlink_to(blob)
+            (source / shard_name).symlink_to(blob)
+            (source / "model.safetensors.index.json").write_text(
+                json.dumps({"weight_map": {"layer.weight": shard_name}}),
+                encoding="utf-8",
+            )
 
             completed = subprocess.run(
                 [
@@ -52,8 +58,8 @@ class SingleContainerDeploymentTest(unittest.TestCase):
 
             self.assertEqual(completed.returncode, 0, completed.stderr)
             self.assertEqual((destination / "config.json").read_text(), "{}")
-            self.assertEqual((destination / "model.safetensors").read_bytes(), b"weights")
-            self.assertFalse((destination / "model.safetensors").is_symlink())
+            self.assertEqual((destination / shard_name).read_bytes(), b"weights")
+            self.assertFalse((destination / shard_name).is_symlink())
             self.assertIn("Copy finished", completed.stdout)
 
     def test_stage_command_rejects_incomplete_existing_destination(self) -> None:
@@ -66,6 +72,42 @@ class SingleContainerDeploymentTest(unittest.TestCase):
             (source / "config.json").write_text("{}", encoding="utf-8")
             (source / "model.safetensors").write_bytes(b"weights")
             (destination / "config.json").write_text("{}", encoding="utf-8")
+
+            completed = subprocess.run(
+                [
+                    "bash",
+                    str(PROJECT_ROOT / "scripts/stage-qwen-model.sh"),
+                    str(source),
+                    str(destination),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn("destination exists but is incomplete", completed.stderr)
+
+    def test_stage_command_rejects_index_without_weight_shards(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "snapshot"
+            destination = root / "Qwen3-ASR-1.7B"
+            source.mkdir()
+            destination.mkdir()
+            (source / "config.json").write_text("{}", encoding="utf-8")
+            (source / "model.safetensors").write_bytes(b"weights")
+            (destination / "config.json").write_text("{}", encoding="utf-8")
+            (destination / "model.safetensors.index.json").write_text(
+                json.dumps(
+                    {
+                        "weight_map": {
+                            "layer.weight": "model-00001-of-00001.safetensors"
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
 
             completed = subprocess.run(
                 [
@@ -307,6 +349,62 @@ exit 0
             self.assertNotEqual(completed.returncode, 0)
             self.assertTrue(api_stopped.exists())
             self.assertIn("vLLM exited after startup", completed.stderr)
+
+    def test_start_command_rejects_index_without_weight_shards(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            bin_dir = root / "bin"
+            model_dir = root / "Qwen3-ASR-1.7B"
+            vllm_started = root / "vllm.started"
+            bin_dir.mkdir()
+            model_dir.mkdir()
+            (model_dir / "config.json").write_text("{}", encoding="utf-8")
+            (model_dir / "model.safetensors.index.json").write_text(
+                json.dumps(
+                    {
+                        "weight_map": {
+                            "layer.weight": "model-00001-of-00001.safetensors"
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self._write_executable(
+                bin_dir / "vllm",
+                """#!/usr/bin/env bash
+touch "$FAKE_VLLM_STARTED"
+exit 1
+""",
+            )
+            self._write_executable(bin_dir / "curl", "#!/usr/bin/env bash\nexit 1\n")
+            self._write_executable(
+                bin_dir / "api-python",
+                "#!/usr/bin/env bash\nexit 0\n",
+            )
+            environment = os.environ.copy()
+            environment.update(
+                {
+                    "PATH": f"{bin_dir}:{environment['PATH']}",
+                    "QWEN_ASCEND_MODEL_PATH": str(model_dir),
+                    "QWEN3_ASR_API_PYTHON": str(bin_dir / "api-python"),
+                    "QWEN3_ASR_PROJECT_ROOT": str(PROJECT_ROOT),
+                    "QWEN_VLLM_STARTUP_TIMEOUT_SEC": "2",
+                    "FAKE_VLLM_STARTED": str(vllm_started),
+                }
+            )
+
+            completed = subprocess.run(
+                ["bash", str(PROJECT_ROOT / "scripts/start-ascend-services.sh")],
+                check=False,
+                capture_output=True,
+                text=True,
+                env=environment,
+                timeout=5,
+            )
+
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertFalse(vllm_started.exists())
+            self.assertIn("staged model is incomplete", completed.stderr)
 
     @staticmethod
     def _write_executable(path: Path, content: str) -> None:

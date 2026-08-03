@@ -5,6 +5,8 @@ set -Eeuo pipefail
 DEFAULT_REVISION="7278e1e70fe206f11671096ffdd38061171dd6e5"
 DEFAULT_SOURCE="/root/.cache/huggingface/hub/models--Qwen--Qwen3-ASR-1.7B/snapshots/${DEFAULT_REVISION}"
 DEFAULT_DESTINATION="/workspace/hf_models/Qwen3-ASR-1.7B"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MODEL_VALIDATOR="${SCRIPT_DIR}/validate-qwen-model.py"
 
 SOURCE_DIR="${1:-${QWEN_MODEL_SOURCE:-${DEFAULT_SOURCE}}}"
 DESTINATION_DIR="${2:-${QWEN_ASCEND_MODEL_PATH:-${DEFAULT_DESTINATION}}}"
@@ -45,13 +47,7 @@ monotonic_seconds() {
 
 model_is_complete() {
     local model_dir="$1"
-    local weight_files
-
-    [[ -f "${model_dir}/config.json" ]] || return 1
-    shopt -s nullglob
-    weight_files=("${model_dir}"/*.safetensors "${model_dir}"/*.safetensors.index.json)
-    shopt -u nullglob
-    (( ${#weight_files[@]} > 0 ))
+    python3 "${MODEL_VALIDATOR}" "${model_dir}" >/dev/null 2>&1
 }
 
 cleanup() {
@@ -70,6 +66,7 @@ handle_signal() {
 
 [[ -d "${SOURCE_DIR}" ]] || die "model source does not exist: ${SOURCE_DIR}"
 [[ -f "${SOURCE_DIR}/config.json" ]] || die "config.json is missing: ${SOURCE_DIR}"
+[[ -f "${MODEL_VALIDATOR}" ]] || die "model validator is unavailable: ${MODEL_VALIDATOR}"
 
 SOURCE_CANONICAL=$(canonical_path "${SOURCE_DIR}")
 DESTINATION_CANONICAL=$(canonical_path "${DESTINATION_DIR}")
