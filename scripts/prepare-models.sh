@@ -25,7 +25,7 @@ command -v uv >/dev/null 2>&1 || die "uv not found; install uv first"
 
 # Confirm
 info "Export settings:"
-info "  Models: Current runtime plan (auto-selected Qwen + realtime stack)"
+info "  Models: Qwen3-ASR-1.7B + FSMN VAD + CAM++ offline stack"
 info "  Output: ${OUTPUT_DIR}"
 read -p "Start export? [Y/n]: " confirm
 if [[ $confirm =~ ^[Nn]$ ]]; then

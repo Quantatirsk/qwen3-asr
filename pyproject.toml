@@ -1,12 +1,12 @@
 [project]
 name = "qwen3-asr"
 version = "1.0.3"
-description = "Qwen3-ASR API service with CUDA vLLM and CPU Rust backends"
+description = "Qwen3-ASR offline API service for Ascend 910B"
 requires-python = ">=3.10,<3.13"
 dependencies = [
   "fastapi==0.128.0",
   "fastapi-offline==1.7.6",
-  "uvicorn[standard]==0.40.0",
+  "uvicorn==0.40.0",
   "pydantic==2.12.0",
   "python-multipart==0.0.22",
   "funasr==1.3.1",
@@ -15,10 +15,8 @@ dependencies = [
   "soundfile==0.13.1",
   "librosa==0.11.0",
   "textual>=0.79,<1",
-  "websockets==16.0",
   "addict==2.4.0",
   "datasets==3.6.0",
-  "scipy==1.15.3",
   "wetext==0.1.2",
   "python-dotenv==1.2.1",
   "huggingface_hub==0.34.0",
@@ -26,11 +24,9 @@ dependencies = [
   "loguru==0.7.2",
   "rich>=13.9,<14",
   "setuptools>=70.0.0,<81",
-  "torch==2.10.0 ; sys_platform == 'linux'",
-  "torchaudio==2.10.0 ; sys_platform == 'linux'",
-  "torchvision==0.25.0 ; sys_platform == 'linux'",
-  "transformers>=4.57,<4.58",
-  "vllm[audio]==0.19.0 ; sys_platform == 'linux'",
+  "torch==2.3.1 ; sys_platform == 'linux' or sys_platform == 'darwin'",
+  "torchaudio==2.3.1 ; sys_platform == 'linux' or sys_platform == 'darwin'",
+  "transformers>=4.45,<4.50",
 ]
 
 [build-system]
@@ -45,16 +41,13 @@ package = false
 
 [tool.uv.sources]
 torch = [
-  { index = "pytorch-cu128", marker = "platform_system == 'Linux'" },
+  { index = "pytorch-cpu", marker = "platform_system == 'Linux'" },
 ]
 torchaudio = [
-  { index = "pytorch-cu128", marker = "platform_system == 'Linux'" },
-]
-torchvision = [
-  { index = "pytorch-cu128", marker = "platform_system == 'Linux'" },
+  { index = "pytorch-cpu", marker = "platform_system == 'Linux'" },
 ]
 
 [[tool.uv.index]]
-name = "pytorch-cu128"
-url = "https://download.pytorch.org/whl/cu128"
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
 explicit = true

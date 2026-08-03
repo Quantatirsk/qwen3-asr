@@ -56,14 +56,6 @@ class Settings:
     }
     ASR_MODELS_CONFIG: str = str(BASE_DIR / "app/services/asr/models.json")
     VAD_MODEL: str = "damo/speech_fsmn_vad_zh-cn-16k-common-pytorch"
-    PUNC_MODEL: str = "iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch"
-    PUNC_REALTIME_MODEL: str = (
-        "iic/punc_ct-transformer_zh-cn-common-vad_realtime-vocab272727"
-    )
-
-    # 流式ASR远场过滤配置
-    ASR_ENABLE_NEARFIELD_FILTER: bool = True  # 是否启用远场声音过滤
-    ASR_NEARFIELD_RMS_THRESHOLD: float = 0.01  # RMS能量阈值（宽松模式，适合大多数场景）
     # 音频处理配置
     MAX_AUDIO_SIZE: int = 2048 * 1024 * 1024  # 2GB
 
@@ -72,10 +64,6 @@ class Settings:
 
     # 音频分段配置
     MAX_SEGMENT_SEC: float = 60.0  # Max offline ASR segment duration in seconds.
-
-    # Runtime 并发配置（按 backend 独立控制）
-    QWEN_RUST_CPU_WORKERS: int = 4
-    FUNASR_WORKERS: int = 1
 
     def __init__(self):
         """从环境变量读取配置"""
@@ -117,16 +105,6 @@ class Settings:
             os.getenv("QWEN_VLLM_TIMEOUT_SEC", str(self.QWEN_VLLM_TIMEOUT_SEC))
         )
 
-        # 远场过滤配置
-        self.ASR_ENABLE_NEARFIELD_FILTER = (
-            os.getenv("ASR_ENABLE_NEARFIELD_FILTER", "true").lower() == "true"
-        )
-        self.ASR_NEARFIELD_RMS_THRESHOLD = float(
-            os.getenv(
-                "ASR_NEARFIELD_RMS_THRESHOLD", str(self.ASR_NEARFIELD_RMS_THRESHOLD)
-            )
-        )
-
         # 音频处理配置
         # 支持简化格式：纯数字表示MB，或带单位（如 2048MB, 2GB）
         max_audio_size_str = os.getenv("MAX_AUDIO_SIZE")
@@ -139,10 +117,6 @@ class Settings:
             os.getenv("MAX_SEGMENT_SEC", str(self.MAX_SEGMENT_SEC))
         )
 
-        self.QWEN_RUST_CPU_WORKERS = int(
-            os.getenv("QWEN_RUST_CPU_WORKERS", str(self.QWEN_RUST_CPU_WORKERS))
-        )
-        self.FUNASR_WORKERS = int(os.getenv("FUNASR_WORKERS", str(self.FUNASR_WORKERS)))
 
     def _parse_size(self, size_str: str) -> int:
         """解析带单位的大小字符串

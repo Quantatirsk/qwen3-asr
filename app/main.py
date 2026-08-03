@@ -159,9 +159,6 @@ def create_app() -> FastAPI:
                 "asr": "/stream/v1/asr",
                 "asr_models": "/stream/v1/asr/models",
                 "asr_health": "/stream/v1/asr/health",
-                "ws_asr": "/ws/v1/asr",
-                # Qwen3-ASR 专用 WebSocket 流式 (POC)
-                "ws_qwen3_asr": "/ws/v1/qwen3/asr",
                 # OpenAI 兼容 API
                 "openai_models": "/v1/models",
                 "openai_transcriptions": "/v1/audio/transcriptions",

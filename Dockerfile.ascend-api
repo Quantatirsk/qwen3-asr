@@ -25,8 +25,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY environments/cpu /app/environments/cpu
-RUN uv sync --project /app/environments/cpu --no-dev --no-install-project --frozen \
+COPY pyproject.toml uv.lock /app/
+RUN uv sync --no-dev --no-install-project --frozen \
     && apt-get remove -y build-essential \
     && apt-get autoremove -y \
     && apt-get clean \

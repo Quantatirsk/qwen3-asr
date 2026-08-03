@@ -160,7 +160,7 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
                     "default": False,
                     "example": False,
                 },
-                "description": "是否返回字词级时间戳（默认关闭；Qwen CUDA vLLM / CPU Rust 在启用时会自动调用 forced aligner）",
+                "description": "是否返回按有效片段均匀估算的字词级时间戳（默认关闭）",
             },
             # 5. 增强选项
             {
@@ -279,6 +279,8 @@ async def asr_transcribe(
             "duration": round(asr_result.duration, 2),
             "processing_time": round(request_duration, 3),
         }
+        if asr_result.word_timestamp_method:
+            response_data["word_timestamp_method"] = asr_result.word_timestamp_method
 
         return JSONResponse(content=response_data, headers={"task_id": task_id})
 
@@ -381,18 +383,16 @@ async def health_check(request: Request) -> dict[str, object]:
     response_model=ASRModelsResponse,
     summary="获取声明条目列表",
     description="""
-返回系统声明的离线模型与 realtime capability 信息。
+返回 Ascend 运行时声明的离线模型信息。
 
 ## 条目说明
 
-| ID | 类型 | 说明 |
-|----|------|------|
-| qwen3-asr-1.7b | model | 离线/实时共用的 Qwen3-ASR 模型条目 |
-| qwen3-asr-0.6b | model | 轻量版 Qwen3-ASR 模型条目 |
-| paraformer-large | capability | WebSocket realtime capability |
+| ID | 说明 |
+|----|------|
+| qwen3-asr-1.7b | Ascend vLLM 离线 Qwen3-ASR 模型 |
 
 ## 返回信息
-- **declared_entries**: 声明的模型与 capability 列表
+- **declared_entries**: 声明的离线模型列表
 - **declared_count**: 声明项总数
 - **runtime**: 运行时加载状态
 """,

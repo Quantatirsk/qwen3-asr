@@ -1,95 +1,91 @@
 # Ascend 910B 部署
 
-## 支持边界
+## 架构边界
 
-当前适配采用拆分运行时：
+部署由两个容器组成：
 
-- `api` 使用 CPU PyTorch，负责 FastAPI、音频处理、Paraformer、CAM++ 和聚类。
-- `qwen-npu` 使用官方 vLLM Ascend 镜像，独占一张 64 GB Ascend 910B，负责 Qwen3-ASR-1.7B 离线识别。
-- API 通过 vLLM OpenAI-compatible Transcriptions API 调用 NPU 服务。
+| 容器 | 设备 | 职责 |
+|---|---|---|
+| `api` | CPU | FastAPI、音频解码、FSMN VAD、CAM++、ITN、结果格式化 |
+| `qwen-npu` | Ascend 910B | vLLM Ascend、Qwen3-ASR-1.7B 离线推理 |
 
-首阶段不声明以下能力已经通过 910B 验证：
+本分支不包含实时 WebSocket、Paraformer、PUNC、本地 CUDA/Rust Qwen 或 Qwen3-ASR-0.6B。
 
-- Qwen WebSocket 实时增量识别；
-- Qwen3 Forced Aligner 和词级时间戳；
-- Qwen context/hotword hints；
-- Paraformer、VAD、PUNC 或 CAM++ 在 NPU 上运行。
+## 词级时间戳
 
-请求 `word_timestamps=true` 时会显式返回错误，不会静默生成伪时间戳。Qwen 实时能力也不会出现在模型能力声明中。
+Ascend 运行时不加载 Qwen3 Forced Aligner。前端传入 `word_timestamps=true` 时，API 在每个 VAD 或说话人片段内均匀分配文本单元时间：
+
+- 中文汉字各自成为一个单元；
+- 英文和数字按连续单词成为一个单元；
+- 标点附加到前一个单元；
+- 时间为片段内绝对时间，最后一个单元严格结束于片段终点；
+- 响应包含 `word_timestamp_method: "uniform_fallback"`。
+
+该结果只用于接口兼容，不应作为字幕精对齐或声学分析依据。
 
 ## 前置条件
 
-开始部署前必须从服务器供应方取得完整兼容 BOM：
+- 已确认 Atlas 型号、910B revision、每卡 HBM 和服务器 CPU 架构；
+- driver、firmware、CANN/HDK 与所选 vLLM Ascend 镜像匹配；
+- 容器可访问 `/dev/davinci0`、管理设备、DCMI 和 driver 文件；
+- `npu-smi info` 在宿主机正常；
+- 模型缓存已预置，生产环境建议 `HF_HUB_OFFLINE=1`。
 
-- Atlas 产品型号、910B revision、每卡 HBM 和 CPU 架构；
-- 宿主 OS、内核、driver 和 firmware；
-- 与所选 vLLM Ascend 镜像匹配的商用 CANN/HDK 支持包；
-- `/dev/davinci0`、管理设备、DCMI 和 driver 文件可由容器读取。
-
-默认 PoC 镜像固定为 `v0.22.1rc1` 对应的多架构 manifest digest。生产环境仍需记录客户实际拉取的平台镜像 digest，并使用客户取得的商用软件版本重新闭合兼容矩阵。
+默认 vLLM Ascend 镜像和 Qwen 权重均以 digest/revision 固定。客户环境升级其中任一项时，需要重新验证兼容矩阵。
 
 ## 模型准备
 
-默认部署使用离线缓存。将 Qwen 和 ModelScope 模型预置到以下目录：
+```bash
+uv sync --frozen
+./scripts/prepare-models.sh
+```
+
+导出目录结构：
 
 ```text
 models/
-  huggingface/
-  modelscope/
+  huggingface/   # Qwen3-ASR-1.7B
+  modelscope/    # FSMN VAD + CAM++
 ```
 
-Qwen 容器内模型路径可通过 `QWEN_ASCEND_MODEL_PATH` 覆盖。若使用 Hugging Face 缓存 ID，保持默认值：
+默认 Qwen revision：
 
-```dotenv
-QWEN_ASCEND_MODEL_PATH=Qwen/Qwen3-ASR-1.7B
-QWEN_ASCEND_MODEL_REVISION=7278e1e70fe206f11671096ffdd38061171dd6e5
-HF_HUB_OFFLINE=1
-```
-
-联网准备机可按固定 revision 下载 Qwen 权重；CPU 辅助模型继续使用项目现有模型准备流程：
-
-```bash
-QWEN_VLLM_BASE_URL=http://qwen-npu:8000 \
-  uv run --project environments/cpu python -m app.utils.download_models \
-  --export-dir models
-uv run --project environments/cpu hf download Qwen/Qwen3-ASR-1.7B \
-  --revision 7278e1e70fe206f11671096ffdd38061171dd6e5 \
-  --cache-dir models/huggingface/hub
+```text
+7278e1e70fe206f11671096ffdd38061171dd6e5
 ```
 
 ## 启动
 
-先确认宿主驱动正常：
-
 ```bash
 npu-smi info
-docker compose -f docker-compose-ascend.yml config
-docker compose -f docker-compose-ascend.yml build
-docker compose -f docker-compose-ascend.yml up -d
-docker compose -f docker-compose-ascend.yml logs -f qwen-npu api
+docker compose config
+docker compose build
+docker compose up -d
+docker compose logs -f qwen-npu api
 ```
 
-默认公开端口为 `17003`。vLLM 服务只暴露在 Compose 内部网络，不直接映射到宿主。
+默认公开地址为 `http://服务器地址:17003`。NPU vLLM 仅在 Compose 内部网络暴露。
 
-## 配置
+## 关键配置
 
 | 变量 | 默认值 | 说明 |
 |---|---|---|
-| `VLLM_ASCEND_IMAGE` | `quay.io/ascend/vllm-ascend@sha256:9008...` | `v0.22.1rc1` 多架构 manifest digest |
-| `QWEN_ASCEND_MODEL_PATH` | `Qwen/Qwen3-ASR-1.7B` | 容器可读取的模型 ID 或本地路径 |
-| `QWEN_ASCEND_MODEL_REVISION` | `7278e1e...` | 固定的 Hugging Face 模型 revision |
-| `QWEN_ASCEND_MAX_MODEL_LEN` | `4096` | 首轮按官方保守值启动 |
-| `QWEN_ASCEND_MEMORY_UTILIZATION` | `0.9` | vLLM 设备内存预算 |
-| `QWEN_VLLM_TIMEOUT_SEC` | `3600` | API 调用 NPU 服务的超时 |
-| `SPEAKER_DIARIZATION_DEVICE` | `cpu` | 避免 ModelScope pipeline 接收不支持的 `npu` 设备 |
+| `VLLM_ASCEND_IMAGE` | 固定 manifest digest | vLLM Ascend 基础镜像 |
+| `QWEN_ASCEND_MODEL_PATH` | `Qwen/Qwen3-ASR-1.7B` | 模型 ID 或容器内路径 |
+| `QWEN_ASCEND_MODEL_REVISION` | `7278e1e...` | 固定权重 revision |
+| `QWEN_ASCEND_MAX_MODEL_LEN` | `4096` | vLLM 最大上下文 |
+| `QWEN_ASCEND_MEMORY_UTILIZATION` | `0.9` | NPU 内存预算 |
+| `QWEN_VLLM_TIMEOUT_SEC` | `3600` | API 到 vLLM 的请求超时 |
 
-## 验收顺序
+## 验收
 
-1. `qwen-npu` 健康检查通过，容器内可执行 `npu-smi info`。
-2. 使用官方示例音频验证 vLLM Transcriptions API。
-3. 验证项目 OpenAI transcription API，且 `enable_speaker_diarization=false`。
-4. 打开 CPU CAM++，验证多说话人结果。
-5. 使用业务金标语料比较 CUDA 与 NPU 的 CER/WER、RTF、延迟、吞吐和 HBM。
-6. 完成并发与稳定性门槛后，再评估 Forced Aligner、实时链路和 FunASR NPU worker。
+1. `qwen-npu` 和 `api` 健康检查通过。
+2. 短音频 REST 与 OpenAI API 返回正确文本。
+3. 长音频输出连续且有序的片段时间戳。
+4. 说话人分离开关两种模式均通过。
+5. `word_timestamps=true` 返回单调、片段内的 token 和 fallback 标识。
+6. JSON、text、SRT、VTT 格式通过。
+7. 静音、无效音频、NPU 不可用和超时返回明确错误。
+8. 使用业务金标语料验证 CER/WER、RTF、并发和稳定性。
 
-完整研究、风险和验收指标见 [Ascend 910B 可行性研究](./research/ascend-910b-feasibility.md)。
+研究依据和仍需客户 BOM 闭合的风险见 [Ascend 910B 可行性研究](research/ascend-910b-feasibility.md)。

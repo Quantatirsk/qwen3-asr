@@ -7,11 +7,11 @@ from unittest.mock import Mock, patch
 
 import requests
 
-from app.core.config import settings
-from app.core.exceptions import InvalidParameterException
-from app.services.asr.manager import _supports_qwen_realtime_on_device
-from app.services.asr.model_capabilities import get_enabled_qwen_huggingface_assets
-from app.services.asr.qwen3_engine import Qwen3ASREngine
+from app.services.asr.manager import ASCEND_MODEL_ID, ModelManager
+from app.services.asr.model_capabilities import (
+    QWEN_ASCEND_REVISION,
+    get_enabled_qwen_huggingface_assets,
+)
 from app.services.asr.qwen3_remote_vllm import Qwen3RemoteVLLMBackend
 
 
@@ -30,15 +30,10 @@ class Qwen3RemoteVLLMBackendTest(unittest.TestCase):
         response = Mock()
         response.json.return_value = {"text": "hello world"}
         post.return_value = response
-
         with tempfile.TemporaryDirectory() as temp_dir:
             audio_path = Path(temp_dir) / "sample.wav"
             audio_path.write_bytes(b"RIFF")
-            text = self.backend.transcribe_text(
-                str(audio_path),
-                language="en",
-                enable_itn=False,
-            )
+            text = self.backend.transcribe_text(str(audio_path), language="en")
 
         self.assertEqual(text, "hello world")
         self.assertEqual(
@@ -49,7 +44,6 @@ class Qwen3RemoteVLLMBackendTest(unittest.TestCase):
         self.assertEqual(
             post.call_args.kwargs["headers"], {"Authorization": "Bearer secret"}
         )
-        self.assertEqual(post.call_args.kwargs["timeout"], 30.0)
         response.raise_for_status.assert_called_once_with()
 
     @patch("app.services.asr.qwen3_remote_vllm.requests.post")
@@ -57,98 +51,34 @@ class Qwen3RemoteVLLMBackendTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             audio_path = Path(temp_dir) / "sample.wav"
             audio_path.write_bytes(b"RIFF")
-
             with self.assertRaisesRegex(RuntimeError, "context hints"):
-                self.backend.transcribe_text(
-                    str(audio_path),
-                    context="product names",
-                )
-
+                self.backend.transcribe_text(str(audio_path), context="product names")
         post.assert_not_called()
 
     @patch("app.services.asr.qwen3_remote_vllm.requests.get")
     def test_readiness_probes_remote_health_endpoint(self, get: Mock) -> None:
-        response = Mock()
-        get.return_value = response
-
+        get.return_value = Mock()
         self.backend.ensure_ready()
-
         get.assert_called_once_with(
             "http://qwen-npu:8000/health",
             headers={"Authorization": "Bearer secret"},
             timeout=10.0,
         )
-        response.raise_for_status.assert_called_once_with()
+        get.return_value.raise_for_status.assert_called_once_with()
 
-    def test_word_timestamps_fail_explicitly(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            audio_path = Path(temp_dir) / "sample.wav"
-            audio_path.write_bytes(b"RIFF")
-
-            with self.assertRaisesRegex(RuntimeError, "word timestamps"):
-                self.backend.transcribe_raw(
-                    str(audio_path),
-                    word_timestamps=True,
-                )
-
-    def test_remote_runtime_does_not_require_local_qwen_assets(self) -> None:
-        with patch.object(
-            settings,
-            "QWEN_VLLM_BASE_URL",
-            "http://qwen-npu:8000",
-        ):
-            self.assertEqual(get_enabled_qwen_huggingface_assets(), [])
-
-    def test_engine_selects_remote_backend_without_realtime_claim(self) -> None:
-        backend = Mock()
-        with (
-            patch.object(
-                settings,
-                "QWEN_VLLM_BASE_URL",
-                "http://qwen-npu:8000",
-            ),
-            patch(
-                "app.services.asr.qwen3_engine.Qwen3RemoteVLLMBackend",
-                return_value=backend,
-            ) as backend_class,
-        ):
-            engine = Qwen3ASREngine(
-                model_path="Qwen/Qwen3-ASR-1.7B",
-                device="cpu",
-                forced_aligner_path="Qwen/Qwen3-ForcedAligner-0.6B",
-            )
-
-        self.assertEqual(engine._backend, "remote_vllm")
-        self.assertFalse(engine.supports_realtime)
-        self.assertIs(engine.model, backend)
-        backend_class.assert_called_once()
-        backend.ensure_ready.assert_called_once_with()
-
-        backend.is_ready.return_value = False
-        self.assertFalse(engine.is_model_loaded())
-
-        with self.assertRaisesRegex(InvalidParameterException, "word_timestamps"):
-            engine.transcribe_long_audio("missing.wav", word_timestamps=True)
-
-        with self.assertRaisesRegex(InvalidParameterException, "hotwords"):
-            engine.transcribe_long_audio("missing.wav", hotwords="product names")
-
-    def test_remote_runtime_is_not_advertised_as_realtime(self) -> None:
-        with patch.object(
-            settings,
-            "QWEN_VLLM_BASE_URL",
-            "http://qwen-npu:8000",
-        ):
-            self.assertFalse(_supports_qwen_realtime_on_device("cpu"))
+    def test_catalog_contains_only_pinned_ascend_model(self) -> None:
+        entries = ModelManager().list_declared_entries()
+        assets = get_enabled_qwen_huggingface_assets()
+        self.assertEqual([entry["id"] for entry in entries], [ASCEND_MODEL_ID])
+        self.assertEqual([asset.model_id for asset in assets], ["Qwen/Qwen3-ASR-1.7B"])
+        self.assertEqual(assets[0].revision, QWEN_ASCEND_REVISION)
 
     @patch("app.services.asr.qwen3_remote_vllm.requests.post")
     def test_http_failures_include_remote_endpoint(self, post: Mock) -> None:
         post.side_effect = requests.ConnectionError("connection refused")
-
         with tempfile.TemporaryDirectory() as temp_dir:
             audio_path = Path(temp_dir) / "sample.wav"
             audio_path.write_bytes(b"RIFF")
-
             with self.assertRaisesRegex(RuntimeError, "qwen-npu:8000"):
                 self.backend.transcribe_text(str(audio_path))
 
@@ -157,11 +87,9 @@ class Qwen3RemoteVLLMBackendTest(unittest.TestCase):
         response = Mock()
         response.json.side_effect = requests.JSONDecodeError("invalid", "x", 0)
         post.return_value = response
-
         with tempfile.TemporaryDirectory() as temp_dir:
             audio_path = Path(temp_dir) / "sample.wav"
             audio_path.write_bytes(b"RIFF")
-
             with self.assertRaisesRegex(RuntimeError, "qwen-npu:8000"):
                 self.backend.transcribe_text(str(audio_path))
 

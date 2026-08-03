@@ -8,7 +8,7 @@ from typing import Optional
 
 import requests
 
-from app.services.asr.engines import ASRRawResult, ASRSegmentResult
+from app.services.asr.results import ASRSegmentResult
 from app.utils.text_processing import normalize_asr_text
 
 
@@ -130,46 +130,14 @@ class Qwen3RemoteVLLMBackend:
         )
         return normalize_asr_text(text, enable_itn=enable_itn)
 
-    def transcribe_raw(
-        self,
-        audio_path: str,
-        *,
-        context: str = "",
-        language: Optional[str] = None,
-        word_timestamps: bool = False,
-        enable_itn: bool = False,
-    ) -> ASRRawResult:
-        if word_timestamps:
-            raise RuntimeError(
-                "Remote Ascend vLLM word timestamps are not supported until the "
-                "Qwen3 forced aligner passes the NPU compatibility gate"
-            )
-        text = self.transcribe_text(
-            audio_path,
-            context=context,
-            language=language,
-            enable_itn=enable_itn,
-        )
-        segments = (
-            [ASRSegmentResult(text=text, start_time=0.0, end_time=0.0)] if text else []
-        )
-        return ASRRawResult(text=text, segments=segments)
-
     def transcribe_batch(
         self,
         audio_paths: list[str],
         *,
         context: str = "",
         language: Optional[str] = None,
-        word_timestamps: bool = False,
         enable_itn: bool = False,
     ) -> list[ASRSegmentResult]:
-        if word_timestamps:
-            raise RuntimeError(
-                "Remote Ascend vLLM word timestamps are not supported until the "
-                "Qwen3 forced aligner passes the NPU compatibility gate"
-            )
-
         results: list[ASRSegmentResult] = []
         for start in range(0, len(audio_paths), self._max_inference_batch_size):
             chunk = audio_paths[start : start + self._max_inference_batch_size]

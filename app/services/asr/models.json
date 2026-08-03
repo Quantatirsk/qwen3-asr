@@ -1,84 +1,19 @@
 {
-    "models": {
-        "paraformer-large": {
-            "name": "Paraformer Large",
-            "kind": "capability",
-            "engine": "funasr",
-            "description": "中文 WebSocket 实时识别能力（Paraformer realtime stack）",
-            "languages": [
-                "zh"
-            ],
-            "default": false,
-            "supports_realtime": true,
-            "models": {
-                "realtime": "iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online"
-            }
-        },
-        "qwen3-asr-1.7b": {
-            "name": "Qwen3-ASR-1.7B",
-            "kind": "model",
-            "engine": "qwen3",
-            "description": "Qwen3-ASR 1.7B，支持52种语言和方言；CUDA 使用本地 vLLM，Ascend 910B 使用远程 vLLM 离线后端",
-            "languages": [
-                "zh",
-                "en",
-                "yue",
-                "ja",
-                "ko",
-                "ar",
-                "de",
-                "es",
-                "fr",
-                "pt",
-                "id",
-                "it",
-                "ru",
-                "th",
-                "vi"
-            ],
-            "default": true,
-            "supports_realtime": true,
-            "models": {
-                "offline": "Qwen/Qwen3-ASR-1.7B"
-            },
-            "extra_kwargs": {
-                "max_model_len": 16384,
-                "forced_aligner_path": "Qwen/Qwen3-ForcedAligner-0.6B",
-                "max_inference_batch_size": 16
-            }
-        },
-        "qwen3-asr-0.6b": {
-            "name": "Qwen3-ASR-0.6B",
-            "kind": "model",
-            "engine": "qwen3",
-            "description": "Qwen3-ASR 0.6B，轻量版支持52种语言和方言；CUDA 使用本地 vLLM，CPU/macOS 使用 QwenASR Rust，Ascend 远程后端仅支持离线识别",
-            "languages": [
-                "zh",
-                "en",
-                "yue",
-                "ja",
-                "ko",
-                "ar",
-                "de",
-                "es",
-                "fr",
-                "pt",
-                "id",
-                "it",
-                "ru",
-                "th",
-                "vi"
-            ],
-            "default": false,
-            "supports_realtime": true,
-            "models": {
-                "offline": "Qwen/Qwen3-ASR-0.6B"
-            },
-            "extra_kwargs": {
-                "max_model_len": 16384,
-                "forced_aligner_path": "Qwen/Qwen3-ForcedAligner-0.6B",
-                "max_inference_batch_size": 16
-            }
-        }
+  "models": {
+    "qwen3-asr-1.7b": {
+      "name": "Qwen3-ASR-1.7B",
+      "engine": "qwen3-ascend-vllm",
+      "description": "Qwen3-ASR 1.7B offline transcription on Ascend 910B",
+      "languages": [
+        "zh", "en", "yue", "ja", "ko", "ar", "de", "es",
+        "fr", "pt", "id", "it", "ru", "th", "vi"
+      ],
+      "models": {
+        "offline": "Qwen/Qwen3-ASR-1.7B"
+      },
+      "extra_kwargs": {
+        "max_inference_batch_size": 16
+      }
     }
+  }
 }

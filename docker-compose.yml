@@ -1,9 +1,14 @@
-name: qwen3-asr
+name: qwen3-asr-ascend
 
 services:
-  qwen3-asr:
-    image: quantatrisk/qwen3-asr:gpu-latest
-    container_name: qwen3-asr
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.ascend-api
+    image: qwen3-asr:ascend-api
+    depends_on:
+      qwen-npu:
+        condition: service_healthy
     ports:
       - "${NGINX_PORT:-17003}:8000"
     volumes:
@@ -11,12 +16,59 @@ services:
       - ./logs:/app/logs
       - ./data:/app/data
       - ./models/modelscope:/root/.cache/modelscope
-      - ./models/huggingface:/root/.cache/huggingface
-    runtime: nvidia
     environment:
       API_KEY: ${API_KEY:-}
-      HF_HUB_OFFLINE: ${HF_HUB_OFFLINE:-0}
-      HF_ENDPOINT: ${HF_ENDPOINT:-}
-      QWEN3_ASR_MODEL: ${QWEN3_ASR_MODEL:-}
-      CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:-0}
+      DEVICE: cpu
+      SPEAKER_DIARIZATION_DEVICE: cpu
+      HF_HUB_OFFLINE: ${HF_HUB_OFFLINE:-1}
+      QWEN_VLLM_BASE_URL: http://qwen-npu:8000
+      QWEN_VLLM_SERVED_MODEL: qwen3-asr
+      QWEN_VLLM_TIMEOUT_SEC: ${QWEN_VLLM_TIMEOUT_SEC:-3600}
+    restart: unless-stopped
+
+  qwen-npu:
+    build:
+      context: .
+      dockerfile: Dockerfile.ascend
+      args:
+        VLLM_ASCEND_IMAGE: ${VLLM_ASCEND_IMAGE:-quay.io/ascend/vllm-ascend@sha256:9008b47081282612abfe4d28069ce34436752c980fd06f7599343213205ce64d}
+    image: qwen3-asr:ascend-vllm
+    shm_size: 1g
+    devices:
+      - /dev/davinci0:/dev/davinci0
+      - /dev/davinci_manager:/dev/davinci_manager
+      - /dev/devmm_svm:/dev/devmm_svm
+      - /dev/hisi_hdc:/dev/hisi_hdc
+    volumes:
+      - ./models/huggingface:/root/.cache/huggingface
+      - /usr/local/dcmi:/usr/local/dcmi:ro
+      - /usr/local/bin/npu-smi:/usr/local/bin/npu-smi:ro
+      - /usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64:ro
+      - /usr/local/Ascend/driver/version.info:/usr/local/Ascend/driver/version.info:ro
+      - /etc/ascend_install.info:/etc/ascend_install.info:ro
+    environment:
+      HF_HUB_OFFLINE: ${HF_HUB_OFFLINE:-1}
+    command:
+      - ${QWEN_ASCEND_MODEL_PATH:-Qwen/Qwen3-ASR-1.7B}
+      - --served-model-name
+      - qwen3-asr
+      - --revision
+      - ${QWEN_ASCEND_MODEL_REVISION:-7278e1e70fe206f11671096ffdd38061171dd6e5}
+      - --tensor-parallel-size
+      - "1"
+      - --max-model-len
+      - ${QWEN_ASCEND_MAX_MODEL_LEN:-4096}
+      - --gpu-memory-utilization
+      - ${QWEN_ASCEND_MEMORY_UTILIZATION:-0.9}
+      - --enforce-eager
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"]
+      interval: 10s
+      timeout: 10s
+      retries: 60
+      start_period: 300s
     restart: unless-stopped

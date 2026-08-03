@@ -10,7 +10,6 @@ from .config import settings
 
 TOKEN_HEADER_NAME = "X-NLS-Token"
 AUTH_OPTIONAL_PLACEHOLDER = "optional"
-WEBSOCKET_QUERY_TOKEN_KEYS = ("token", "x_nls_token", "X-NLS-Token")
 
 
 def normalize_token(token: Optional[str]) -> Optional[str]:
@@ -105,22 +104,6 @@ def extract_openai_token(request: Request) -> Optional[str]:
     return extract_bearer_token(request) or extract_header_token(request)
 
 
-def extract_websocket_token(websocket) -> Optional[str]:
-    """从 WebSocket 连接中提取 token。"""
-    if hasattr(websocket, "headers"):
-        token = normalize_token(websocket.headers.get(TOKEN_HEADER_NAME))
-        if token:
-            return token
-
-    if hasattr(websocket, "query_params"):
-        for key in WEBSOCKET_QUERY_TOKEN_KEYS:
-            token = normalize_token(websocket.query_params.get(key))
-            if token:
-                return token
-
-    return None
-
-
 def _validate_resolved_token(
     token: Optional[str],
     missing_message: str,
@@ -155,19 +138,3 @@ def validate_openai_token(request: Request, task_id: str = "") -> tuple[bool, st
     _ = task_id
     token = extract_openai_token(request)
     return _validate_resolved_token(token, "缺少Authorization Bearer或X-NLS-Token头部")
-
-
-def validate_token_websocket(token: str, task_id: str = "") -> tuple[bool, str]:
-    """验证WebSocket连接中的token"""
-    _ = task_id
-    return _validate_resolved_token(token, "缺少token参数")
-
-
-def validate_websocket_token(websocket, task_id: str = "") -> tuple[bool, str]:
-    """验证 WebSocket 连接 token（header/query 参数）。"""
-    _ = task_id
-    token = extract_websocket_token(websocket)
-    return _validate_resolved_token(
-        token,
-        "缺少鉴权信息，请通过 X-NLS-Token header 或 token/x_nls_token 查询参数传入",
-    )

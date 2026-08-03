@@ -83,6 +83,7 @@ class VerboseTranscriptionResponse(BaseModel):
     text: str
     segments: List[TranscriptionSegment] = Field(default_factory=list)
     words: Optional[List[TranscriptionWord]] = None
+    word_timestamp_method: Optional[str] = None
 
 
 class ModelObject(BaseModel):
@@ -189,8 +190,8 @@ def build_transcription_payload(
                 words.append(
                     TranscriptionWord(
                         word=wt.text,
-                        start=round(seg.start_time + wt.start_time, 3),
-                        end=round(seg.start_time + wt.end_time, 3),
+                        start=round(wt.start_time, 3),
+                        end=round(wt.end_time, 3),
                     )
                 )
 
@@ -204,6 +205,7 @@ def build_transcription_payload(
             text=asr_result.text,
             segments=segments,
             words=words if words else None,
+            word_timestamp_method=asr_result.word_timestamp_method,
         ).model_dump()
     elif response_format == ResponseFormat.JSON:
         payload = {"text": asr_result.text}
@@ -313,9 +315,7 @@ def _get_openai_model_description() -> str:
     default_model = get_default_offline_model_id()
 
     model_descriptions = {
-        "qwen3-asr-1.7b": "Qwen3-ASR 1.7B，52 种语言，vLLM 高性能",
-        "qwen3-asr-0.6b": "Qwen3-ASR 0.6B，轻量版，适合小显存环境",
-        "qwen3-asr": "自动路由到当前已启动的 Qwen3-ASR 版本",
+        "qwen3-asr-1.7b": "Qwen3-ASR 1.7B，Ascend vLLM 离线推理",
     }
 
     # 构建表格行
@@ -336,7 +336,7 @@ def _get_openai_model_description() -> str:
 
 **兼容性说明：**
 - 支持 OpenAI SDK 和第三方客户端调用
-- 当前默认模型根据显存自动选择；也可通过 `QWEN3_ASR_MODEL` 覆盖
+- 当前运行时只提供 `qwen3-asr-1.7b`
 """
 
 
@@ -484,7 +484,7 @@ async def create_transcription(
     ),
     word_timestamps: bool = Form(
         False,
-        description="是否返回字词级时间戳（默认关闭；Qwen CUDA vLLM / CPU Rust 会在启用时自动调用 forced aligner）"
+        description="是否返回按有效片段均匀估算的字词级时间戳（默认关闭）"
     ),
     # 5. 输出选项
     response_format: ResponseFormat = Form(

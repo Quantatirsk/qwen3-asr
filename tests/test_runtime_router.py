@@ -4,73 +4,62 @@ import asyncio
 import threading
 import time
 import unittest
-from unittest.mock import patch
 
-from app.core.config import settings
-from app.services.asr.engines import ASRFullResult
-from app.services.asr.runtime.router import (
-    OfflineASRRequest,
-    RuntimeFamily,
-    RuntimeRouter,
-)
+from app.services.asr.manager import ASCEND_MODEL_ID
+from app.services.asr.results import ASRFullResult
+from app.services.asr.runtime.router import OfflineASRRequest, RuntimeRouter
 
 
-class _StatefulEngine:
+class _Config:
+    model_id = ASCEND_MODEL_ID
+
+
+class _ConcurrentEngine:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self.active = 0
         self.max_active = 0
-        self.current_audio_path = ""
 
-    def transcribe_long_audio(
-        self, *, audio_path: str, **_kwargs: object
-    ) -> ASRFullResult:
+    def transcribe_long_audio(self, *, audio_path: str, **_kwargs) -> ASRFullResult:
         with self._lock:
             self.active += 1
             self.max_active = max(self.max_active, self.active)
-            self.current_audio_path = audio_path
         time.sleep(0.01)
         with self._lock:
-            result = self.current_audio_path
             self.active -= 1
-        return ASRFullResult(text=result, segments=[], duration=0.0)
+        return ASRFullResult(text=audio_path, segments=[], duration=0.0)
+
+
+class _Manager:
+    def __init__(self, engine: _ConcurrentEngine) -> None:
+        self.engine = engine
+
+    def get_declared_entry_config(self, _model_id=None):
+        return _Config()
+
+    def create_engine(self, _model_id=None):
+        return self.engine
 
 
 class RuntimeRouterTest(unittest.IsolatedAsyncioTestCase):
-    def test_remote_vllm_configuration_overrides_local_device(self) -> None:
+    async def test_remote_requests_are_bounded_and_keep_results_isolated(self) -> None:
+        engine = _ConcurrentEngine()
         router = RuntimeRouter()
-
-        with (
-            patch.object(settings, "QWEN_VLLM_BASE_URL", "http://qwen-npu:8000"),
-            patch.object(settings, "DEVICE", "cpu"),
-        ):
-            family = router._resolve_family("qwen3-asr-1.7b")
-
-        self.assertEqual(family, RuntimeFamily.QWEN_REMOTE_VLLM)
-
-    async def test_vllm_offline_requests_do_not_overlap(self) -> None:
-        engine = _StatefulEngine()
-        router = RuntimeRouter()
-        semaphore = asyncio.Semaphore(8)
-        router._resolve_family = lambda _model_id: RuntimeFamily.QWEN_VLLM  # type: ignore[method-assign]
-        router._get_shared_engine = lambda _family, _model_id: (  # type: ignore[method-assign]
-            engine,
-            semaphore,
-        )
-
+        router._manager = _Manager(engine)
         requests = [
-            OfflineASRRequest(
-                model_id="qwen3-asr-test",
-                audio_path=f"request-{index}",
-            )
-            for index in range(8)
+            OfflineASRRequest(model_id=ASCEND_MODEL_ID, audio_path=f"request-{index}")
+            for index in range(12)
         ]
-        results = await asyncio.gather(
-            *(router.run_offline(request) for request in requests)
-        )
 
-        self.assertEqual(engine.max_active, 1)
+        results = await asyncio.gather(*(router.run_offline(item) for item in requests))
+
+        self.assertLessEqual(engine.max_active, 8)
+        self.assertGreater(engine.max_active, 1)
         self.assertEqual(
             [result.text for result in results],
-            [request.audio_path for request in requests],
+            [item.audio_path for item in requests],
         )
+
+
+if __name__ == "__main__":
+    unittest.main()

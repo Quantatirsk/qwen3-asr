@@ -39,7 +39,7 @@ class ASRQueryParams(BaseModel):
 
     word_timestamps: Optional[bool] = Field(
         default=False,
-        description="是否返回字词级时间戳（默认关闭；Qwen CUDA vLLM / CPU Rust 会在启用时自动调用 forced aligner）",
+        description="是否返回估算的字词级时间戳（默认关闭；按有效音频片段均匀分配）",
     )
 
     vocabulary_id: Optional[str] = Field(
@@ -138,6 +138,11 @@ class ASRSuccessResponse(BaseResponse):
         description="音频总时长（秒）",
     )
 
+    word_timestamp_method: Optional[str] = Field(
+        default=None,
+        description="词级时间戳生成方式；uniform_fallback 表示按片段均匀估算",
+    )
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -203,35 +208,29 @@ class ASRHealthCheckResponse(HealthCheckResponse):
 
 
 class ASRDeclaredEntryInfo(BaseModel):
-    """声明式 ASR 条目信息，可表示离线模型或 realtime capability。"""
+    """Ascend 离线 ASR 模型信息。"""
 
     id: str = Field(..., description="模型id")
-    kind: str = Field(..., description="条目类型：model 或 capability")
     name: str = Field(..., description="模型名称")
     engine: str = Field(..., description="引擎类型")
     description: str = Field(..., description="模型描述")
     languages: List[str] = Field(..., description="支持的语言列表")
     default: bool = Field(default=False, description="是否为默认模型")
-    supports_realtime: bool = Field(default=False, description="是否支持实时识别")
     offline_model: Optional[dict] = Field(default=None, description="离线模型信息")
-    realtime_model: Optional[dict] = Field(default=None, description="实时模型信息")
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "id": "qwen3-asr-1.7b",
-                "kind": "model",
                 "name": "Qwen3-ASR-1.7B",
                 "engine": "qwen3",
                 "description": "多语言离线语音识别模型",
                 "languages": ["zh", "en"],
                 "default": True,
-                "supports_realtime": True,
                 "offline_model": {
                     "path": "Qwen/Qwen3-ASR-1.7B",
                     "exists": True,
                 },
-                "realtime_model": None,
             }
         }
     }
@@ -256,9 +255,9 @@ class ASRRuntimeInfo(BaseModel):
 
 
 class ASRModelsResponse(BaseModel):
-    """ASR 模型列表响应，分离声明视角与运行时视角。"""
+    """Ascend ASR 模型列表响应。"""
 
-    declared_entries: List[ASRDeclaredEntryInfo] = Field(..., description="声明的模型与 capability 列表")
+    declared_entries: List[ASRDeclaredEntryInfo] = Field(..., description="声明的离线模型列表")
     declared_count: int = Field(..., description="声明条目总数")
     runtime: ASRRuntimeInfo = Field(..., description="运行时加载状态")
 
@@ -268,36 +267,18 @@ class ASRModelsResponse(BaseModel):
                 "declared_entries": [
                     {
                         "id": "qwen3-asr-1.7b",
-                        "kind": "model",
                         "name": "Qwen3-ASR-1.7B",
                         "engine": "qwen3",
                         "description": "多语言离线语音识别模型",
                         "languages": ["zh", "en"],
                         "default": True,
-                        "supports_realtime": True,
                         "offline_model": {
                             "path": "Qwen/Qwen3-ASR-1.7B",
                             "exists": True,
                         },
-                        "realtime_model": None,
-                    },
-                    {
-                        "id": "paraformer-large",
-                        "kind": "capability",
-                        "name": "Paraformer Large",
-                        "engine": "funasr",
-                        "description": "中文 WebSocket 实时识别能力",
-                        "languages": ["zh"],
-                        "default": False,
-                        "supports_realtime": True,
-                        "offline_model": None,
-                        "realtime_model": {
-                            "path": "iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online",
-                            "exists": True,
-                        },
                     }
                 ],
-                "declared_count": 3,
+                "declared_count": 1,
                 "runtime": {
                     "loaded_model_ids": ["qwen3-asr-1.7b"],
                     "loaded_count": 1,

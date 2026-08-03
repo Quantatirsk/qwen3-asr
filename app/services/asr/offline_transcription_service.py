@@ -9,10 +9,10 @@ from typing import Optional
 from fastapi import Request
 
 from app.models.common import SampleRate
-from app.services.asr.engines import ASRFullResult
+from app.services.asr.results import ASRFullResult
 from app.services.asr.model_selection import get_default_offline_model_id
 from app.services.asr.runtime import OfflineASRRequest, get_runtime_router
-from app.services.audio import get_audio_service
+from app.services.asr.uniform_alignment import apply_uniform_word_timestamps
 
 
 @dataclass(frozen=True)
@@ -36,7 +36,14 @@ class OfflineTranscriptionService:
     """Prepare audio and run the active offline ASR model."""
 
     def __init__(self) -> None:
-        self._audio_service = get_audio_service()
+        self._audio_service = None
+
+    def _get_audio_service(self):
+        if self._audio_service is None:
+            from app.services.audio import get_audio_service
+
+            self._audio_service = get_audio_service()
+        return self._audio_service
 
     async def prepare_from_request(
         self,
@@ -46,7 +53,7 @@ class OfflineTranscriptionService:
         task_id: str,
         sample_rate: int,
     ) -> PreparedAudio:
-        audio = await self._audio_service.process_from_request(
+        audio = await self._get_audio_service().process_from_request(
             request=request,
             audio_address=audio_address,
             task_id=task_id,
@@ -67,7 +74,7 @@ class OfflineTranscriptionService:
         task_id: str,
         sample_rate: int,
     ) -> PreparedAudio:
-        audio = await self._audio_service.process_upload_file(
+        audio = await self._get_audio_service().process_upload_file(
             audio_data=audio_data,
             filename=filename,
             task_id=task_id,
@@ -95,17 +102,18 @@ class OfflineTranscriptionService:
                 enable_itn=True,
                 sample_rate=options.sample_rate or int(SampleRate.RATE_16000),
                 enable_speaker_diarization=options.enable_speaker_diarization,
-                word_timestamps=options.word_timestamps,
                 timestamp_scale=prepared_audio.timestamp_scale,
                 task_id=options.task_id,
             )
         )
+        if options.word_timestamps:
+            apply_uniform_word_timestamps(result)
         return result
 
     def cleanup(self, prepared_audio: Optional[PreparedAudio]) -> None:
         if prepared_audio is None:
             return
-        self._audio_service.cleanup(
+        self._get_audio_service().cleanup(
             prepared_audio.original_path,
             prepared_audio.normalized_path,
         )
