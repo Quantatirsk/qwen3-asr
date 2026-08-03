@@ -53,14 +53,16 @@ class SpeakerSegment:
 
 
 def _resolve_modelscope_device() -> str:
-    """根据配置和硬件自动选择 modelscope pipeline 设备
-    """
+    """根据配置和硬件自动选择 modelscope pipeline 设备"""
     from ..core.device import detect_device
 
-    return detect_device(settings.DEVICE)
+    configured_device = settings.SPEAKER_DIARIZATION_DEVICE or settings.DEVICE
+    return detect_device(configured_device)
 
 
-def _move_pipeline_model_to_device(pipeline_instance: Any, modelscope_device: str) -> None:
+def _move_pipeline_model_to_device(
+    pipeline_instance: Any, modelscope_device: str
+) -> None:
     """将 pipeline 的底层模型迁移到目标设备。"""
     if hasattr(pipeline_instance, "device_name"):
         pipeline_instance.device_name = modelscope_device
@@ -205,8 +207,12 @@ def _enable_batched_sv(
     logger.info(
         "CAM++ 说话人分离启用 batched SV: device={}, sv_device={}, vad_device={}",
         modelscope_device,
-        getattr(getattr(pipeline_instance, "sv_pipeline", None), "device_name", "unknown"),
-        getattr(getattr(pipeline_instance, "vad_pipeline", None), "device_name", "unknown"),
+        getattr(
+            getattr(pipeline_instance, "sv_pipeline", None), "device_name", "unknown"
+        ),
+        getattr(
+            getattr(pipeline_instance, "vad_pipeline", None), "device_name", "unknown"
+        ),
     )
     return pipeline_instance
 
@@ -221,7 +227,7 @@ def get_global_diarization_pipeline() -> Any:
                 from modelscope.utils.constant import Tasks
                 from ..infrastructure.model_utils import resolve_model_path
 
-                model_id = 'iic/speech_campplus_speaker-diarization_common'
+                model_id = "iic/speech_campplus_speaker-diarization_common"
                 model_path = resolve_model_path(model_id)
                 modelscope_device = _resolve_modelscope_device()
 
@@ -262,9 +268,7 @@ class SpeakerDiarizer:
         self.min_segment_sec = min_segment_sec
         self.min_segment_ms = int(min_segment_sec * 1000)
 
-    def diarize(
-        self, audio_path: str
-    ) -> List[SpeakerSegment]:
+    def diarize(self, audio_path: str) -> List[SpeakerSegment]:
         """执行说话人分离
 
         Args:
@@ -283,9 +287,9 @@ class SpeakerDiarizer:
             # 解析结果: {'text': [[start, end, speaker_id], ...]}
             # pipeline 返回类型不确定，需要安全地获取 'text' 字段
             if isinstance(result, dict):
-                raw_output = result.get('text', [])
+                raw_output = result.get("text", [])
             else:
-                raw_output = getattr(result, 'text', []) or []
+                raw_output = getattr(result, "text", []) or []
 
             segments = []
             for seg in raw_output:
@@ -294,11 +298,13 @@ class SpeakerDiarizer:
                         start_ms = int(float(seg[0]) * 1000)
                         end_ms = int(float(seg[1]) * 1000)
                         speaker_id = f"说话人{int(seg[2]) + 1}"
-                        segments.append(SpeakerSegment(
-                            start_ms=start_ms,
-                            end_ms=end_ms,
-                            speaker_id=speaker_id,
-                        ))
+                        segments.append(
+                            SpeakerSegment(
+                                start_ms=start_ms,
+                                end_ms=end_ms,
+                                speaker_id=speaker_id,
+                            )
+                        )
                     except (ValueError, TypeError) as e:
                         logger.warning(f"跳过格式错误的片段: {seg}, 错误: {e}")
 
@@ -320,7 +326,9 @@ class SpeakerDiarizer:
 
                 # 获取音频时长
                 try:
-                    audio_duration_ms = int(librosa.get_duration(path=audio_path) * 1000)
+                    audio_duration_ms = int(
+                        librosa.get_duration(path=audio_path) * 1000
+                    )
                 except Exception:
                     # 无法获取时长时使用默认值
                     audio_duration_ms = 5000
@@ -473,10 +481,7 @@ class SpeakerDiarizer:
             final_merged.append(merged_seg)
 
             if j > i + 1:
-                logger.debug(
-                    f"[第二层] {seg.speaker_id}: "
-                    f"合并了 {j - i} 个片段"
-                )
+                logger.debug(f"[第二层] {seg.speaker_id}: " f"合并了 {j - i} 个片段")
             i = j
 
         return final_merged
@@ -493,12 +498,8 @@ class SpeakerDiarizer:
         if sample_rate <= 0 or audio_data.size == 0:
             return upper_ms
 
-        context_samples = max(
-            1, int(sample_rate * self.LOW_ENERGY_CONTEXT_MS / 1000)
-        )
-        candidate_points = list(
-            range(lower_ms, upper_ms + 1, self.LOW_ENERGY_STEP_MS)
-        )
+        context_samples = max(1, int(sample_rate * self.LOW_ENERGY_CONTEXT_MS / 1000))
+        candidate_points = list(range(lower_ms, upper_ms + 1, self.LOW_ENERGY_STEP_MS))
         if not candidate_points or candidate_points[-1] != upper_ms:
             candidate_points.append(upper_ms)
 
@@ -625,7 +626,9 @@ class SpeakerDiarizer:
                 audio_data,
                 sample_rate,
             )
-            logger.info(f"智能合并完成: {len(raw_segments)} → {len(final_segments)} 个片段")
+            logger.info(
+                f"智能合并完成: {len(raw_segments)} → {len(final_segments)} 个片段"
+            )
 
             output_dir = output_dir or settings.TEMP_DIR
             os.makedirs(output_dir, exist_ok=True)

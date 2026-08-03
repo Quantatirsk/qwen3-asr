@@ -380,6 +380,7 @@ Automatic long audio segmentation:
 |---------|---------|---------|---------------------|-------------------------|---------------------------|----------|
 | Linux + NVIDIA GPU | Official vLLM 0.19.0 | ✅ | ✅ | ✅ | ❌ | Production-oriented |
 | CPU / macOS | QwenASR Rust | ✅ | ✅ | ✅ (forced aligner) | ❌ | Recommended local fallback |
+| Linux + Ascend 910B | Remote vLLM Ascend | ✅ | ❌ | ❌ | ❌ | Hardware validation required |
 
 ## Offline-Capable Models
 
@@ -400,6 +401,7 @@ Automatic long audio segmentation:
 - **No CUDA**: Select the vendored Rust-backed `qwen3-asr-0.6b`
 - **macOS / Apple Silicon**: Always default to `qwen3-asr-0.6b`, regardless of memory size
 - **Environment override**: Set `QWEN3_ASR_MODEL=qwen3-asr-1.7b` or `QWEN3_ASR_MODEL=qwen3-asr-0.6b` to bypass automatic selection
+- **Ascend split runtime**: Set `QWEN_VLLM_BASE_URL` to select the remote offline backend; the deployment profile selects `qwen3-asr-1.7b`
 - `paraformer-large` realtime capability is always prepared for websocket streaming
 
 At startup the service checks the current runtime model plan and downloads missing models by default. Set `HF_HUB_OFFLINE=1` only for strictly offline deployments with a prepared cache.
@@ -414,6 +416,9 @@ Settings in `.env.example`:
 | `API_KEY` | - | API authentication key (optional, unauthenticated if not set) |
 | `CUDA_VISIBLE_DEVICES` | `0` | Visible GPU list; one backend instance is started per visible GPU |
 | `QWEN3_ASR_MODEL` | auto | Force `qwen3-asr-1.7b` or `qwen3-asr-0.6b` instead of VRAM-based selection |
+| `QWEN_VLLM_BASE_URL` | unset | Remote vLLM endpoint used by the Ascend split runtime |
+| `QWEN_VLLM_SERVED_MODEL` | `qwen3-asr` | Model name exposed by the remote vLLM server |
+| `QWEN_VLLM_TIMEOUT_SEC` | `3600` | Remote transcription timeout in seconds |
 | `HF_HUB_OFFLINE` | unset | Set to `1` only after preparing `./models` for offline deployment |
 | `HF_ENDPOINT` | unset | Online Hugging Face mirror endpoint, for example `https://hf-mirror.com` |
 
@@ -427,6 +432,7 @@ After starting the service:
 ## Links
 
 - **Deployment Guide**: [Detailed Docs](./docs/deployment.md)
+- **Ascend 910B Deployment**: [Split Runtime Guide](./docs/deployment-ascend.md)
 - **Qwen3-ASR**: [Qwen3-ASR GitHub](https://github.com/QwenLM/Qwen3-ASR)
 - **FunASR**: [FunASR GitHub](https://github.com/alibaba-damo-academy/FunASR)
 - **Chinese README**: [中文文档](./docs/README_zh.md)

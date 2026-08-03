@@ -27,6 +27,13 @@ class Settings:
 
     # 设备配置
     DEVICE: str = "auto"  # auto, cpu, cuda:0, npu:0
+    SPEAKER_DIARIZATION_DEVICE: str = ""
+
+    # Remote vLLM configuration
+    QWEN_VLLM_BASE_URL: str = ""
+    QWEN_VLLM_SERVED_MODEL: str = "qwen3-asr"
+    QWEN_VLLM_API_KEY: Optional[str] = None
+    QWEN_VLLM_TIMEOUT_SEC: float = 3600.0
 
     # 路径配置
     BASE_DIR: Path = Path(__file__).parent.parent.parent
@@ -95,6 +102,20 @@ class Settings:
 
         # 设备配置
         self.DEVICE = os.getenv("DEVICE", self.DEVICE)
+        self.SPEAKER_DIARIZATION_DEVICE = os.getenv(
+            "SPEAKER_DIARIZATION_DEVICE", self.SPEAKER_DIARIZATION_DEVICE
+        )
+
+        self.QWEN_VLLM_BASE_URL = os.getenv(
+            "QWEN_VLLM_BASE_URL", self.QWEN_VLLM_BASE_URL
+        ).rstrip("/")
+        self.QWEN_VLLM_SERVED_MODEL = os.getenv(
+            "QWEN_VLLM_SERVED_MODEL", self.QWEN_VLLM_SERVED_MODEL
+        )
+        self.QWEN_VLLM_API_KEY = (os.getenv("QWEN_VLLM_API_KEY") or "").strip() or None
+        self.QWEN_VLLM_TIMEOUT_SEC = float(
+            os.getenv("QWEN_VLLM_TIMEOUT_SEC", str(self.QWEN_VLLM_TIMEOUT_SEC))
+        )
 
         # 远场过滤配置
         self.ASR_ENABLE_NEARFIELD_FILTER = (
@@ -112,9 +133,7 @@ class Settings:
         if max_audio_size_str:
             self.MAX_AUDIO_SIZE = self._parse_size(max_audio_size_str)
 
-        self.ASR_BATCH_SIZE = int(
-            os.getenv("ASR_BATCH_SIZE", str(self.ASR_BATCH_SIZE))
-        )
+        self.ASR_BATCH_SIZE = int(os.getenv("ASR_BATCH_SIZE", str(self.ASR_BATCH_SIZE)))
 
         self.MAX_SEGMENT_SEC = float(
             os.getenv("MAX_SEGMENT_SEC", str(self.MAX_SEGMENT_SEC))
@@ -123,10 +142,7 @@ class Settings:
         self.QWEN_RUST_CPU_WORKERS = int(
             os.getenv("QWEN_RUST_CPU_WORKERS", str(self.QWEN_RUST_CPU_WORKERS))
         )
-        self.FUNASR_WORKERS = int(
-            os.getenv("FUNASR_WORKERS", str(self.FUNASR_WORKERS))
-        )
-
+        self.FUNASR_WORKERS = int(os.getenv("FUNASR_WORKERS", str(self.FUNASR_WORKERS)))
 
     def _parse_size(self, size_str: str) -> int:
         """解析带单位的大小字符串
@@ -142,11 +158,11 @@ class Settings:
             return int(size_str) * 1024 * 1024
 
         # 带单位的处理
-        if size_str.endswith('GB'):
+        if size_str.endswith("GB"):
             return int(float(size_str[:-2]) * 1024 * 1024 * 1024)
-        elif size_str.endswith('MB'):
+        elif size_str.endswith("MB"):
             return int(float(size_str[:-2]) * 1024 * 1024)
-        elif size_str.endswith('KB'):
+        elif size_str.endswith("KB"):
             return int(float(size_str[:-2]) * 1024)
         else:
             # 默认视为字节

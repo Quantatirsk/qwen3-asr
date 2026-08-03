@@ -46,7 +46,9 @@ def get_qwen_model_override() -> Optional[str]:
     return normalized
 
 
-def detect_qwen_model_by_vram(all_model_ids: Optional[list[str]] = None) -> Optional[str]:
+def detect_qwen_model_by_vram(
+    all_model_ids: Optional[list[str]] = None,
+) -> Optional[str]:
     """Pick the active Qwen model for the current machine."""
     from app.core.device import detect_device, get_vram_gb
     from app.services.asr.qwenasr_rust import is_qwenasr_rust_available
@@ -56,14 +58,25 @@ def detect_qwen_model_by_vram(all_model_ids: Optional[list[str]] = None) -> Opti
     if override_model:
         return override_model if override_model in model_ids else None
 
+    if settings.QWEN_VLLM_BASE_URL and "qwen3-asr-1.7b" in model_ids:
+        return "qwen3-asr-1.7b"
+
     resolved_device = detect_device(settings.DEVICE)
 
     # macOS defaults to the lighter Rust CPU path unless QWEN3_ASR_MODEL is set.
     if platform.system() == "Darwin":
-        return "qwen3-asr-0.6b" if is_qwenasr_rust_available() and "qwen3-asr-0.6b" in model_ids else None
+        return (
+            "qwen3-asr-0.6b"
+            if is_qwenasr_rust_available() and "qwen3-asr-0.6b" in model_ids
+            else None
+        )
 
     if resolved_device == "cpu":
-        return "qwen3-asr-0.6b" if is_qwenasr_rust_available() and "qwen3-asr-0.6b" in model_ids else None
+        return (
+            "qwen3-asr-0.6b"
+            if is_qwenasr_rust_available() and "qwen3-asr-0.6b" in model_ids
+            else None
+        )
 
     vram = get_vram_gb()
     preferred = "qwen3-asr-1.7b" if vram >= 32 else "qwen3-asr-0.6b"

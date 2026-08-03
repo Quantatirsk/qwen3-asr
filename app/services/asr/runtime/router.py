@@ -23,6 +23,7 @@ _VLLM_SHARED_CONCURRENCY = 8
 
 class RuntimeFamily(str, Enum):
     QWEN_VLLM = "qwen_vllm"
+    QWEN_REMOTE_VLLM = "qwen_remote_vllm"
     QWEN_RUST_CPU = "qwen_rust_cpu"
     FUNASR = "funasr"
 
@@ -91,6 +92,8 @@ class RuntimeRouter:
     def _resolve_family(self, model_id: str) -> RuntimeFamily:
         device = detect_device(settings.DEVICE)
         if model_id.startswith("qwen3-asr-"):
+            if settings.QWEN_VLLM_BASE_URL:
+                return RuntimeFamily.QWEN_REMOTE_VLLM
             if device.startswith("cuda"):
                 return RuntimeFamily.QWEN_VLLM
             if device == "cpu" and is_qwenasr_rust_available():
@@ -99,7 +102,10 @@ class RuntimeRouter:
         return RuntimeFamily.FUNASR
 
     def _pool_size_for_family(self, family: RuntimeFamily) -> int:
-        if family == RuntimeFamily.QWEN_VLLM:
+        if family in {
+            RuntimeFamily.QWEN_VLLM,
+            RuntimeFamily.QWEN_REMOTE_VLLM,
+        }:
             return 1
         if family == RuntimeFamily.QWEN_RUST_CPU:
             return settings.QWEN_RUST_CPU_WORKERS
@@ -149,7 +155,10 @@ class RuntimeRouter:
     def warmup_model(self, model_id: Optional[str] = None) -> None:
         resolved_model_id = self.resolve_model_id(model_id)
         family = self._resolve_family(resolved_model_id)
-        if family == RuntimeFamily.QWEN_VLLM:
+        if family in {
+            RuntimeFamily.QWEN_VLLM,
+            RuntimeFamily.QWEN_REMOTE_VLLM,
+        }:
             self._get_shared_engine(family, resolved_model_id)
             return
         pool = self._create_pool(family, resolved_model_id)
@@ -178,7 +187,10 @@ class RuntimeRouter:
     ) -> RuntimeEngineLease:
         resolved_model_id = self.resolve_model_id(model_id)
         family = self._resolve_family(resolved_model_id)
-        if family == RuntimeFamily.QWEN_VLLM:
+        if family in {
+            RuntimeFamily.QWEN_VLLM,
+            RuntimeFamily.QWEN_REMOTE_VLLM,
+        }:
             engine, semaphore = self._get_shared_engine(family, resolved_model_id)
             await semaphore.acquire()
             return RuntimeEngineLease(

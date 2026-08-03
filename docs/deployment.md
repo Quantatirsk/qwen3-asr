@@ -1,5 +1,8 @@
 # Qwen3-ASR 部署指南
 
+Ascend 910B 使用独立运行时和兼容矩阵，参见
+[Ascend 910B 部署](./deployment-ascend.md)。
+
 快速部署 Qwen3-ASR 语音识别服务，支持 CPU/macOS 与 NVIDIA GPU 两种运行形态。
 
 依赖安装现在改成根目录默认 GPU，CPU 为单独特化环境：

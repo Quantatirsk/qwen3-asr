@@ -1,0 +1,10 @@
+ARG VLLM_ASCEND_IMAGE=quay.io/ascend/vllm-ascend:v0.22.1rc1
+FROM ${VLLM_ASCEND_IMAGE}
+
+ENV HF_HOME=/root/.cache/huggingface \
+    HF_HUB_CACHE=/root/.cache/huggingface/hub \
+    HF_HUB_DISABLE_SYMLINKS_WARNING=1 \
+    PYTHONUNBUFFERED=1
+
+ENTRYPOINT ["vllm", "serve"]
+CMD ["Qwen/Qwen3-ASR-1.7B", "--served-model-name", "qwen3-asr", "--tensor-parallel-size", "1", "--max-model-len", "4096", "--gpu-memory-utilization", "0.9", "--enforce-eager", "--host", "0.0.0.0", "--port", "8000"]

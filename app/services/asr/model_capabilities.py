@@ -55,14 +55,22 @@ _DIARIZATION_ASSETS = (
         source="modelscope",
         model_id="damo/speech_campplus_sv_zh-cn_16k-common",
         description="CAM++ Speaker Verification",
-        required_patterns=("configuration.json", "config.yaml", "campplus_cn_common.bin"),
+        required_patterns=(
+            "configuration.json",
+            "config.yaml",
+            "campplus_cn_common.bin",
+        ),
         min_total_size_bytes=10_000_000,
     ),
     ModelAsset(
         source="modelscope",
         model_id="damo/speech_campplus-transformer_scl_zh-cn_16k-common",
         description="CAM++ Transformer",
-        required_patterns=("configuration.json", "campplus_cn_encoder.pt", "transformer_backend.pt"),
+        required_patterns=(
+            "configuration.json",
+            "campplus_cn_encoder.pt",
+            "transformer_backend.pt",
+        ),
         min_total_size_bytes=10_000_000,
     ),
 )
@@ -85,7 +93,12 @@ _REALTIME_PARAFORMER_ASSETS = (
         source="modelscope",
         model_id=settings.PUNC_MODEL,
         description="Punctuation Offline",
-        required_patterns=("configuration.json", "config.yaml", "model.pt", "tokens.json"),
+        required_patterns=(
+            "configuration.json",
+            "config.yaml",
+            "model.pt",
+            "tokens.json",
+        ),
         min_total_size_bytes=50_000_000,
     ),
 )
@@ -128,6 +141,9 @@ def get_enabled_qwen_huggingface_assets(
     include_forced_aligner: bool = True,
 ) -> list[ModelAsset]:
     """Return HuggingFace assets required by the runtime Qwen plan."""
+    if settings.QWEN_VLLM_BASE_URL:
+        return []
+
     manager = get_model_manager()
     assets: list[ModelAsset] = []
     model_id = get_active_qwen_model()
@@ -150,14 +166,19 @@ def get_enabled_qwen_huggingface_assets(
                 min_total_size_bytes=500_000_000,
             )
         )
-    forced_aligner = str(model_config.extra_kwargs.get("forced_aligner_path") or "").strip()
+    forced_aligner = str(
+        model_config.extra_kwargs.get("forced_aligner_path") or ""
+    ).strip()
     if forced_aligner and include_forced_aligner:
         assets.append(
             ModelAsset(
                 source="huggingface",
                 model_id=forced_aligner,
                 description=f"{model_config.name} Forced Aligner",
-                required_patterns=("snapshots/*/config.json", "snapshots/*/model.safetensors"),
+                required_patterns=(
+                    "snapshots/*/config.json",
+                    "snapshots/*/model.safetensors",
+                ),
                 min_total_size_bytes=500_000_000,
             )
         )

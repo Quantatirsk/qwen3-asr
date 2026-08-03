@@ -24,6 +24,9 @@ def _supports_qwen_realtime_on_device(configured_device: str) -> bool:
     from app.core.device import detect_device
     from .qwenasr_rust import is_qwenasr_rust_available
 
+    if settings.QWEN_VLLM_BASE_URL:
+        return False
+
     device = detect_device(configured_device)
     if device.startswith("cuda"):
         return True
@@ -68,6 +71,7 @@ class DeclaredEntryConfig:
         """是否有实时模型"""
         return bool(self.realtime_model_path)
 
+
 class ModelManager:
     """Static model metadata plus engine construction."""
 
@@ -87,7 +91,9 @@ class ModelManager:
                 config = json.load(f)
 
             for model_id, model_config in config["models"].items():
-                self._declared_entry_configs[model_id] = DeclaredEntryConfig(model_id, model_config)
+                self._declared_entry_configs[model_id] = DeclaredEntryConfig(
+                    model_id, model_config
+                )
             self._default_model_id = get_default_model_id(
                 all_model_ids=list(self._declared_entry_configs.keys()),
             )
@@ -98,7 +104,9 @@ class ModelManager:
         except (json.JSONDecodeError, KeyError) as e:
             raise DefaultServerErrorException(f"模型配置文件格式错误: {str(e)}")
 
-    def get_declared_entry_config(self, model_id: Optional[str] = None) -> DeclaredEntryConfig:
+    def get_declared_entry_config(
+        self, model_id: Optional[str] = None
+    ) -> DeclaredEntryConfig:
         """获取声明条目配置。"""
         if model_id is None:
             model_id = self._default_model_id
@@ -173,15 +181,14 @@ class ModelManager:
         engine_type = config.engine.lower()
         factory = _ENGINE_REGISTRY.get(engine_type)
         if not factory:
-            raise InvalidParameterException(
-                f"不支持的引擎类型: {config.engine}"
-            )
+            raise InvalidParameterException(f"不支持的引擎类型: {config.engine}")
         return factory(config)
 
     def create_engine(self, model_id: Optional[str] = None) -> BaseASREngine:
         """Create a fresh engine instance."""
         config = self.get_declared_entry_config(model_id)
         return self._create_engine(config)
+
 
 # 全局模型管理器实例
 _model_manager: Optional[ModelManager] = None
@@ -205,6 +212,7 @@ def _register_builtin_engines():
     try:
         from .engines import FunASREngine  # noqa: F401
         from .engines.funasr import _register_funasr_engine
+
         _register_funasr_engine(register_engine, DeclaredEntryConfig)
     except ImportError as e:
         logger.warning(f"FunASR引擎不可用: {e}")
@@ -212,6 +220,7 @@ def _register_builtin_engines():
     try:
         from .qwen3_engine import Qwen3ASREngine  # noqa: F401
         from .qwen3_engine import _register_qwen3_engine
+
         _register_qwen3_engine(register_engine, DeclaredEntryConfig)
     except ImportError as e:
         logger.warning(f"Qwen3引擎不可用: {e}")

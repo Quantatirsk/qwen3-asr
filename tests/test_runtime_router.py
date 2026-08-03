@@ -4,7 +4,9 @@ import asyncio
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
+from app.core.config import settings
 from app.services.asr.engines import ASRFullResult
 from app.services.asr.runtime.router import (
     OfflineASRRequest,
@@ -35,6 +37,17 @@ class _StatefulEngine:
 
 
 class RuntimeRouterTest(unittest.IsolatedAsyncioTestCase):
+    def test_remote_vllm_configuration_overrides_local_device(self) -> None:
+        router = RuntimeRouter()
+
+        with (
+            patch.object(settings, "QWEN_VLLM_BASE_URL", "http://qwen-npu:8000"),
+            patch.object(settings, "DEVICE", "cpu"),
+        ):
+            family = router._resolve_family("qwen3-asr-1.7b")
+
+        self.assertEqual(family, RuntimeFamily.QWEN_REMOTE_VLLM)
+
     async def test_vllm_offline_requests_do_not_overlap(self) -> None:
         engine = _StatefulEngine()
         router = RuntimeRouter()
