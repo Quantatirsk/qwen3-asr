@@ -30,6 +30,30 @@ directory_size_bytes() {
     echo "${size:-0}"
 }
 
+canonical_path() {
+    python3 - "$1" <<'PY'
+import sys
+from pathlib import Path
+
+print(Path(sys.argv[1]).resolve(strict=False))
+PY
+}
+
+monotonic_seconds() {
+    python3 -c 'import time; print(time.monotonic())'
+}
+
+model_is_complete() {
+    local model_dir="$1"
+    local weight_files
+
+    [[ -f "${model_dir}/config.json" ]] || return 1
+    shopt -s nullglob
+    weight_files=("${model_dir}"/*.safetensors "${model_dir}"/*.safetensors.index.json)
+    shopt -u nullglob
+    (( ${#weight_files[@]} > 0 ))
+}
+
 cleanup() {
     if [[ -n "${COPY_PID}" ]] && kill -0 "${COPY_PID}" 2>/dev/null; then
         kill "${COPY_PID}" 2>/dev/null || true
@@ -47,11 +71,20 @@ handle_signal() {
 [[ -d "${SOURCE_DIR}" ]] || die "model source does not exist: ${SOURCE_DIR}"
 [[ -f "${SOURCE_DIR}/config.json" ]] || die "config.json is missing: ${SOURCE_DIR}"
 
-if [[ -f "${DESTINATION_DIR}/config.json" ]]; then
-    echo "Model already staged: ${DESTINATION_DIR}"
-    exit 0
+SOURCE_CANONICAL=$(canonical_path "${SOURCE_DIR}")
+DESTINATION_CANONICAL=$(canonical_path "${DESTINATION_DIR}")
+if [[ "${DESTINATION_CANONICAL}" == "${SOURCE_CANONICAL}" || \
+      "${DESTINATION_CANONICAL}" == "${SOURCE_CANONICAL}/"* ]]; then
+    die "destination must not be inside model source: ${DESTINATION_DIR}"
 fi
-[[ ! -e "${DESTINATION_DIR}" ]] || die "destination exists but is incomplete: ${DESTINATION_DIR}"
+
+if [[ -e "${DESTINATION_DIR}" ]]; then
+    if model_is_complete "${DESTINATION_DIR}"; then
+        echo "Model already staged: ${DESTINATION_DIR}"
+        exit 0
+    fi
+    die "destination exists but is incomplete: ${DESTINATION_DIR}"
+fi
 
 mkdir -p "${DESTINATION_PARENT}" "${STAGING_DIR}"
 trap cleanup EXIT
@@ -65,15 +98,21 @@ echo "Total bytes: ${TOTAL_BYTES}"
 cp -aL "${SOURCE_DIR}/." "${STAGING_DIR}/" &
 COPY_PID=$!
 PREVIOUS_BYTES=0
-PREVIOUS_SECONDS=${SECONDS}
+PREVIOUS_SECONDS=$(monotonic_seconds)
 
 while kill -0 "${COPY_PID}" 2>/dev/null; do
     COPIED_BYTES=$(directory_size_bytes "${STAGING_DIR}")
-    CURRENT_SECONDS=${SECONDS}
-    ELAPSED=$((CURRENT_SECONDS - PREVIOUS_SECONDS))
-    ((ELAPSED > 0)) || ELAPSED=1
-    SPEED_MB=$(awk "BEGIN { printf \"%.2f\", ((${COPIED_BYTES} - ${PREVIOUS_BYTES}) / ${ELAPSED}) / 1024 / 1024 }")
-    PERCENT=$(awk "BEGIN { if (${TOTAL_BYTES} > 0) printf \"%.2f\", (${COPIED_BYTES} / ${TOTAL_BYTES}) * 100; else print \"0.00\" }")
+    CURRENT_SECONDS=$(monotonic_seconds)
+    SPEED_MB=$(awk \
+        -v copied="${COPIED_BYTES}" \
+        -v previous="${PREVIOUS_BYTES}" \
+        -v now="${CURRENT_SECONDS}" \
+        -v before="${PREVIOUS_SECONDS}" \
+        'BEGIN { elapsed = now - before; if (elapsed <= 0) elapsed = 0.001; printf "%.2f", ((copied - previous) / elapsed) / 1024 / 1024 }')
+    PERCENT=$(awk \
+        -v copied="${COPIED_BYTES}" \
+        -v total="${TOTAL_BYTES}" \
+        'BEGIN { if (total > 0) printf "%.2f", (copied / total) * 100; else print "0.00" }')
     printf "\r%s copied=%'d/%'d bytes (%6.2f%%) %8s MB/s" \
         "$(date '+%H:%M:%S')" \
         "${COPIED_BYTES}" \
@@ -89,11 +128,7 @@ wait "${COPY_PID}"
 COPY_PID=""
 printf "\n"
 
-[[ -f "${STAGING_DIR}/config.json" ]] || die "copied model is missing config.json"
-shopt -s nullglob
-WEIGHT_FILES=("${STAGING_DIR}"/*.safetensors "${STAGING_DIR}"/*.safetensors.index.json)
-shopt -u nullglob
-(( ${#WEIGHT_FILES[@]} > 0 )) || die "copied model is missing safetensors weights"
+model_is_complete "${STAGING_DIR}" || die "copied model is incomplete"
 
 mv "${STAGING_DIR}" "${DESTINATION_DIR}"
 trap - EXIT INT TERM

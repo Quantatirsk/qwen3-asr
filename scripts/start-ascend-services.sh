@@ -15,6 +15,7 @@ TENSOR_PARALLEL_SIZE="${QWEN_ASCEND_TENSOR_PARALLEL_SIZE:-1}"
 MAX_MODEL_LEN="${QWEN_ASCEND_MAX_MODEL_LEN:-4096}"
 MEMORY_UTILIZATION="${QWEN_ASCEND_MEMORY_UTILIZATION:-0.9}"
 VLLM_LOG="${QWEN_VLLM_LOG:-${PROJECT_ROOT}/logs/vllm.log}"
+PROCESS_POLL_INTERVAL="${QWEN_PROCESS_POLL_INTERVAL_SEC:-1}"
 
 VLLM_PID=""
 API_PID=""
@@ -113,6 +114,21 @@ echo "Starting Qwen3-ASR API: ${API_HOST}:${API_PORT}"
 cd "${PROJECT_ROOT}"
 "${API_PYTHON}" "${PROJECT_ROOT}/start.py" &
 API_PID=$!
+
+while kill -0 "${API_PID}" 2>/dev/null && kill -0 "${VLLM_PID}" 2>/dev/null; do
+    sleep "${PROCESS_POLL_INTERVAL}"
+done
+
+if ! kill -0 "${VLLM_PID}" 2>/dev/null; then
+    set +e
+    wait "${VLLM_PID}"
+    VLLM_STATUS=$?
+    set -e
+    VLLM_PID=""
+    ((VLLM_STATUS != 0)) || VLLM_STATUS=1
+    echo "ERROR: vLLM exited after startup" >&2
+    exit "${VLLM_STATUS}"
+fi
 
 set +e
 wait "${API_PID}"

@@ -8,6 +8,7 @@ on:
 jobs:
   validate-api:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -18,3 +19,4 @@ jobs:
       - run: uv run python -m compileall -q app tests
       - run: bash -n scripts/stage-qwen-model.sh scripts/start-ascend-services.sh
       - run: docker build --check -f Dockerfile.ascend .
+      - run: docker build -f Dockerfile.ascend -t qwen3-asr:ascend-single-container-test .
