@@ -43,12 +43,33 @@ from ...services.asr.offline_transcription_service import (
     PreparedAudio,
     get_offline_transcription_service,
 )
+from ...services.asr.results import ASRSegmentResult
 
 # 配置日志
 logger = logging.getLogger(__name__)
 
 # 创建路由器
 router = APIRouter(prefix="/stream/v1", tags=["ASR"])
+
+
+def _serialize_segment(segment: ASRSegmentResult) -> dict[str, object]:
+    data: dict[str, object] = {
+        "text": segment.text,
+        "start_time": segment.start_time,
+        "end_time": segment.end_time,
+    }
+    if segment.speaker_id:
+        data["speaker_id"] = segment.speaker_id
+    if segment.word_tokens:
+        data["word_tokens"] = [
+            {
+                "text": token.text,
+                "start_time": token.start_time,
+                "end_time": token.end_time,
+            }
+            for token in segment.word_tokens
+        ]
+    return data
 
 
 async def get_asr_params(request: Request) -> ASRQueryParams:
@@ -245,26 +266,7 @@ async def asr_transcribe(
         logger.info(f"[{task_id}] 识别完成，共 {len(asr_result.segments)} 个分段，总字符: {len(asr_result.text)}")
 
         # 构建分段结果（始终返回 segments，短音频也是 1 个 segment）
-        segments_data = []
-        for seg in asr_result.segments:
-            seg_dict = {
-                "text": seg.text,
-                "start_time": round(seg.start_time, 2),
-                "end_time": round(seg.end_time, 2),
-            }
-            if seg.speaker_id:
-                seg_dict["speaker_id"] = seg.speaker_id
-            # 添加字词级时间戳（如果存在）
-            if seg.word_tokens:
-                seg_dict["word_tokens"] = [
-                    {
-                        "text": wt.text,
-                        "start_time": round(wt.start_time, 6),
-                        "end_time": round(wt.end_time, 6),
-                    }
-                    for wt in seg.word_tokens
-                ]
-            segments_data.append(seg_dict)
+        segments_data = [_serialize_segment(segment) for segment in asr_result.segments]
 
         # 计算请求处理时间
         request_duration = time.time() - request_start_time

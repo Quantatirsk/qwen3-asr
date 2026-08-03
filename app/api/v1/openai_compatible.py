@@ -187,8 +187,8 @@ def build_transcription_payload(
                 words.append(
                     TranscriptionWord(
                         word=wt.text,
-                        start=round(wt.start_time, 6),
-                        end=round(wt.end_time, 6),
+                        start=wt.start_time,
+                        end=wt.end_time,
                     )
                 )
 
