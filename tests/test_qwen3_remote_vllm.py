@@ -130,6 +130,9 @@ class Qwen3RemoteVLLMBackendTest(unittest.TestCase):
         with self.assertRaisesRegex(InvalidParameterException, "word_timestamps"):
             engine.transcribe_long_audio("missing.wav", word_timestamps=True)
 
+        with self.assertRaisesRegex(InvalidParameterException, "hotwords"):
+            engine.transcribe_long_audio("missing.wav", hotwords="product names")
+
     def test_remote_runtime_is_not_advertised_as_realtime(self) -> None:
         with patch.object(
             settings,

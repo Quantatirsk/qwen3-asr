@@ -242,6 +242,10 @@ class Qwen3ASREngine(BaseASREngine):
             raise InvalidParameterException(
                 "word_timestamps is not supported by the Ascend vLLM runtime"
             )
+        if self._backend == "remote_vllm" and hotwords.strip():
+            raise InvalidParameterException(
+                "hotwords are not supported by the Ascend vLLM runtime"
+            )
         return super().transcribe_long_audio(
             audio_path=audio_path,
             hotwords=hotwords,

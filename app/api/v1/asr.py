@@ -15,6 +15,7 @@ import time
 import logging
 
 from ...core.config import settings
+from ...core.executor import run_sync
 from ...core.exceptions import (
     AuthenticationException,
     InvalidParameterException,
@@ -314,6 +315,7 @@ async def asr_transcribe(
     finally:
         transcription_service.cleanup(prepared_audio)
 
+
 @router.get(
     "/asr/health",
     response_model=ASRHealthCheckResponse,
@@ -329,7 +331,7 @@ async def asr_transcribe(
 - **memory_usage**: GPU 显存使用情况（仅 GPU 模式）
 """,
 )
-async def health_check(request: Request):
+async def health_check(request: Request) -> dict[str, object]:
     """ASR服务健康检查端点"""
     # 鉴权
     result, content = validate_token(request)
@@ -342,7 +344,7 @@ async def health_check(request: Request):
             runtime_router = get_runtime_router()
             default_model = runtime_router.resolve_model_id(None)
             async with await runtime_router.acquire_engine(default_model) as engine:
-                model_loaded = engine.is_model_loaded()
+                model_loaded = await run_sync(engine.is_model_loaded)
                 device = engine.device
         except Exception:
             model_loaded = False
@@ -373,7 +375,6 @@ async def health_check(request: Request):
             "version": settings.APP_VERSION,
             "message": str(e),
         }
-
 
 @router.get(
     "/asr/models",
