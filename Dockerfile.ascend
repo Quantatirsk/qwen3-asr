@@ -36,9 +36,9 @@ WORKDIR /workspace/qwen3-asr
 COPY pyproject.toml uv.lock ./
 RUN uv sync --no-dev --no-install-project --frozen
 
-# Positively enumerate the runtime source instead of COPY . . so unrelated
-# repo artifacts (video/, demo/, tests/, environments/, tarballs, etc.) never
-# enter the build context or image. Keep this list in sync with PYTHON packages.
+# 只拷贝运行所需的源码，而不是“COPY . .”，这样无关仓库产物
+# （video/、demo/、tests/、environments/、压缩包等）永远不会进入
+# 构建上下文或镜像。此清单需与 PYTHON 包保持一致。
 COPY app ./app
 COPY scripts ./scripts
 COPY start.py ./
