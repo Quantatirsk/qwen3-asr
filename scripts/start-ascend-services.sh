@@ -12,12 +12,12 @@ VLLM_HOST="${QWEN_VLLM_HOST:-127.0.0.1}"
 VLLM_PORT="${QWEN_VLLM_PORT:-17004}"
 API_HOST="${QWEN3_ASR_API_HOST:-0.0.0.0}"
 API_PORT="${QWEN3_ASR_API_PORT:-17003}"
-STARTUP_TIMEOUT="${QWEN_VLLM_STARTUP_TIMEOUT_SEC:-600}"
 TENSOR_PARALLEL_SIZE="${QWEN_ASCEND_TENSOR_PARALLEL_SIZE:-1}"
 MAX_MODEL_LEN="${QWEN_ASCEND_MAX_MODEL_LEN:-4096}"
 MEMORY_UTILIZATION="${QWEN_ASCEND_MEMORY_UTILIZATION:-0.9}"
 VLLM_LOG="${QWEN_VLLM_LOG:-${PROJECT_ROOT}/logs/vllm.log}"
 PROCESS_POLL_INTERVAL="${QWEN_PROCESS_POLL_INTERVAL_SEC:-1}"
+STARTUP_TIMEOUT_SEC="${QWEN_VLLM_STARTUP_TIMEOUT_SEC:-600}"
 
 VLLM_PID=""
 API_PID=""
@@ -53,10 +53,8 @@ handle_signal() {
 }
 
 command -v vllm >/dev/null 2>&1 || die "vllm executable is unavailable"
-command -v curl >/dev/null 2>&1 || die "curl executable is unavailable"
 require_positive_integer "QWEN_VLLM_PORT" "${VLLM_PORT}"
 require_positive_integer "QWEN3_ASR_API_PORT" "${API_PORT}"
-require_positive_integer "QWEN_VLLM_STARTUP_TIMEOUT_SEC" "${STARTUP_TIMEOUT}"
 require_positive_integer "QWEN_ASCEND_TENSOR_PARALLEL_SIZE" "${TENSOR_PARALLEL_SIZE}"
 require_positive_integer "QWEN_ASCEND_MAX_MODEL_LEN" "${MAX_MODEL_LEN}"
 [[ -x "${API_PYTHON}" ]] || die "API Python is unavailable: ${API_PYTHON}"
@@ -86,25 +84,32 @@ echo "Starting Ascend vLLM: ${VLLM_HOST}:${VLLM_PORT}"
 "${VLLM_COMMAND[@]}" > >(tee -a "${VLLM_LOG}") 2>&1 &
 VLLM_PID=$!
 
-HEALTH_URL="http://${VLLM_HOST}:${VLLM_PORT}/health"
-DEADLINE=$((SECONDS + STARTUP_TIMEOUT))
-echo "Waiting for vLLM health: ${HEALTH_URL}"
-until curl --fail --silent --show-error --max-time 2 "${HEALTH_URL}" >/dev/null; do
-    if ! kill -0 "${VLLM_PID}" 2>/dev/null; then
-        wait "${VLLM_PID}" || true
-        VLLM_PID=""
-        die "vLLM exited before becoming ready; inspect ${VLLM_LOG}"
+VLLM_READY_URL="http://${VLLM_HOST}:${VLLM_PORT}/health"
+VLLM_DEADLINE_EPOCH=$(( $(date +%s) + STARTUP_TIMEOUT_SEC ))
+echo "Waiting for vLLM to become ready at ${VLLM_READY_URL} (timeout ${STARTUP_TIMEOUT_SEC}s)"
+while true; do
+    if kill -0 "${VLLM_PID}" 2>/dev/null; then
+        if curl -fsS --max-time 5 "${VLLM_READY_URL}" >/dev/null 2>&1; then
+            echo "vLLM is ready at ${VLLM_READY_URL}"
+            break
+        fi
+        if (( $(date +%s) >= VLLM_DEADLINE_EPOCH )); then
+            echo "ERROR: timed out waiting ${STARTUP_TIMEOUT_SEC}s for vLLM at ${VLLM_READY_URL}" >&2
+            exit 1
+        fi
+        sleep "${PROCESS_POLL_INTERVAL}"
+    else
+        echo "ERROR: vLLM process exited before becoming ready" >&2
+        exit 1
     fi
-    ((SECONDS < DEADLINE)) || die "vLLM startup timed out after ${STARTUP_TIMEOUT}s"
-    sleep 2
 done
-echo "vLLM is ready."
+
+
 
 export HOST="${API_HOST}"
 export PORT="${API_PORT}"
 export DEVICE="cpu"
 export SPEAKER_DIARIZATION_DEVICE="cpu"
-export HF_HUB_OFFLINE="1"
 export FUNASR_STARTUP_UI="plain"
 export QWEN_VLLM_BASE_URL="http://${VLLM_HOST}:${VLLM_PORT}"
 export QWEN_VLLM_SERVED_MODEL="${SERVED_MODEL}"
