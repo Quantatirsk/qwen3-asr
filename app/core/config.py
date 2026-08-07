@@ -117,6 +117,10 @@ class Settings:
             os.getenv("MAX_SEGMENT_SEC", str(self.MAX_SEGMENT_SEC))
         )
 
+        self.MODELSCOPE_PATH = os.getenv(
+            "MODELSCOPE_PATH", self.MODELSCOPE_PATH
+        )
+
 
     def _parse_size(self, size_str: str) -> int:
         """解析带单位的大小字符串

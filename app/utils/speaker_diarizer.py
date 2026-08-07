@@ -86,6 +86,9 @@ def _create_modelscope_pipeline(
         "model": model,
         "device": modelscope_device,
     }
+    # Silence funasr's PyPI version prompt reached through modelscope's
+    # inner AutoModel construction (it inherits disable_update from kwargs).
+    pipeline_kwargs["disable_update"] = True
     if model_revision is not None:
         pipeline_kwargs["model_revision"] = model_revision
 
