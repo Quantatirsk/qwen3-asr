@@ -19,11 +19,12 @@ class SingleContainerDeploymentTest(unittest.TestCase):
         dockerignore = (PROJECT_ROOT / ".dockerignore").read_text(encoding="utf-8")
 
         self.assertEqual(dockerfiles, ["Dockerfile.ascend"])
-        self.assertFalse((PROJECT_ROOT / "docker-compose.yml").exists())
         self.assertIn('CMD ["/bin/bash"]', dockerfile)
         self.assertNotIn("ENTRYPOINT", dockerfile)
         self.assertIn("UV_PROJECT_ENVIRONMENT=/opt/qwen3-asr-venv", dockerfile)
-        self.assertIn("--exclude-qwen", dockerfile)
+        self.assertNotIn("download_models", dockerfile)
+        self.assertNotIn("--exclude-qwen", dockerfile)
+        self.assertNotIn("verify_required_models_integrity", dockerfile)
         self.assertIn("EXPOSE 17003", dockerfile)
         self.assertIn(".venv/", dockerignore)
 
@@ -213,21 +214,15 @@ while true; do sleep 0.1; done
 """,
             )
             self._write_executable(
-                bin_dir / "curl",
-                """#!/usr/bin/env bash
-for _ in 1 2 3 4 5 6 7 8 9 10; do
-  [[ -f "$FAKE_VLLM_ARGS" ]] && exit 0
-  sleep 0.01
-done
-exit 1
-""",
-            )
-            self._write_executable(
                 bin_dir / "api-python",
                 """#!/usr/bin/env bash
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  [[ -f "$FAKE_VLLM_ARGS" ]] && break
+  sleep 0.01
+done
 printf '%s\n' \
   "$QWEN_VLLM_BASE_URL" "$HOST" "$PORT" "$DEVICE" \
-  "$SPEAKER_DIARIZATION_DEVICE" "$HF_HUB_OFFLINE" "$1" > "$FAKE_API_ENV"
+  "$SPEAKER_DIARIZATION_DEVICE" "$1" > "$FAKE_API_ENV"
 exit 0
 """,
             )
@@ -275,7 +270,7 @@ exit 0
                     str(PROJECT_ROOT / "start.py"),
                 ],
             )
-            self.assertIn("vLLM is ready", completed.stdout)
+            self.assertIn("Starting Ascend vLLM", completed.stdout)
 
     def test_start_command_stops_api_when_ready_vllm_exits(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -300,16 +295,6 @@ for _ in $(seq 1 50); do
 done
 sleep 0.1
 exit 7
-""",
-            )
-            self._write_executable(
-                bin_dir / "curl",
-                """#!/usr/bin/env bash
-for _ in 1 2 3 4 5 6 7 8 9 10; do
-  [[ -f "$FAKE_VLLM_READY" ]] && exit 0
-  sleep 0.01
-done
-exit 1
 """,
             )
             self._write_executable(
@@ -376,7 +361,6 @@ touch "$FAKE_VLLM_STARTED"
 exit 1
 """,
             )
-            self._write_executable(bin_dir / "curl", "#!/usr/bin/env bash\nexit 1\n")
             self._write_executable(
                 bin_dir / "api-python",
                 "#!/usr/bin/env bash\nexit 0\n",

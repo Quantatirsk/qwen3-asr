@@ -7,7 +7,7 @@ The single image contains two isolated Python environments:
 - the base image environment runs Ascend vLLM and `Qwen/Qwen3-ASR-1.7B`;
 - `/opt/qwen3-asr-venv` runs FastAPI, audio decoding, FSMN VAD, CAM++ speaker diarization, and ITN on CPU.
 
-Both processes run in the same container and communicate over `127.0.0.1`. The image starts in `/bin/bash`; it never starts a service automatically. The repository contains no realtime WebSocket, Paraformer, punctuation-model, local CUDA, or Rust Qwen runtime.
+Both processes run in the same container and communicate over `127.0.0.1`. The repository contains no realtime WebSocket, Paraformer, punctuation-model, local CUDA, or Rust Qwen runtime.
 
 ## Capabilities
 
@@ -28,9 +28,19 @@ The image build downloads and embeds the CPU support models. Qwen weights remain
 docker build -f Dockerfile.ascend -t qwen3-asr:ascend-910b .
 ```
 
+## Compose Start (Ascend host)
+
+The image is a single container: the base environment runs Ascend vLLM on the NPU, and `/opt/qwen3-asr-venv` runs the FastAPI CPU worker. Compose mounts the Ascend devices, driver/DCMI, the customer-supplied model cache, then stages and starts both services automatically:
+
+```bash
+docker compose up -d
+```
+
+`docker-compose.yml` leaves `API_KEY` unset, so API requests are **not** token-authenticated (intranet trust). Set `QWEN_MODEL_SOURCE` wherever the platform stores the Qwen snapshot if it is not the default HF path. vLLM stays on `127.0.0.1:17004`; only `17003` is exposed to the host.
+
 ## Manual Container Start
 
-After the customer platform starts the image and opens its shell, stage the preloaded Qwen snapshot:
+The image starts in `/bin/bash` and never starts a service automatically. After the customer platform opens its shell, stage the preloaded Qwen snapshot:
 
 ```bash
 SRC=/root/.cache/huggingface/hub/models--Qwen--Qwen3-ASR-1.7B/snapshots/7278e1e70fe206f11671096ffdd38061171dd6e5
@@ -40,10 +50,11 @@ SRC=/root/.cache/huggingface/hub/models--Qwen--Qwen3-ASR-1.7B/snapshots/7278e1e7
 Then start vLLM and the API in the foreground:
 
 ```bash
-export API_KEY=replace-me
 export QWEN_ASCEND_TENSOR_PARALLEL_SIZE=1
 /workspace/qwen3-asr/scripts/start-ascend-services.sh
 ```
+
+For an intranet (trusted) deployment, omit `API_KEY` entirely to disable token authentication.
 
 The public API listens on `0.0.0.0:17003`. Ascend vLLM listens only on `127.0.0.1:17004`. See [Ascend deployment](docs/deployment-ascend.md) for the complete operating procedure.
 

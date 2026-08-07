@@ -10,7 +10,7 @@
 - API 使用 `/opt/qwen3-asr-venv` 中的 CPU PyTorch，承载 FSMN VAD、CAM++ 和 ITN；
 - vLLM 只监听 `127.0.0.1:17004`，API 对外监听 `0.0.0.0:17003`；
 - Qwen 权重由客户平台预置，FSMN/CAM++ 辅助模型已经固化在镜像中；
-- 不依赖 Compose、第二个容器、容器 DNS 或目标机联网下载。
+- 单容器内通过 `127.0.0.1` 通信；不依赖第二个容器、容器 DNS 或目标机联网下载。
 
 本分支不包含实时 WebSocket、Paraformer、PUNC、本地 CUDA/Rust Qwen 或 Qwen3-ASR-0.6B。
 
@@ -64,13 +64,26 @@ DST=/workspace/hf_models/Qwen3-ASR-1.7B
 
 ### 3. 启动全部服务
 
+#### 3.1 Compose 自动启动（推荐）
+
+在 Ascend 宿主机上已有 qwen3-asr:ascend-910b 镜像时，可用仓库根目录的 docker-compose.yml 一键拉起：
+
+```bash
+docker compose up -d
+```
+
+Compose 会挂载 Ascend 设备、driver/DCMI、平台预置的 Qwen 模型缓存，自动执行模型暂存并启动 vLLM 与 API。文件默认不设置 API_KEY，即使用内网免验证；如需改源目录，调整 QWEN_MODEL_SOURCE 即可。
+
+#### 3.2 手动启动
+
 单卡默认配置：
 
 ```bash
-export API_KEY=replace-me
 export QWEN_ASCEND_TENSOR_PARALLEL_SIZE=1
 /workspace/qwen3-asr/scripts/start-ascend-services.sh
 ```
+
+内网（受信）环境可省略 `export API_KEY=replace-me`，此时 API 默认不校验 token。
 
 多卡容器必须先确认平台已经把对应设备全部注入，再调整张量并行数：
 
