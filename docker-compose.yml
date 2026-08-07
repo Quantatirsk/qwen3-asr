@@ -1,0 +1,46 @@
+name: qwen3-asr-ascend
+
+services:
+  qwen3-asr:
+    image: qwen3-asr:ascend-910b
+    container_name: qwen3-asr
+    restart: unless-stopped
+    network_mode: host
+    ipc: host
+    shm_size: 1g
+    environment:
+      QWEN_ASCEND_TENSOR_PARALLEL_SIZE: "1"
+      QWEN_ASCEND_MAX_MODEL_LEN: "4096"
+      QWEN_ASCEND_MEMORY_UTILIZATION: "0.9"
+      QWEN_VLLM_HOST: "127.0.0.1"
+      QWEN_VLLM_PORT: "17004"
+      QWEN_VLLM_SERVED_MODEL: "qwen3-asr"
+      QWEN_VLLM_STARTUP_TIMEOUT_SEC: "600"
+      QWEN_VLLM_TIMEOUT_SEC: "3600"
+      QWEN3_ASR_API_HOST: "0.0.0.0"
+      QWEN3_ASR_API_PORT: "17003"
+      QWEN_MODEL_SOURCE: "/root/.cache/huggingface/hub/models--Qwen--Qwen3-ASR-1.7B/snapshots/7278e1e70fe206f11671096ffdd38061171dd6e5"
+      QWEN_ASCEND_MODEL_PATH: "/root/.cache/huggingface/hub/qwen-staged/Qwen3-ASR-1.7B"
+    volumes:
+      - ./models/huggingface/hub:/root/.cache/huggingface/hub
+      - ./models/modelscope/hub/models:/root/.cache/modelscope/hub/models
+      - /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro
+      - /usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64:ro
+      - /usr/local/dcmi:/usr/local/dcmi:ro
+      - /usr/local/bin/npu-smi:/usr/local/bin/npu-smi:ro
+    devices:
+      - /dev/davinci0:/dev/davinci0
+      - /dev/davinci_manager:/dev/davinci_manager
+      - /dev/devmm_svm:/dev/devmm_svm
+      - /dev/hisi_hdc:/dev/hisi_hdc
+    command:
+      - /bin/bash
+      - -lc
+      - /workspace/qwen3-asr/scripts/stage-qwen-model.sh "$${QWEN_MODEL_SOURCE}" "$${QWEN_ASCEND_MODEL_PATH}" && /workspace/qwen3-asr/scripts/start-ascend-services.sh
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "-s", "http://127.0.0.1:17003/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+    stop_grace_period: 15s
