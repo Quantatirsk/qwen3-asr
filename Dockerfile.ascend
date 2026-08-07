@@ -36,18 +36,19 @@ WORKDIR /workspace/qwen3-asr
 COPY pyproject.toml uv.lock ./
 RUN uv sync --no-dev --no-install-project --frozen
 
-COPY . .
+# Positively enumerate the runtime source instead of COPY . . so unrelated
+# repo artifacts (video/, demo/, tests/, environments/, tarballs, etc.) never
+# enter the build context or image. Keep this list in sync with PYTHON packages.
+COPY app ./app
+COPY scripts ./scripts
+COPY start.py ./
 
 RUN chmod +x \
         scripts/stage-qwen-model.sh \
         scripts/start-ascend-services.sh \
-    && HF_HUB_OFFLINE=0 /opt/qwen3-asr-venv/bin/python \
-        -m app.utils.download_models --auto-mode --exclude-qwen \
-    && /opt/qwen3-asr-venv/bin/python -c \
-        "from app.utils.model_loader import verify_required_models_integrity; result = verify_required_models_integrity(use_logger=False); raise SystemExit(1 if result['invalid_models'] else 0)" \
     && mkdir -p /workspace/hf_models temp data logs
 
-ENV HF_HUB_OFFLINE=1 \
+ENV HF_HUB_OFFLINE=0 \
     DEVICE=cpu \
     SPEAKER_DIARIZATION_DEVICE=cpu \
     QWEN_ASCEND_MODEL_PATH=/workspace/hf_models/Qwen3-ASR-1.7B \
