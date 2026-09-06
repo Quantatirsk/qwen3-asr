@@ -437,7 +437,7 @@ This project uses the MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Quantatirsk/qwen3-asr&type=Date)](https://star-history.com/#Quantatirsk/qwen3-asr&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=Quantatirsk/qwen3-asr&type=Date)](https://star-history.dera.page/#Quantatirsk/qwen3-asr&Date)
 
 ## Contributing
 
