@@ -2,10 +2,11 @@
 """Runtime router for pooled ASR execution."""
 
 from __future__ import annotations
+
 import asyncio
 import threading
-from dataclasses import dataclass
 from enum import Enum
+from functools import partial
 from typing import Awaitable, Callable, Optional
 
 import torch
@@ -14,6 +15,7 @@ from app.core.config import settings
 from app.core.device import detect_device
 from app.core.executor import run_sync
 from app.services.asr.engines import ASRFullResult, BaseASREngine
+from app.services.asr.long_audio import OfflineASRRequest, transcribe_with_pool
 from app.services.asr.manager import get_model_manager
 from app.services.asr.qwenasr_rust import is_qwenasr_rust_available
 from .local_pool import LocalEnginePool
@@ -25,20 +27,6 @@ class RuntimeFamily(str, Enum):
     QWEN_VLLM = "qwen_vllm"
     QWEN_RUST_CPU = "qwen_rust_cpu"
     FUNASR = "funasr"
-
-
-@dataclass
-class OfflineASRRequest:
-    model_id: str
-    audio_path: str
-    hotwords: str = ""
-    enable_punctuation: bool = True
-    enable_itn: bool = True
-    sample_rate: int = 16000
-    enable_speaker_diarization: bool = True
-    word_timestamps: bool = False
-    timestamp_scale: float = 1.0
-    task_id: Optional[str] = None
 
 
 class RuntimeEngineLease:
@@ -121,6 +109,7 @@ class RuntimeRouter:
                 size=self._pool_size_for_family(family),
                 factory=lambda: self._manager.create_engine(model_id),
             )
+            pool.warmup()
             self._pools[pool_key] = pool
             self._loaded_model_ids.add(model_id)
             return pool
@@ -152,8 +141,7 @@ class RuntimeRouter:
         if family == RuntimeFamily.QWEN_VLLM:
             self._get_shared_engine(family, resolved_model_id)
             return
-        pool = self._create_pool(family, resolved_model_id)
-        pool.warmup()
+        self._create_pool(family, resolved_model_id)
 
     def get_loaded_model_ids(self) -> list[str]:
         return sorted(self._loaded_model_ids)
@@ -185,7 +173,9 @@ class RuntimeRouter:
                 engine=engine,
                 release_callback=semaphore.release,
             )
-        pool = self._create_pool(family, resolved_model_id)
+        pool = self._pools.get((family, resolved_model_id))
+        if pool is None:
+            pool = await run_sync(self._create_pool, family, resolved_model_id)
         engine = await pool.acquire()
         return RuntimeEngineLease(
             engine=engine,
@@ -194,7 +184,12 @@ class RuntimeRouter:
 
     async def run_offline(self, request: OfflineASRRequest) -> ASRFullResult:
         model_id = self.resolve_model_id(request.model_id)
-        if self._resolve_family(model_id) == RuntimeFamily.QWEN_VLLM:
+        family = self._resolve_family(model_id)
+        if family == RuntimeFamily.QWEN_RUST_CPU:
+            return await transcribe_with_pool(
+                request, partial(self.acquire_engine, model_id), model_id
+            )
+        if family == RuntimeFamily.QWEN_VLLM:
             lock = self._vllm_offline_locks.setdefault(model_id, asyncio.Lock())
             async with lock:
                 return await self._run_offline(request, model_id)

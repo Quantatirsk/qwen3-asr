@@ -4,10 +4,11 @@ import asyncio
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
 from app.services.asr.engines import ASRFullResult
+from app.services.asr.long_audio import OfflineASRRequest
 from app.services.asr.runtime.router import (
-    OfflineASRRequest,
     RuntimeFamily,
     RuntimeRouter,
 )
@@ -37,7 +38,8 @@ class _StatefulEngine:
 class RuntimeRouterTest(unittest.IsolatedAsyncioTestCase):
     async def test_vllm_offline_requests_do_not_overlap(self) -> None:
         engine = _StatefulEngine()
-        router = RuntimeRouter()
+        with patch("app.services.asr.runtime.router.get_model_manager"):
+            router = RuntimeRouter()
         semaphore = asyncio.Semaphore(8)
         router._resolve_family = lambda _model_id: RuntimeFamily.QWEN_VLLM  # type: ignore[method-assign]
         router._get_shared_engine = lambda _family, _model_id: (  # type: ignore[method-assign]

@@ -407,6 +407,7 @@ def normalize_audio_for_asr(audio_path: str, target_sr: int = 16000) -> Normaliz
     Returns:
         Normalized audio path and timestamp scale metadata.
     """
+    normalized_path: Optional[str] = None
     try:
         # 检查文件扩展名
         file_ext = os.path.splitext(audio_path)[1].lower()
@@ -419,7 +420,10 @@ def normalize_audio_for_asr(audio_path: str, target_sr: int = 16000) -> Normaliz
                 return NormalizedAudio(path=audio_path)
 
         # 转换为标准WAV格式
-        normalized_path = convert_audio_to_wav(audio_path, target_sr=target_sr)
+        normalized_path = audio_path + ".normalized.wav"
+        convert_audio_to_wav(
+            audio_path, output_path=normalized_path, target_sr=target_sr
+        )
         logger.debug(f"音频文件已标准化: {audio_path} -> {normalized_path}")
 
         timestamp_scale = 1.0
@@ -430,6 +434,8 @@ def normalize_audio_for_asr(audio_path: str, target_sr: int = 16000) -> Normaliz
         return NormalizedAudio(path=normalized_path, timestamp_scale=timestamp_scale)
 
     except Exception as e:
+        if normalized_path is not None:
+            cleanup_temp_file(normalized_path)
         raise DefaultServerErrorException(f"音频标准化失败: {str(e)}")
 
 

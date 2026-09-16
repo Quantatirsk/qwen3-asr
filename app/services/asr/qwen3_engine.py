@@ -3,7 +3,6 @@
 
 import logging
 import os
-from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, List, Any
 from dataclasses import dataclass
 
@@ -144,9 +143,6 @@ class Qwen3ASREngine(BaseASREngine):
         self.model_path = model_path
         self._backend = self._select_backend()
         self._forced_aligner_path = forced_aligner_path
-        self._rust_num_threads = 0
-        self._rust_verbosity = 0
-        self._rust_batch_runtimes: list[QwenASRRustRuntime] = []
 
         try:
             if self._backend == "vllm":
@@ -191,36 +187,12 @@ class Qwen3ASREngine(BaseASREngine):
                 num_threads,
                 settings.QWEN_RUST_CPU_WORKERS,
             )
-        self._rust_num_threads = num_threads
-        self._rust_verbosity = 0
         return QwenASRRustRuntime(
             model_path=model_path,
             forced_aligner_path=forced_aligner_path,
             num_threads=num_threads,
             verbosity=0,
         )
-
-    def _get_rust_batch_runtimes(self, worker_count: int) -> list[QwenASRRustRuntime]:
-        if worker_count <= 1:
-            return [self.model]
-
-        if not self._rust_batch_runtimes:
-            self._rust_batch_runtimes = [self.model]
-
-        while len(self._rust_batch_runtimes) < worker_count:
-            self._rust_batch_runtimes.append(
-                QwenASRRustRuntime(
-                    model_path=self.model_path,
-                    forced_aligner_path=self._forced_aligner_path,
-                    num_threads=self._rust_num_threads,
-                    verbosity=self._rust_verbosity,
-                )
-            )
-
-        return self._rust_batch_runtimes[:worker_count]
-
-    def _get_rust_stage_concurrency(self, segment_count: int) -> int:
-        return max(1, min(settings.QWEN_RUST_CPU_WORKERS, segment_count))
 
     def _rust_transcribe_text_segment(
         self,
@@ -263,32 +235,13 @@ class Qwen3ASREngine(BaseASREngine):
         enable_itn: bool,
         sample_rate: int,
     ) -> dict[int, str]:
-        if not valid_segments:
-            return {}
-
-        worker_count = self._get_rust_stage_concurrency(len(valid_segments))
-        runtimes = self._get_rust_batch_runtimes(worker_count)
-        output: dict[int, str] = {}
-        for batch_start in range(0, len(valid_segments), worker_count):
-            chunk = valid_segments[batch_start:batch_start + worker_count]
-            chunk_runtimes = runtimes[:len(chunk)]
-            with ThreadPoolExecutor(max_workers=len(chunk)) as executor:
-                futures = [
-                    executor.submit(
-                        self._rust_transcribe_text_segment,
-                        runtime,
-                        seg,
-                        hotwords,
-                        enable_punctuation,
-                        enable_itn,
-                        sample_rate,
-                    )
-                    for runtime, (_idx, seg) in zip(chunk_runtimes, chunk)
-                ]
-                for (idx, _seg), future in zip(chunk, futures):
-                    output[idx] = future.result()
-
-        return output
+        # The router leases engines per segment; native operations stay sequential here.
+        return {
+            idx: self._rust_transcribe_text_segment(
+                self.model, seg, hotwords, enable_punctuation, enable_itn, sample_rate
+            )
+            for idx, seg in valid_segments
+        }
 
     def _run_rust_align_stage(
         self,
@@ -296,35 +249,11 @@ class Qwen3ASREngine(BaseASREngine):
         texts: dict[int, str],
         language: Optional[str] = None,
     ) -> dict[int, list[WordToken]]:
-        if not valid_segments:
-            return {}
-
-        align_inputs = [(idx, seg, texts.get(idx, "")) for idx, seg in valid_segments if texts.get(idx, "").strip()]
-        worker_count = self._get_rust_stage_concurrency(len(valid_segments))
-        runtimes = self._get_rust_batch_runtimes(worker_count)
-        output: dict[int, list[WordToken]] = {}
-
-        if not align_inputs:
-            return output
-
-        for batch_start in range(0, len(align_inputs), worker_count):
-            chunk = align_inputs[batch_start:batch_start + worker_count]
-            chunk_runtimes = runtimes[:len(chunk)]
-            with ThreadPoolExecutor(max_workers=len(chunk)) as executor:
-                futures = [
-                    executor.submit(
-                        self._rust_align_word_tokens,
-                        runtime,
-                        seg,
-                        text,
-                        language,
-                    )
-                    for runtime, (_idx, seg, text) in zip(chunk_runtimes, chunk)
-                ]
-                for (idx, _seg, _text), future in zip(chunk, futures):
-                    output[idx] = future.result()
-
-        return output
+        return {
+            idx: self._rust_align_word_tokens(self.model, seg, texts[idx], language)
+            for idx, seg in valid_segments
+            if texts.get(idx, "").strip()
+        }
 
     def _warmup_forced_aligner(self) -> None:
         if not self._forced_aligner_path:
@@ -434,7 +363,7 @@ class Qwen3ASREngine(BaseASREngine):
         )
 
     @_handle_asr_error("批量推理")
-    def _transcribe_batch(
+    def transcribe_segments(
         self,
         segments: List[Any],
         hotwords: str = "",

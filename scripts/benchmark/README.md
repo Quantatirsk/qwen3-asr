@@ -75,7 +75,8 @@ QWEN_RUST_CPU_WORKERS=8 \
 说明：
 
 - 脚本只跑当前一组配置
-- Rust ASR 和 forced align 共享 `QWEN_RUST_CPU_WORKERS`
+- `QWEN_RUST_CPU_WORKERS` 控制每个进程中 runtime 池的 engine 数量；每个 engine 只持有一个 Rust runtime，ASR 与 forced align 顺序复用该实例。离线按片段租借，实时按会话租借同一个池。
+- 此脚本直接构造单个 engine，不经过统一池，不能用来衡量多请求并发吞吐；worker 数大于 1 时仅影响该实例的线程配置。
 - 跑完后会输出一条进度日志，并写入 `--json-out`
 - 如果传了 `--json-out`，脚本还会自动生成同名 `.md` 中文对比报告
 - 也可以显式指定 Markdown 路径：
@@ -194,3 +195,5 @@ scripts/benchmark/
    - RTF < 1.0: 处理速度快于实时，性能良好
    - RTF ≈ 1.0: 刚好实时处理
    - RTF > 1.0: 处理速度慢于实时，可能出现延迟累积
+
+统一调度的性能对照、机制消融和验证边界见 [验证记录](../../docs/research/unified-runtime-validation.md)。

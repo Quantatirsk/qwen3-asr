@@ -31,9 +31,10 @@ class LocalEnginePool(Generic[T]):
 
         with self._init_lock:
             if self._state is None:
-                self._state = _PoolState(queue=asyncio.Queue(maxsize=self._size))
+                state = _PoolState[T](queue=asyncio.Queue(maxsize=self._size))
                 for _ in range(self._size):
-                    self._state.queue.put_nowait(self._factory())
+                    state.queue.put_nowait(self._factory())
+                self._state = state
         return self._state
 
     def warmup(self) -> None:

@@ -119,6 +119,7 @@ class Qwen3ASRService:
     ) -> None:
         try:
             engine = await self._ensure_engine(ctx)
+            assert ctx.streaming_state is not None, "Streaming state is not initialized"
 
             if len(ctx.audio_buffer) > 0:
                 ctx.streaming_state = await run_sync(
@@ -331,6 +332,9 @@ class Qwen3ASRService:
                         ctx.audio_buffer = ctx.audio_buffer[chunk_size:]
 
                         engine = await self._ensure_engine(ctx)
+                        assert (
+                            ctx.streaming_state is not None
+                        ), "Streaming state is not initialized"
                         ctx.streaming_state = await run_sync(
                             engine.streaming_transcribe,
                             chunk,
@@ -381,11 +385,12 @@ class Qwen3ASRService:
                 getattr(ctx, "streaming_state", None), "internal_state", None
             )
             close_stream = getattr(stream_handle, "close", None)
-            if callable(close_stream):
-                close_stream()
-
-            if ctx.engine_lease is not None:
-                await ctx.engine_lease.close()
+            try:
+                if callable(close_stream):
+                    close_stream()
+            finally:
+                if ctx.engine_lease is not None:
+                    await ctx.engine_lease.close()
             logger.info("[%s] Connection closed", task_id)
 
     async def _stop(
@@ -396,6 +401,7 @@ class Qwen3ASRService:
     ) -> None:
         try:
             engine = await self._ensure_engine(ctx)
+            assert ctx.streaming_state is not None, "Streaming state is not initialized"
 
             if len(ctx.audio_buffer) > 0:
                 ctx.streaming_state = await run_sync(

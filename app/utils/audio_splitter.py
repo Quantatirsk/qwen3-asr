@@ -92,6 +92,7 @@ class AudioSplitter:
         """
         try:
             from ..services.asr.engines import get_global_vad_model
+            from ..services.asr.engines.global_models import get_vad_inference_lock
 
             logger.info("开始 VAD 语音段检测...")
             vad_model = get_global_vad_model(self.device)
@@ -99,7 +100,8 @@ class AudioSplitter:
                 raise DefaultServerErrorException("VAD 模型未加载")
 
             # 调用 VAD 模型
-            result = vad_model.generate(input=audio_path, cache={})
+            with get_vad_inference_lock():
+                result = vad_model.generate(input=audio_path, cache={})
 
             if not result or len(result) == 0:
                 logger.warning("VAD 未检测到语音段")
