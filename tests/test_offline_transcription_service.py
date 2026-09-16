@@ -1,11 +1,12 @@
 import unittest
+from contextlib import nullcontext
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from app.core.exceptions import InvalidParameterException
 from app.services.asr.offline_transcription_service import (
     OfflineTranscriptionOptions,
     OfflineTranscriptionService,
-    PreparedAudio,
 )
 from app.services.asr.results import ASRFullResult, ASRSegmentResult
 
@@ -33,9 +34,9 @@ class OfflineTranscriptionServiceTest(unittest.IsolatedAsyncioTestCase):
             return_value=router,
         ):
             with self.assertRaisesRegex(InvalidParameterException, "vocabulary_id"):
-                await service.transcribe(
-                    PreparedAudio("audio.wav", 4.0, "audio.wav"),
-                    OfflineTranscriptionOptions(hotwords="产品名"),
+                await service.start_transcription(
+                    audio_data=b"audio",
+                    options=OfflineTranscriptionOptions(hotwords="product"),
                 )
 
         self.assertIsNone(router.request)
@@ -44,13 +45,25 @@ class OfflineTranscriptionServiceTest(unittest.IsolatedAsyncioTestCase):
         router = _RuntimeRouter()
         service = OfflineTranscriptionService()
 
-        with patch(
-            "app.services.asr.offline_transcription_service.get_runtime_router",
-            return_value=router,
+        audio = SimpleNamespace(normalized_path="audio.wav", timestamp_scale=1.0)
+        with (
+            patch(
+                "app.services.asr.offline_transcription_service.get_runtime_router",
+                return_value=router,
+            ),
+            patch.object(
+                service,
+                "_get_audio_service",
+                return_value=SimpleNamespace(
+                    prepare=lambda **kwargs: nullcontext(audio)
+                ),
+            ),
         ):
-            result = await service.transcribe(
-                PreparedAudio("audio.wav", 4.0, "audio.wav"),
-                OfflineTranscriptionOptions(word_timestamps=True),
+            result = await (
+                await service.start_transcription(
+                    audio_data=b"audio",
+                    options=OfflineTranscriptionOptions(word_timestamps=True),
+                )
             )
 
         self.assertFalse(hasattr(router.request, "word_timestamps"))

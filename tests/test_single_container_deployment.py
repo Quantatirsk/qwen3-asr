@@ -266,7 +266,6 @@ exit 0
                     "17003",
                     "cpu",
                     "cpu",
-                    "1",
                     str(PROJECT_ROOT / "start.py"),
                 ],
             )

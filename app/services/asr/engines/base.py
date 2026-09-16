@@ -2,18 +2,12 @@
 
 from __future__ import annotations
 
-import logging
-import time
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
 from app.core.config import settings
 from app.core.exceptions import DefaultServerErrorException
-from app.core.logging import log_inference_metrics
 from app.services.asr.results import ASRFullResult, ASRSegmentResult
-from app.utils.audio import get_audio_duration
-
-logger = logging.getLogger(__name__)
 
 
 class BaseASREngine(ABC):
@@ -29,7 +23,7 @@ class BaseASREngine(ABC):
         """Transcribe one normalized audio file."""
 
     @abstractmethod
-    def _transcribe_batch(
+    def transcribe_segments(
         self,
         segments: list[Any],
         enable_itn: bool = True,
@@ -46,100 +40,34 @@ class BaseASREngine(ABC):
         timestamp_scale: float = 1.0,
         task_id: Optional[str] = None,
     ) -> ASRFullResult:
-        from app.utils.audio_splitter import AudioSplitter
-
-        started_at = time.time()
-        task_prefix = f"[{task_id}] " if task_id else ""
-        duration = 0.0
-        speaker_segments = None
-        audio_segments = None
+        from app.services.asr.long_audio import prepare_long_audio
 
         try:
-            duration = get_audio_duration(audio_path)
-            if enable_speaker_diarization:
-                from app.utils.speaker_diarizer import SpeakerDiarizer
-
-                speaker_segments = SpeakerDiarizer().split_audio_by_speakers(audio_path)
-                if not speaker_segments:
-                    logger.warning("%sspeaker diarization found no segments; using VAD", task_prefix)
-
-            if not speaker_segments:
-                audio_segments = AudioSplitter(device=self.device).split_audio_file(audio_path)
-
-            segments_to_process = speaker_segments or audio_segments
-            if not segments_to_process:
-                raise DefaultServerErrorException("音频分割失败：未生成任何片段")
-
-            results: list[ASRSegmentResult] = []
-            for batch_start in range(0, len(segments_to_process), settings.ASR_BATCH_SIZE):
-                batch = segments_to_process[
-                    batch_start : batch_start + settings.ASR_BATCH_SIZE
-                ]
-                batch_results = self._transcribe_batch(
-                    batch,
-                    enable_itn=enable_itn,
-                    sample_rate=sample_rate,
-                )
-                for source, transcribed in zip(batch, batch_results):
-                    if not transcribed.text:
-                        continue
-                    results.append(
-                        ASRSegmentResult(
-                            text=transcribed.text,
-                            start_time=float(getattr(source, "start_sec", 0.0)),
-                            end_time=float(getattr(source, "end_sec", 0.0)),
-                            speaker_id=getattr(source, "speaker_id", None),
+            with prepare_long_audio(
+                audio_path,
+                self.device,
+                enable_speaker_diarization,
+                self.model_id,
+                task_id,
+            ) as audio:
+                results = []
+                for start in range(0, len(audio.segments), settings.ASR_BATCH_SIZE):
+                    results.extend(
+                        self.transcribe_segments(
+                            list(
+                                audio.segments[start : start + settings.ASR_BATCH_SIZE]
+                            ),
+                            enable_itn=enable_itn,
+                            sample_rate=sample_rate,
                         )
                     )
-
-            if timestamp_scale != 1.0:
-                for segment in results:
-                    segment.start_time *= timestamp_scale
-                    segment.end_time *= timestamp_scale
-                duration *= timestamp_scale
-
-            result = ASRFullResult(
-                text="\n".join(segment.text for segment in results),
-                segments=results,
-                duration=duration,
-            )
-            log_inference_metrics(
-                logger=logger,
-                message="离线长音频识别完成",
-                task_id=task_id,
-                duration_ms=(time.time() - started_at) * 1000,
-                audio_duration_sec=duration,
-                model_id=self.model_id,
-                status="success",
-                segments_count=len(results),
-                batch_size=settings.ASR_BATCH_SIZE,
-                enable_speaker_diarization=enable_speaker_diarization,
-            )
-            return result
+                return audio.finish(results, timestamp_scale)
+        except DefaultServerErrorException:
+            raise
         except Exception as exc:
-            log_inference_metrics(
-                logger=logger,
-                message="离线长音频识别失败",
-                task_id=task_id,
-                duration_ms=(time.time() - started_at) * 1000,
-                audio_duration_sec=duration,
-                model_id=getattr(self, "model_id", "unknown"),
-                status="error",
-                error=str(exc),
-            )
-            if isinstance(exc, DefaultServerErrorException):
-                raise
-            raise DefaultServerErrorException(f"长音频识别失败: {exc}") from exc
-        finally:
-            try:
-                if speaker_segments:
-                    from app.utils.speaker_diarizer import SpeakerDiarizer
-
-                    SpeakerDiarizer.cleanup_segments(speaker_segments)
-                if audio_segments:
-                    AudioSplitter.cleanup_segments(audio_segments)
-            except Exception as exc:
-                logger.warning("cleanup of temporary audio segments failed: %s", exc)
+            raise DefaultServerErrorException(
+                f"Long audio transcription failed: {exc}"
+            ) from exc
 
     @property
     @abstractmethod

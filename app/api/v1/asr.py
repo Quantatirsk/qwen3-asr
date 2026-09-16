@@ -10,7 +10,7 @@ from fastapi import (
     Depends
 )
 from fastapi.responses import JSONResponse
-from typing import Annotated, Optional
+from typing import Annotated
 import time
 import logging
 
@@ -40,7 +40,6 @@ from ...services.asr.runtime import get_runtime_router
 from ...services.asr.audio_validation import validate_sample_rate
 from ...services.asr.offline_transcription_service import (
     OfflineTranscriptionOptions,
-    PreparedAudio,
     get_offline_transcription_service,
 )
 from ...services.asr.results import ASRSegmentResult
@@ -225,7 +224,6 @@ async def asr_transcribe(
 ) -> JSONResponse:
     """语音识别API端点"""
     task_id = generate_task_id()
-    prepared_audio: Optional[PreparedAudio] = None
 
     # 性能计时
     request_start_time = time.time()
@@ -242,26 +240,19 @@ async def asr_transcribe(
         if not result:
             raise AuthenticationException(content, task_id)
 
-        # 使用音频服务处理音频
-        target_sample_rate = int(params.sample_rate) if params.sample_rate else 16000
-        prepared_audio = await transcription_service.prepare_from_request(
-            request=request,
+        inference_task = await transcription_service.start_transcription(
+            audio_data=(await request.body()) or None,
             audio_address=params.audio_address,
-            task_id=task_id,
-            sample_rate=target_sample_rate,
-        )
-
-        logger.info(f"[{task_id}] 开始调用 transcribe_long_audio (enable_speaker_diarization={params.enable_speaker_diarization})...")
-        asr_result = await transcription_service.transcribe(
-            prepared_audio,
-            OfflineTranscriptionOptions(
+            options=OfflineTranscriptionOptions(
                 sample_rate=int(params.sample_rate or SampleRate.RATE_16000),
                 hotwords=params.vocabulary_id or "",
-                enable_speaker_diarization=params.enable_speaker_diarization is not False,
+                enable_speaker_diarization=params.enable_speaker_diarization
+                is not False,
                 word_timestamps=params.word_timestamps is True,
                 task_id=task_id,
             ),
         )
+        asr_result = await inference_task
 
         logger.info(f"[{task_id}] 识别完成，共 {len(asr_result.segments)} 个分段，总字符: {len(asr_result.text)}")
 
@@ -315,9 +306,6 @@ async def asr_transcribe(
             task_id=task_id,
         )
         return JSONResponse(content=response_data, headers={"task_id": task_id})
-
-    finally:
-        transcription_service.cleanup(prepared_audio)
 
 
 @router.get(

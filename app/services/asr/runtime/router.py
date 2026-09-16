@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import threading
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
 from app.core.executor import run_sync
+from app.services.asr.long_audio import OfflineASRRequest
 from app.services.asr.results import ASRFullResult
 from app.services.asr.manager import ASCEND_MODEL_ID, get_model_manager
 
@@ -15,17 +15,6 @@ if TYPE_CHECKING:
     from app.services.asr.engines import BaseASREngine
 
 _REMOTE_CONCURRENCY = 8
-
-
-@dataclass(frozen=True)
-class OfflineASRRequest:
-    model_id: str
-    audio_path: str
-    enable_itn: bool = True
-    sample_rate: int = 16000
-    enable_speaker_diarization: bool = True
-    timestamp_scale: float = 1.0
-    task_id: Optional[str] = None
 
 
 class RuntimeEngineLease:
@@ -73,7 +62,7 @@ class RuntimeRouter:
     async def acquire_engine(
         self, model_id: Optional[str] = None
     ) -> RuntimeEngineLease:
-        engine = self._get_engine(model_id)
+        engine = await run_sync(self._get_engine, model_id)
         await self._semaphore.acquire()
         return RuntimeEngineLease(engine, self._semaphore)
 

@@ -1,27 +1,22 @@
-# -*- coding: utf-8 -*-
-"""Shared offline transcription workflow."""
+"""Shared offline transcription workflow and task resource ownership."""
 
 from __future__ import annotations
 
+import asyncio
+from contextlib import ExitStack
 from dataclasses import dataclass
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from fastapi import Request
-
+from app.core.executor import run_sync
 from app.core.exceptions import InvalidParameterException
-from app.models.common import SampleRate
-from app.services.asr.manager import ASCEND_MODEL_ID
 from app.services.asr.results import ASRFullResult
-from app.services.asr.runtime import OfflineASRRequest, get_runtime_router
+from app.services.asr.manager import ASCEND_MODEL_ID
 from app.services.asr.uniform_alignment import apply_uniform_word_timestamps
+from app.services.asr.long_audio import OfflineASRRequest
+from app.services.asr.runtime import get_runtime_router
 
-
-@dataclass(frozen=True)
-class PreparedAudio:
-    normalized_path: str
-    duration: float
-    original_path: str
-    timestamp_scale: float = 1.0
+if TYPE_CHECKING:
+    from app.services.audio.audio_service import AudioProcessingService
 
 
 @dataclass(frozen=True)
@@ -34,91 +29,73 @@ class OfflineTranscriptionOptions:
 
 
 class OfflineTranscriptionService:
-    """Prepare audio and run the active offline ASR model."""
+    """Prepare audio before returning a task that owns its files until completion."""
 
     def __init__(self) -> None:
-        self._audio_service = None
+        self._audio_service: Optional[AudioProcessingService] = None
 
-    def _get_audio_service(self):
+    def _get_audio_service(self) -> AudioProcessingService:
         if self._audio_service is None:
             from app.services.audio import get_audio_service
 
             self._audio_service = get_audio_service()
         return self._audio_service
 
-    async def prepare_from_request(
+    async def start_transcription(
         self,
         *,
-        request: Request,
-        audio_address: Optional[str],
-        task_id: str,
-        sample_rate: int,
-    ) -> PreparedAudio:
-        audio = await self._get_audio_service().process_from_request(
-            request=request,
-            audio_address=audio_address,
-            task_id=task_id,
-            sample_rate=sample_rate,
-        )
-        return PreparedAudio(
-            normalized_path=audio.normalized_path,
-            duration=audio.duration,
-            original_path=audio.original_path,
-            timestamp_scale=audio.timestamp_scale,
-        )
-
-    async def prepare_upload(
-        self,
-        *,
-        audio_data: bytes,
-        filename: Optional[str],
-        task_id: str,
-        sample_rate: int,
-    ) -> PreparedAudio:
-        audio = await self._get_audio_service().process_upload_file(
-            audio_data=audio_data,
-            filename=filename,
-            task_id=task_id,
-            sample_rate=sample_rate,
-        )
-        return PreparedAudio(
-            normalized_path=audio.normalized_path,
-            duration=audio.duration,
-            original_path=audio.original_path,
-            timestamp_scale=audio.timestamp_scale,
-        )
-
-    async def transcribe(
-        self,
-        prepared_audio: PreparedAudio,
+        audio_data: Optional[bytes],
         options: OfflineTranscriptionOptions,
-    ) -> ASRFullResult:
+        filename: Optional[str] = None,
+        audio_address: Optional[str] = None,
+    ) -> asyncio.Task[ASRFullResult]:
         if options.hotwords.strip():
             raise InvalidParameterException(
                 "vocabulary_id is not supported by the Ascend offline runtime"
             )
-        result = await get_runtime_router().run_offline(
-            OfflineASRRequest(
+        resources = ExitStack()
+        try:
+            # Register ownership in the worker before returning across a cancellation point.
+            audio = await run_sync(
+                resources.enter_context,
+                self._get_audio_service().prepare(
+                    audio_data=audio_data,
+                    audio_address=audio_address,
+                    filename=filename,
+                    task_id=options.task_id,
+                    sample_rate=options.sample_rate,
+                ),
+            )
+            request = OfflineASRRequest(
                 model_id=ASCEND_MODEL_ID,
-                audio_path=prepared_audio.normalized_path,
+                audio_path=audio.normalized_path,
                 enable_itn=True,
-                sample_rate=options.sample_rate or int(SampleRate.RATE_16000),
+                sample_rate=options.sample_rate,
                 enable_speaker_diarization=options.enable_speaker_diarization,
-                timestamp_scale=prepared_audio.timestamp_scale,
+                timestamp_scale=audio.timestamp_scale,
                 task_id=options.task_id,
             )
-        )
-        if options.word_timestamps:
-            apply_uniform_word_timestamps(result)
-        return result
 
-    def cleanup(self, prepared_audio: Optional[PreparedAudio]) -> None:
-        if prepared_audio is None:
-            return
-        self._get_audio_service().cleanup(
-            prepared_audio.original_path,
-            prepared_audio.normalized_path,
-        )
+            async def transcribe() -> ASRFullResult:
+                result = await get_runtime_router().run_offline(request)
+                if options.word_timestamps:
+                    apply_uniform_word_timestamps(result)
+                return result
+
+            task = asyncio.create_task(transcribe())
+        except BaseException:
+            resources.close()
+            raise
+
+        def finish(completed: asyncio.Task[ASRFullResult]) -> None:
+            resources.close()
+            # Observe failures even if a response never starts consuming the task.
+            if not completed.cancelled():
+                completed.exception()
+
+        # A callback also handles cancellation before the coroutine starts running.
+        task.add_done_callback(finish)
+        return task
 
 
 _offline_transcription_service: Optional[OfflineTranscriptionService] = None

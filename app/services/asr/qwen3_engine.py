@@ -47,7 +47,7 @@ class Qwen3ASREngine(BaseASREngine):
             enable_itn=enable_itn,
         )
 
-    def _transcribe_batch(
+    def transcribe_segments(
         self,
         segments: list[Any],
         enable_itn: bool = True,
