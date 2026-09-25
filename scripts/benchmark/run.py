@@ -344,7 +344,7 @@ def parse_args():
         "--concurrency",
         nargs="+",
         type=int,
-        default=[5, 10, 20, 50],
+        default=[1, 2, 4],
         help="并发级别列表 (默认: 5 10 20 50)",
     )
     parser.add_argument(

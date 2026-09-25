@@ -2,6 +2,31 @@
 
 测试 ASR/TTS WebSocket 服务在不同并发级别下的性能表现。
 
+ASR 客户端现使用 R2T2 `/v1/stream` 协议，自动转换为 16 kHz int16 单声道。
+默认接入上限为四路，超过上限用于验证容量拒绝。推荐先执行 `--test-type asr`。
+实时转写与共享容量验收见 `realtime_smoke.py`；离线 CPU 基准仍使用下文 Rust 脚本。
+
+## 正式服务验收
+
+验收脚本独立于实验工程。提供自己的中英文 WAV，或使用本机保留的 `tests/files/realtime/zh.wav`、`en.wav`（本地音频不提交 Git）：
+
+```bash
+python -m scripts.benchmark.realtime_smoke \
+  tests/files/realtime/zh.wav tests/files/realtime/en.wav \
+  --url http://127.0.0.1:4174 --concurrency 4 \
+  --output benchmark_results/r2t2-acceptance.json
+```
+
+需要 FFmpeg 和项目 Python 依赖。浏览器验收可选，Playwright 安装到忽略的工具缓存目录，不依赖旧实验目录：
+
+```bash
+npm install --prefix .cache/browser-tests playwright
+./.cache/browser-tests/node_modules/.bin/playwright install chromium
+NODE_PATH="$PWD/.cache/browser-tests/node_modules" \
+  TEST_WAV="$PWD/tests/files/realtime/zh.wav" \
+  node scripts/benchmark/realtime_browser.cjs
+```
+
 ## 依赖
 
 ```bash
@@ -43,7 +68,7 @@ python start.py
 | `--port` | 8000 | 服务器端口 |
 | `--audio-file` | - | ASR 测试音频文件路径 (测试 ASR 时必需) |
 | `--test-type` | both | 测试类型: `asr` / `tts` / `both` |
-| `--concurrency` | 5 10 20 50 | 并发级别列表 |
+| `--concurrency` | 1 2 4 | 并发级别列表 |
 | `--output` | ./benchmark_results | 报告输出目录 |
 | `--timeout` | 120 | 请求超时时间 (秒) |
 | `--voice` | 中文女 | TTS 测试音色 |

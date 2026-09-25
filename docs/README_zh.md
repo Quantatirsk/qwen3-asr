@@ -3,7 +3,7 @@
 <h1>Qwen3-ASR</h1>
 <h3>开箱即用的本地私有化部署语音识别服务</h3>
 
-以 [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR) 为核心的语音识别 API 服务，提供 CUDA vLLM 与 CPU Rust 两种后端，兼容阿里云语音 API 和 OpenAI Audio API，并保留 Paraformer realtime WebSocket 能力。
+语音识别 API 服务：离线使用 Qwen3-ASR（CUDA vLLM / CPU Rust），实时使用独立 R2T2 引擎。保留离线阿里云接口和 OpenAI Audio 文件转写接口，实时只提供自动语言识别的并发 WebSocket 接口。
 
 ---
 
@@ -46,12 +46,11 @@
 >
 ## 主要特性
 
-- **混合运行时栈** - 离线推理由自动选择的 Qwen3-ASR 提供，WebSocket 流式由 Paraformer realtime 能力提供
-- **说话人分离** - 基于 CAM++ 模型自动识别多说话人，返回说话人标记
+- **独立运行时** - 离线使用 Qwen3-ASR，流式音频由 R2T2 提供，支持自动语言识别和并发，详见[部署和协议](realtime.md)
+- **离线说话人分离** - 文件转写可通过 CAM++ 模型返回说话人标记
 - **OpenAI API 兼容** - 支持 `/v1/audio/transcriptions` 端点，可直接使用 OpenAI SDK
-- **阿里云 API 兼容** - 支持阿里云语音识别 RESTful API 和 WebSocket 流式协议
+- **阿里云 API 兼容** - 保留离线 RESTful API；实时统一使用 `/v1/stream`
 - **WebSocket 流式识别** - 支持实时流式语音识别，低延迟
-- **智能远场过滤** - 流式 ASR 自动过滤远场声音和环境音，减少误触发
 - **智能音频分段** - 基于 VAD 的贪婪合并算法，自动切分长音频，避免包含过长静音
 - **GPU 批处理加速** - 支持批量推理，比逐个处理快 2-3 倍
 - **资源感知运行时** - 根据当前机器资源自动选择合适的 Qwen3-ASR 模型
@@ -64,6 +63,16 @@
 ## 快速部署
 
 ### 1. Docker 部署(推荐)
+
+统一离线 + 实时部署：
+
+```bash
+bash deploy/prepare.sh
+ASR_GPU=1 docker compose -f docker-compose.realtime.yml up -d
+```
+
+录音页面：`http://localhost:4174/realtime`。中英文自动识别，默认四路并发。
+完整部署配置和协议见 [R2T2 实时转写](realtime.md)。以下为仅离线部署：
 
 ```bash
 # 复制并编辑配置
@@ -270,9 +279,9 @@ curl -X POST "http://localhost:8000/v1/audio/transcriptions" \
 | `/stream/v1/asr`        | POST      | 语音识别（支持长音频） |
 | `/stream/v1/asr/models` | GET       | 声明条目列表               |
 | `/stream/v1/asr/health` | GET       | 健康检查               |
-| `/ws/v1/asr`            | WebSocket | 流式语音识别（阿里云协议兼容） |
-| `/ws/v1/asr/funasr`     | WebSocket | FunASR 流式识别（向后兼容）   |
-| `/ws/v1/asr/qwen`       | WebSocket | Qwen3-ASR 流式识别 |
+| `/v1/stream` | WebSocket | R2T2 原生流式，16 kHz int16 LE 单声道 |
+| `/v1/config` | GET | 实时能力与接入限制 |
+| `/realtime` | GET | 浏览器录音转写页面 |
 
 **请求参数:**
 
@@ -359,38 +368,29 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 
 ### WebSocket 流式识别限制
 
-**FunASR 模型限制**（使用 `/ws/v1/asr` 或 `/ws/v1/asr/funasr`）：
-- ✅ 实时语音识别、低延迟
-- ✅ 字句级时间戳
-- ❌ **词级时间戳**（FunASR realtime 路径未实现）
-- ❌ **置信度分数**（未实现）
-- 音频入口固定保留最多 10 秒待处理数据；队列满时会对 WebSocket 发送端施加背压，不会静默丢弃音频。客户端应持续读取识别事件并增量发送。
-- 该路径使用 Paraformer，离线接口使用 Qwen3-ASR；应在同一路径内比较延迟，不能直接比较两者总吞吐。
-
-**Qwen3-ASR 流式**（使用 `/ws/v1/asr/qwen`）：
-- ✅ 支持多语言实时识别
-- ✅ 当前支持 CUDA vLLM 与 CPU Rust 两条流式路径
-- ❌ 当前流式路径不返回词级时间戳
+R2T2 步长 160 ms，初始前瞻 160 ms；收集 320 ms 音频后开始首次解码，实际出字延迟还取决于语音和推理耗时。
+短句可以发送 `end` 提前刷新。单会话上限 1 小时，默认最多接入四路；实时不提供说话人标签和词级时间戳。
+旧流式接口已移除，不提供协议别名。详见[协议、限制和迁移](realtime.md)。
 
 ### Qwen3 运行时矩阵
 
 | 运行环境 | 后端 | 离线转写 | WebSocket 流式 | 离线词级时间戳 | 流式词级时间戳 | 成熟度 |
 |---------|------|---------|----------------|----------------|----------------|--------|
-| Linux + NVIDIA GPU | 官方 vLLM 0.19.0 | ✅ | ✅ | ✅ | ❌ | 面向生产 |
-| CPU / macOS | QwenASR Rust | ✅ | ✅ | ✅（forced aligner） | ❌ | 推荐本地后端 |
+| Linux + NVIDIA GPU | 官方 vLLM 0.19.0 | ✅ | 远程 R2T2 | ✅ | ❌ | 面向生产 |
+| CPU / macOS | QwenASR Rust | ✅ | 远程 R2T2 | ✅（forced aligner） | ❌ | 推荐本地后端 |
 
 ## 支持离线的模型
 
 | 模型 ID              | 名称              | 说明                                     | 特性      |
 | -------------------- | ----------------- | ---------------------------------------- | --------- |
-| `qwen3-asr-1.7b`   | Qwen3-ASR 1.7B    | 高性能多语言 ASR；CUDA 使用 vLLM | 离线/实时 |
-| `qwen3-asr-0.6b`   | Qwen3-ASR 0.6B    | 轻量版多语言 ASR；CUDA 使用 vLLM，CPU/macOS 使用 Rust backend | 离线/实时 |
+| `qwen3-asr-1.7b`   | Qwen3-ASR 1.7B    | 高性能多语言 ASR；CUDA 使用 vLLM | 离线 |
+| `qwen3-asr-0.6b`   | Qwen3-ASR 0.6B    | 轻量版多语言 ASR；CUDA 使用 vLLM，CPU/macOS 使用 Rust backend | 离线 |
 
 ## 仅实时能力
 
 | 能力 ID | 运行时 | 说明 |
 | ------- | ------ | ---- |
-| `paraformer-large` | FunASR realtime | 中文 WebSocket 实时识别栈，包含实时标点链路 |
+| `confucius4-r2t2` | 共享 vLLM 0.19.0 环境 | 中英文自动识别、会话独立的流式转写 |
 
 **运行时选择:**
 - **显存 >= 32GB**: 选择 `qwen3-asr-1.7b`
@@ -398,7 +398,7 @@ curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=tru
 - **无 CUDA**: 选择基于 vendored Rust 的 `qwen3-asr-0.6b`
 - **macOS / Apple Silicon**: 无论内存大小多少，默认都选择 `qwen3-asr-0.6b`
 - **环境变量覆盖**: 设置 `QWEN3_ASR_MODEL=qwen3-asr-1.7b` 或 `QWEN3_ASR_MODEL=qwen3-asr-0.6b` 可跳过自动选择
-- `paraformer-large` 实时能力始终为 WebSocket 流式准备
+- 实时使用 `R2T2_URL` 启用，模型缓存独立挂载，不加载到离线进程。
 
 启动时会先检测当前运行计划所需模型；如果本地缓存缺失，会自动下载。离线部署可显式设置 `HF_HUB_OFFLINE=1` 并提前准备模型缓存。
 

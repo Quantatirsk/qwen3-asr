@@ -19,13 +19,13 @@ class TestConfig:
     warmup_requests: int = 3
 
     # 并发配置
-    concurrency_levels: List[int] = field(default_factory=lambda: [5, 10, 20, 50])
+    concurrency_levels: List[int] = field(default_factory=lambda: [1, 2, 4])
 
     # ASR 配置
     asr_audio_file: Optional[Path] = None
     asr_sample_rate: int = 16000
-    asr_chunk_size: int = 9600  # 600ms @ 16kHz
-    asr_format: str = "pcm"
+    asr_chunk_size: int = 2560  # 160ms @ 16kHz
+    asr_format: str = "int16_le"
 
     # TTS 配置
     tts_text_count: int = 50  # 预生成的测试文本数量
@@ -47,7 +47,7 @@ class TestConfig:
     @property
     def asr_ws_url(self) -> str:
         """ASR WebSocket URL"""
-        return f"{self.ws_base_url}/ws/v1/asr"
+        return f"{self.ws_base_url}/v1/stream"
 
     @property
     def tts_ws_url(self) -> str:

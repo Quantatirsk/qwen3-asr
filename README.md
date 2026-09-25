@@ -3,7 +3,7 @@
 <h1>Qwen3-ASR</h1>
 <h3>Ready-to-use Local Speech Recognition API Service</h3>
 
-Speech recognition API service centered on [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR), with CUDA vLLM and CPU Rust backends, OpenAI API compatibility, Alibaba Cloud Speech API compatibility, and a Paraformer realtime websocket capability.
+Speech recognition API service with Qwen3-ASR offline inference (CUDA vLLM or CPU Rust) and independent R2T2 streaming inference. Offline Alibaba Cloud and OpenAI Audio interfaces remain available; R2T2 provides an auto-language, concurrent native WebSocket interface.
 
 [简体中文](./docs/README_zh.md)
 
@@ -49,12 +49,11 @@ Speech recognition API service centered on [Qwen3-ASR](https://github.com/QwenLM
 >
 ## Features
 
-- **Hybrid Runtime Stack** - Uses auto-selected Qwen3-ASR for offline inference and Paraformer realtime for websocket streaming
-- **Speaker Diarization** - Automatic multi-speaker identification using CAM++ model
+- **Offline And Realtime** - Qwen3-ASR handles offline files; R2T2 handles streaming audio with automatic language detection. Both run in one container and shared vLLM environment. See [deployment and protocol](docs/realtime.md).
+- **Offline Speaker Diarization** - File transcription supports speaker identification using CAM++
 - **OpenAI API Compatible** - Supports `/v1/audio/transcriptions` endpoint, works with OpenAI SDK
-- **Alibaba Cloud API Compatible** - Supports Alibaba Cloud Speech RESTful API and WebSocket streaming protocol
-- **WebSocket Streaming** - Real-time streaming speech recognition with low latency
-- **Smart Far-Field Filtering** - Automatically filters far-field sounds and ambient noise in streaming ASR
+- **Alibaba Cloud REST Compatible** - Retains the offline REST API; the old Aliyun WebSocket protocol has been removed
+- **WebSocket Streaming** - Native R2T2 incremental text over `/v1/stream`
 - **Intelligent Audio Segmentation** - VAD-based greedy merge algorithm for automatic long audio splitting
 - **GPU Batch Processing** - Batch inference support, 2-3x faster than sequential processing
 - **Resource-Aware Runtime** - Auto-selects the appropriate Qwen3-ASR model for the current machine
@@ -67,6 +66,18 @@ Speech recognition API service centered on [Qwen3-ASR](https://github.com/QwenLM
 ## Quick Deployment
 
 ### 1. Docker Deployment (Recommended)
+
+For the unified offline + realtime service on GPU 1 with bridge port mapping
+`4174:8000` (one container, no host networking):
+
+```bash
+bash deploy/prepare.sh
+ASR_GPU=1 docker compose -f docker-compose.realtime.yml up -d
+```
+
+See [runtime requirements and model cache preparation](docs/realtime.md).
+Microphone page: `http://localhost:4174/realtime`.
+The configurations below are the legacy offline-only deployments.
 
 ```bash
 # Copy and edit configuration
@@ -272,9 +283,9 @@ curl -X POST "http://localhost:8000/v1/audio/transcriptions" \
 | `/stream/v1/asr` | POST | Speech recognition (long audio support) |
 | `/stream/v1/asr/models` | GET | Declared model/capability entries |
 | `/stream/v1/asr/health` | GET | Health check |
-| `/ws/v1/asr` | WebSocket | Streaming ASR (Alibaba Cloud protocol compatible) |
-| `/ws/v1/asr/funasr` | WebSocket | FunASR streaming (backward compatible) |
-| `/ws/v1/asr/qwen` | WebSocket | Qwen3-ASR streaming |
+| `/v1/stream` | WebSocket | R2T2 streaming, 16 kHz int16 LE mono |
+| `/v1/config` | GET | Realtime capabilities and admission limits |
+| `/realtime` | GET | Microphone transcription page |
 
 **Request Parameters:**
 
@@ -361,38 +372,32 @@ Automatic long audio segmentation:
 
 ### WebSocket Streaming Limitations
 
-**FunASR Model Limitations** (using `/ws/v1/asr` or `/ws/v1/asr/funasr`):
-- ✅ Real-time speech recognition, low latency
-- ✅ Sentence-level timestamps
-- ❌ **Word-level timestamps** (not implemented on the FunASR realtime path)
-- ❌ **Confidence scores** (not implemented)
-- Audio ingress is bounded to 10 seconds and applies WebSocket backpressure instead of dropping audio. Send incrementally and continue reading recognition events.
-- This path uses Paraformer, while offline endpoints use Qwen3-ASR. Compare latency within the same path, not their total throughput.
-
-**Qwen3-ASR Streaming** (using `/ws/v1/asr/qwen`):
-- ✅ Multi-language real-time recognition
-- ✅ CUDA vLLM and CPU Rust both support the current streaming path
-- ❌ Word-level timestamps are not available in the current streaming path
+R2T2 uses 160 ms strides with 160 ms of initial lookahead. The first decode
+starts after 320 ms of audio; actual text latency also depends on speech and
+inference. Session audio is limited to one hour, with four admitted sessions
+by default. Streaming does not produce speaker labels or word timestamps.
+Legacy streaming endpoints have been removed, without protocol aliases.
+See [protocol, limits and migration](docs/realtime.md).
 
 ### Qwen3 Runtime Matrix
 
 | Runtime | Backend | Offline | WebSocket Streaming | Word Timestamps Offline | Word Timestamps Streaming | Maturity |
 |---------|---------|---------|---------------------|-------------------------|---------------------------|----------|
-| Linux + NVIDIA GPU | Official vLLM 0.19.0 | ✅ | ✅ | ✅ | ❌ | Production-oriented |
-| CPU / macOS | QwenASR Rust | ✅ | ✅ | ✅ (forced aligner) | ❌ | Recommended local fallback |
+| Linux + NVIDIA GPU | Official vLLM 0.19.0 | ✅ | Remote R2T2 | ✅ | ❌ | Production-oriented |
+| CPU / macOS | QwenASR Rust | ✅ | Remote R2T2 | ✅ (forced aligner) | ❌ | Recommended local fallback |
 
 ## Offline-Capable Models
 
 | Model ID | Name | Description | Features |
 |----------|------|-------------|----------|
-| `qwen3-asr-1.7b` | Qwen3-ASR 1.7B | High-performance multilingual ASR, 52 languages + dialects; CUDA uses vLLM | Offline/Realtime |
-| `qwen3-asr-0.6b` | Qwen3-ASR 0.6B | Lightweight multilingual ASR; CUDA uses vLLM, CPU/macOS uses Rust backend | Offline/Realtime |
+| `qwen3-asr-1.7b` | Qwen3-ASR 1.7B | High-performance multilingual ASR, 52 languages + dialects; CUDA uses vLLM | Offline |
+| `qwen3-asr-0.6b` | Qwen3-ASR 0.6B | Lightweight multilingual ASR; CUDA uses vLLM, CPU/macOS uses Rust backend | Offline |
 
 ## Realtime-Only Capability
 
 | Capability ID | Runtime | Description |
 |---------------|---------|-------------|
-| `paraformer-large` | FunASR realtime | Chinese websocket realtime stack with realtime punctuation |
+| `confucius4-r2t2` | Shared vLLM 0.19.0 environment | Automatic Chinese and English streaming, isolated concurrent sessions |
 
 **Runtime selection:**
 - **VRAM >= 32GB**: Select `qwen3-asr-1.7b`
@@ -400,7 +405,7 @@ Automatic long audio segmentation:
 - **No CUDA**: Select the vendored Rust-backed `qwen3-asr-0.6b`
 - **macOS / Apple Silicon**: Always default to `qwen3-asr-0.6b`, regardless of memory size
 - **Environment override**: Set `QWEN3_ASR_MODEL=qwen3-asr-1.7b` or `QWEN3_ASR_MODEL=qwen3-asr-0.6b` to bypass automatic selection
-- `paraformer-large` realtime capability is always prepared for websocket streaming
+- Realtime is enabled by `R2T2_URL`; its checkpoint is mounted separately and never loaded in the offline process.
 
 At startup the service checks the current runtime model plan and downloads missing models by default. Set `HF_HUB_OFFLINE=1` only for strictly offline deployments with a prepared cache.
 

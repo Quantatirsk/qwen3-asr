@@ -1,5 +1,7 @@
 # Ascend 910B 完整部署可行性研究
 
+> 2026-09-25 架构更新：本文保留为旧版研究快照。当前实时链路已改为 Confucius4-R2T2 + vLLM AsyncLLM，Paraformer 实时链路和旧 WebSocket 协议已移除；对应迁移清单不再适用。新的 CUDA 实现见 [实时架构](../realtime.md)。R2T2 的音频处理、滚动前缀解码、并发调度及性能尚未在 910B 验证，不能由离线 Qwen3-ASR 的支持情况直接推出；当前部署镜像也不能直接运行在 NPU 上。
+
 > 研究快照：2026-08-03
 >
 > 研究对象：当前仓库 `qwen3-asr` 服务在 Ascend 910B / Atlas A2 上的完整部署

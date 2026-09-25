@@ -14,7 +14,7 @@ def load_audio_file(
     target_sample_rate: int = 16000,
 ) -> Tuple[bytes, float]:
     """
-    加载音频文件并转换为 PCM 16-bit 格式
+    加载音频文件并转换为单声道 int16 LE PCM
 
     Args:
         audio_path: 音频文件路径
@@ -37,8 +37,7 @@ def load_audio_file(
     # 计算时长
     duration_seconds = len(audio_data) / target_sample_rate
 
-    # 转换为 16-bit PCM
-    pcm_data = (audio_data * 32767).astype(np.int16)
+    pcm_data = (np.clip(audio_data, -1, 1) * 32767).astype("<i2")
     pcm_bytes = pcm_data.tobytes()
 
     return pcm_bytes, duration_seconds
@@ -63,14 +62,11 @@ def resample_audio(
     if orig_sample_rate == target_sample_rate:
         return audio_data
 
-    # 计算重采样比例
-    ratio = target_sample_rate / orig_sample_rate
-    new_length = int(len(audio_data) * ratio)
+    from math import gcd
+    from scipy.signal import resample_poly
 
-    # 使用线性插值进行重采样
-    x_old = np.linspace(0, 1, len(audio_data))
-    x_new = np.linspace(0, 1, new_length)
-    resampled = np.interp(x_new, x_old, audio_data)
+    divisor = gcd(orig_sample_rate, target_sample_rate)
+    resampled = resample_poly(audio_data, target_sample_rate // divisor, orig_sample_rate // divisor)
 
     return resampled.astype(np.float32)
 
@@ -103,7 +99,7 @@ def split_audio_into_chunks(
     Returns:
         字节块列表
     """
-    chunk_bytes = chunk_size * 2  # 16-bit = 2 bytes per sample
+    chunk_bytes = chunk_size * 4
     chunks = []
 
     for i in range(0, len(pcm_bytes), chunk_bytes):

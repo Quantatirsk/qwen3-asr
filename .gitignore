@@ -2,6 +2,10 @@
 ref/
 *.db
 benchmark_results/
+# Disposable experiments and tool caches must not enter the source tree.
+/*-poc/
+/*-poc.*/
+.ruff_cache/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

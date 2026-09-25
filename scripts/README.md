@@ -10,7 +10,7 @@
 - ✅ 支持立体声、左声道、右声道选择
 - ✅ 生成 RMS 时序图和分布直方图
 - ✅ 详细的统计分析和阈值建议
-- ✅ 可自定义分块大小（默认 240ms，与流式 ASR 一致）
+- ✅ 可自定义分析分块大小（默认 240ms，不代表 R2T2 推理窗口）
 
 ## 安装依赖
 
@@ -258,23 +258,11 @@ RMS 统计分析
 python scripts/analyze_audio_rms.py audio.wav --no-plot --output analysis.png
 ```
 
-## 与远场过滤功能的关系
+## 与实时识别的关系
 
-此工具使用与 `app/utils/audio_filter.py` 相同的 RMS 计算方法，确保分析结果与实际运行时的行为一致。
-
-确定阈值后，在配置文件中设置：
-
-```bash
-# docker-compose.yml
-environment:
-  - ASR_NEARFIELD_RMS_THRESHOLD=0.01  # 使用分析得出的阈值
-```
-
-或在 `.env` 文件中：
-
-```bash
-ASR_NEARFIELD_RMS_THRESHOLD=0.01
-```
+本工具仅分析音频能量。R2T2 实时链路不应用原有的近场 RMS 过滤器，
+旧阈值环境变量已移除，分析结果不会改变服务端识别行为。
+实时协议和分块限制见 [R2T2 文档](../docs/realtime.md)。
 
 ## 相关文档
 
