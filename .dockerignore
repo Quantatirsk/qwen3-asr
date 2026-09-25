@@ -60,4 +60,9 @@ docs/
 # 其他
 .pytest_cache
 .coverage
-node_modules 
+node_modules
+.cache/
+benchmark_results/
+*-poc/
+*-poc.*/
+.ruff_cache/

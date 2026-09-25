@@ -5,7 +5,10 @@
 
 set -euo pipefail
 
-OUTPUT_DIR="./models"
+SCOPE="${1:-offline}"
+case "$SCOPE" in offline|realtime|all) ;; *) printf 'Usage: %s [offline|realtime|all]\n' "$0" >&2; exit 1 ;; esac
+EXPORT_ROOT="${EXPORT_ROOT:-./model_exports/$(date +%Y%m%d-%H%M%S)}"
+OUTPUT_DIR="${EXPORT_ROOT}/models"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
@@ -25,7 +28,7 @@ command -v uv >/dev/null 2>&1 || die "uv not found; install uv first"
 
 # Confirm
 info "Export settings:"
-info "  Models: Current runtime plan (auto-selected Qwen + realtime stack)"
+info "  Models: ${SCOPE} (Qwen offline / pinned R2T2 realtime)"
 info "  Output: ${OUTPUT_DIR}"
 read -p "Start export? [Y/n]: " confirm
 if [[ $confirm =~ ^[Nn]$ ]]; then
@@ -35,11 +38,12 @@ fi
 
 info "Exporting models..."
 
-# Remove existing models dir to ensure clean state
-rm -rf "${OUTPUT_DIR}"
+# Never clear an active model cache during export.
+[ ! -e "${OUTPUT_DIR}" ] || die "Output already exists: ${OUTPUT_DIR}"
+mkdir -p "${EXPORT_ROOT}"
 
 # Run Python export
-uv run python -m app.utils.download_models --export-dir "${OUTPUT_DIR}"
+uv run python -m app.utils.download_models --scope "${SCOPE}" --export-dir "${OUTPUT_DIR}"
 
 info "Packaging..."
 
@@ -56,10 +60,10 @@ if command -v pigz &> /dev/null; then
     else
         CPU_CORES=4
     fi
-    tar -cf - "${OUTPUT_DIR}" | pigz -p "${CPU_CORES}" > "${PACKAGE}"
+    tar -C "${EXPORT_ROOT}" -cf - models | pigz -p "${CPU_CORES}" > "${PACKAGE}"
 else
     info "pigz not found, using standard gzip..."
-    tar -czf "${PACKAGE}" "${OUTPUT_DIR}"
+    tar -C "${EXPORT_ROOT}" -czf "${PACKAGE}" models
 fi
 
 SIZE=$(du -sh "${PACKAGE}" | cut -f1)

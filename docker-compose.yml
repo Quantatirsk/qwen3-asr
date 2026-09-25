@@ -14,6 +14,8 @@ services:
       - ./models/huggingface:/root/.cache/huggingface
     runtime: nvidia
     environment:
+      R2T2_URL: ${R2T2_URL:-}
+      R2T2_INTERNAL_TOKEN: ${R2T2_INTERNAL_TOKEN:-}
       API_KEY: ${API_KEY:-}
       HF_HUB_OFFLINE: ${HF_HUB_OFFLINE:-0}
       HF_ENDPOINT: ${HF_ENDPOINT:-}
