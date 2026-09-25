@@ -24,6 +24,7 @@ from ...core.exceptions import (
     get_http_status_code,
 )
 from ...core.security import validate_token
+from ...core.device import detect_device
 from ...models.common import SampleRate
 from ...models.asr import (
     ASRResponse,
@@ -326,20 +327,13 @@ async def health_check(request: Request):
         raise AuthenticationException(content, "health_check")
 
     try:
-        # 尝试获取默认模型的引擎
-        try:
-            runtime_router = get_runtime_router()
-            default_model = runtime_router.resolve_model_id(None)
-            async with await runtime_router.acquire_engine(default_model) as engine:
-                model_loaded = True
-                device = engine.device
-        except Exception:
-            model_loaded = False
-            device = "unknown"
-
+        # Readiness must not wait for a busy offline inference slot.
         runtime_router = get_runtime_router()
-        memory_info = runtime_router.get_memory_usage()
+        default_model = runtime_router.resolve_model_id(None)
         loaded_models = runtime_router.get_loaded_model_ids()
+        model_loaded = default_model in loaded_models
+        device = detect_device(settings.DEVICE) if model_loaded else "unknown"
+        memory_info = runtime_router.get_memory_usage()
 
         return {
             "status": "healthy" if model_loaded else "unhealthy",
@@ -376,7 +370,6 @@ async def health_check(request: Request):
 |----|------|------|
 | qwen3-asr-1.7b | model | 离线/实时共用的 Qwen3-ASR 模型条目 |
 | qwen3-asr-0.6b | model | 轻量版 Qwen3-ASR 模型条目 |
-| paraformer-large | capability | WebSocket realtime capability |
 
 ## 返回信息
 - **declared_entries**: 声明的模型与 capability 列表

@@ -274,30 +274,15 @@ class ASRModelsResponse(BaseModel):
                         "description": "多语言离线语音识别模型",
                         "languages": ["zh", "en"],
                         "default": True,
-                        "supports_realtime": True,
+                        "supports_realtime": False,
                         "offline_model": {
                             "path": "Qwen/Qwen3-ASR-1.7B",
                             "exists": True,
                         },
                         "realtime_model": None,
-                    },
-                    {
-                        "id": "paraformer-large",
-                        "kind": "capability",
-                        "name": "Paraformer Large",
-                        "engine": "funasr",
-                        "description": "中文 WebSocket 实时识别能力",
-                        "languages": ["zh"],
-                        "default": False,
-                        "supports_realtime": True,
-                        "offline_model": None,
-                        "realtime_model": {
-                            "path": "iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online",
-                            "exists": True,
-                        },
                     }
                 ],
-                "declared_count": 3,
+                "declared_count": 2,
                 "runtime": {
                     "loaded_model_ids": ["qwen3-asr-1.7b"],
                     "loaded_count": 1,

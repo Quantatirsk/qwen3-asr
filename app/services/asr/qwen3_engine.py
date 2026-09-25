@@ -4,7 +4,6 @@
 import logging
 import os
 from typing import Optional, List, Any
-from dataclasses import dataclass
 
 import torch
 import numpy as np
@@ -97,25 +96,8 @@ def _handle_asr_error(operation: str):
     return decorator
 
 
-@dataclass
-class Qwen3StreamingState:
-    internal_state: Any
-    chunk_size_sec: float = 2.0
-    unfixed_chunk_num: int = 2
-    unfixed_token_num: int = 5
-    max_new_tokens: int = 32
-    language: Optional[str] = None
-    chunk_count: int = 0
-    last_text: str = ""
-    last_language: str = ""
-
-
 class Qwen3ASREngine(BaseASREngine):
     model: Any
-
-    @property
-    def supports_realtime(self) -> bool:
-        return self._backend in {"vllm", "rust"}
 
     def __init__(
         self,
@@ -433,109 +415,6 @@ class Qwen3ASREngine(BaseASREngine):
             f"Qwen3 backend={self._backend} does not support batch transcription"
         )
 
-    @_handle_asr_error("初始化流式状态")
-    def init_streaming_state(self, context: str = "", language: Optional[str] = None, **kwargs) -> Qwen3StreamingState:
-        if self._backend not in {"vllm", "rust"}:
-            raise DefaultServerErrorException(
-                f"Qwen3 backend={self._backend} does not support realtime streaming"
-            )
-        if self._backend == "rust":
-            if context:
-                logger.debug("QwenASR Rust backend ignores streaming context hints")
-            chunk_size_sec = float(kwargs.get("chunk_size_sec", 2.0))
-            unfixed_chunk_num = int(kwargs.get("unfixed_chunk_num", 2))
-            unfixed_token_num = int(kwargs.get("unfixed_token_num", 5))
-            max_new_tokens = int(kwargs.get("max_new_tokens", 32))
-            stream_handle = self.model.create_stream(
-                chunk_size_sec=chunk_size_sec,
-                unfixed_chunk_num=unfixed_chunk_num,
-                rollback_tokens=unfixed_token_num,
-                max_new_tokens=max_new_tokens,
-                language=language,
-            )
-            return Qwen3StreamingState(
-                internal_state=stream_handle,
-                chunk_size_sec=chunk_size_sec,
-                unfixed_chunk_num=unfixed_chunk_num,
-                unfixed_token_num=unfixed_token_num,
-                max_new_tokens=max_new_tokens,
-                language=language,
-                chunk_count=0,
-                last_text="",
-                last_language=language or "",
-            )
-        if self._backend == "vllm":
-            streaming_state = self.model.init_streaming_state(context=context, language=language, **kwargs)
-            return Qwen3StreamingState(
-                internal_state=streaming_state,
-                chunk_size_sec=float(kwargs.get("chunk_size_sec", 2.0)),
-                unfixed_chunk_num=int(kwargs.get("unfixed_chunk_num", 2)),
-                unfixed_token_num=int(kwargs.get("unfixed_token_num", 5)),
-                max_new_tokens=int(kwargs.get("max_new_tokens", 32)),
-                language=language,
-                chunk_count=int(getattr(streaming_state, "chunk_id", 0)),
-                last_text=str(getattr(streaming_state, "text", "") or ""),
-                last_language=str(getattr(streaming_state, "language", "") or ""),
-            )
-
-        raise DefaultServerErrorException(
-            f"Qwen3 backend={self._backend} does not support realtime streaming"
-        )
-
-    @_handle_asr_error("流式识别")
-    def streaming_transcribe(self, pcm16k: np.ndarray, state: Qwen3StreamingState) -> Qwen3StreamingState:
-        if self._backend not in {"vllm", "rust"}:
-            raise DefaultServerErrorException(
-                f"Qwen3 backend={self._backend} does not support realtime streaming"
-            )
-        pcm = pcm16k.astype(np.float32) / (32768.0 if pcm16k.dtype == np.int16 else 1.0)
-        if self._backend == "rust":
-            text = self.model.push_stream(
-                stream=state.internal_state,
-                samples=pcm,
-                chunk_size_sec=state.chunk_size_sec,
-                unfixed_chunk_num=state.unfixed_chunk_num,
-                rollback_tokens=state.unfixed_token_num,
-                max_new_tokens=state.max_new_tokens,
-                language=state.language,
-            )
-            state.chunk_count += 1
-            state.last_text = text
-            state.last_language = state.language or ""
-            return state
-
-        streaming_state = self.model.feed_stream(pcm, state.internal_state)
-        state.internal_state = streaming_state
-        state.chunk_count = int(getattr(streaming_state, "chunk_id", state.chunk_count))
-        state.last_text = str(getattr(streaming_state, "text", "") or "")
-        state.last_language = str(getattr(streaming_state, "language", "") or "")
-        return state
-
-    @_handle_asr_error("结束流式识别")
-    def finish_streaming_transcribe(self, state: Qwen3StreamingState) -> Qwen3StreamingState:
-        if self._backend not in {"vllm", "rust"}:
-            raise DefaultServerErrorException(
-                f"Qwen3 backend={self._backend} does not support realtime streaming"
-            )
-        if self._backend == "rust":
-            text = self.model.finish_stream(
-                stream=state.internal_state,
-                chunk_size_sec=state.chunk_size_sec,
-                unfixed_chunk_num=state.unfixed_chunk_num,
-                rollback_tokens=state.unfixed_token_num,
-                max_new_tokens=state.max_new_tokens,
-                language=state.language,
-            )
-            state.last_text = text
-            state.last_language = state.language or ""
-            return state
-
-        streaming_state = self.model.finish_stream(state.internal_state)
-        state.internal_state = streaming_state
-        state.chunk_count = int(getattr(streaming_state, "chunk_id", state.chunk_count))
-        state.last_text = str(getattr(streaming_state, "text", "") or "")
-        state.last_language = str(getattr(streaming_state, "language", "") or "")
-        return state
 
     def is_model_loaded(self) -> bool:
         return self.model is not None

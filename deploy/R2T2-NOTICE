@@ -1,0 +1,24 @@
+R2T2 decoding adaptation
+Copyright 2026 The NetEase Youdao team.
+Source: https://github.com/netease-youdao/Confucius4-R2T2
+Revision: 26d55a54ce5670cff9947a167d8ed95d569fd4d9
+
+app/services/realtime/engine.py adapts the rolling-window, stable-prefix decoding
+method for native asynchronous vLLM scheduling. Modifications include per-session
+cancellation, sample-position-based window trimming, whitespace preservation,
+bounded memory, and final decoding at exact chunk boundaries.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Model weights are separately licensed by upstream MODEL_LICENSE:
+https://github.com/netease-youdao/Confucius4-R2T2/blob/26d55a54ce5670cff9947a167d8ed95d569fd4d9/MODEL_LICENSE

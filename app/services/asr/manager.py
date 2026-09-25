@@ -19,19 +19,6 @@ logger = logging.getLogger(__name__)
 _ENGINE_REGISTRY: Dict[str, Callable[[Any], BaseASREngine]] = {}
 
 
-def _supports_qwen_realtime_on_device(configured_device: str) -> bool:
-    """Resolve whether Qwen realtime mode is available on the active device."""
-    from app.core.device import detect_device
-    from .qwenasr_rust import is_qwenasr_rust_available
-
-    device = detect_device(configured_device)
-    if device.startswith("cuda"):
-        return True
-    if device == "cpu":
-        return is_qwenasr_rust_available()
-    return False
-
-
 def register_engine(engine_type: str, factory: Callable[[Any], BaseASREngine]):
     """注册ASR引擎工厂函数"""
     _ENGINE_REGISTRY[engine_type] = factory
@@ -134,8 +121,6 @@ class ModelManager:
                 realtime_path_exists = realtime_model_path.exists()
 
             supports_realtime = config.supports_realtime
-            if config.engine == "qwen3":
-                supports_realtime = _supports_qwen_realtime_on_device(settings.DEVICE)
 
             entries.append(
                 {
@@ -201,14 +186,6 @@ def get_model_manager() -> ModelManager:
 # 注册内置引擎
 def _register_builtin_engines():
     """注册内置的ASR引擎"""
-    # 导入引擎模块并注册
-    try:
-        from .engines import FunASREngine  # noqa: F401
-        from .engines.funasr import _register_funasr_engine
-        _register_funasr_engine(register_engine, DeclaredEntryConfig)
-    except ImportError as e:
-        logger.warning(f"FunASR引擎不可用: {e}")
-
     try:
         from .qwen3_engine import Qwen3ASREngine  # noqa: F401
         from .qwen3_engine import _register_qwen3_engine

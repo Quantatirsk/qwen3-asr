@@ -24,7 +24,6 @@ _PRELOAD_QUIET_LOGGERS = (
     "root",
     "vllm",
     "app.infrastructure.model_utils",
-    "app.services.asr.engines.funasr",
     "app.services.asr.engines.global_models",
     "app.services.asr.qwen3_engine",
     "app.utils.speaker_diarizer",
@@ -266,9 +265,7 @@ def _build_required_model_integrity_specs() -> list[ModelIntegritySpec]:
     )
     specs: list[ModelIntegritySpec] = []
 
-    for asset in get_runtime_required_modelscope_assets(
-        include_realtime_punc=True,
-    ):
+    for asset in get_runtime_required_modelscope_assets():
         specs.append(
             _build_modelscope_spec(
                 asset.model_id,
@@ -399,8 +396,6 @@ def preload_models() -> dict[str, Any]:
     result: dict[str, Any] = {
         "asr_models": {},  # ASR model loading status.
         "vad_model": {"loaded": False, "error": None},
-        "punc_model": {"loaded": False, "error": None},
-        "punc_realtime_model": {"loaded": False, "error": None},
         "speaker_diarization_model": {"loaded": False, "error": None},
     }
 
@@ -437,12 +432,8 @@ def preload_models() -> dict[str, Any]:
         models_to_load = []
         runtime_router = None
 
-    # Check whether paraformer-only support models should be loaded.
-    paraformer_enabled = "paraformer-large" in models_to_load
 
     total_steps = len(models_to_load) + 2
-    if paraformer_enabled:
-        total_steps += 2
 
     logger.info(
         "开始预加载模型: declared=%s runtime=%s models=%s",
@@ -480,39 +471,8 @@ def preload_models() -> dict[str, Any]:
             logger.error("语音活动检测模型(VAD)加载失败: %s", e)
         progress.advance("已完成语音活动检测模型(VAD)")
 
-        # 3. Preload the offline punctuation model.
-        if paraformer_enabled:
-            progress.update("加载标点符号模型(离线)")
-            try:
-                from ..services.asr.engines import get_global_punc_model
 
-                punc_model = get_global_punc_model(asr_device)
-                if punc_model:
-                    result["punc_model"]["loaded"] = True
-                else:
-                    result["punc_model"]["error"] = "标点符号模型加载后返回None"
-            except Exception as e:
-                result["punc_model"]["error"] = str(e)
-                logger.error("标点符号模型(离线)加载失败: %s", e)
-            progress.advance("已完成标点符号模型(离线)")
-
-        # 4. Preload the realtime punctuation model for Paraformer streaming.
-        if paraformer_enabled:
-            progress.update("加载标点符号模型(实时)")
-            try:
-                from ..services.asr.engines import get_global_punc_realtime_model
-
-                punc_realtime_model = get_global_punc_realtime_model(asr_device)
-                if punc_realtime_model:
-                    result["punc_realtime_model"]["loaded"] = True
-                else:
-                    result["punc_realtime_model"]["error"] = "实时标点符号模型加载后返回None"
-            except Exception as e:
-                result["punc_realtime_model"]["error"] = str(e)
-                logger.error("实时标点符号模型加载失败: %s", e)
-            progress.advance("已完成标点符号模型(实时)")
-
-        # 5. Preload the required speaker diarization model (CAM++).
+        # 3. Preload the required speaker diarization model (CAM++).
         progress.update("加载说话人分离模型(CAM++)")
         try:
             from ..utils.speaker_diarizer import get_global_diarization_pipeline
@@ -531,12 +491,12 @@ def preload_models() -> dict[str, Any]:
     total_asr_count = len(result["asr_models"])
     extra_loaded = sum(
         1
-        for key in ("vad_model", "punc_model", "punc_realtime_model", "speaker_diarization_model")
+        for key in ("vad_model", "speaker_diarization_model")
         if result[key]["loaded"]
     )
     extra_failed = sum(
         1
-        for key in ("vad_model", "punc_model", "punc_realtime_model", "speaker_diarization_model")
+        for key in ("vad_model", "speaker_diarization_model")
         if result[key]["error"]
     )
     logger.info(

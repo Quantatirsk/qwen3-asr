@@ -4,7 +4,7 @@
 模型预下载脚本
 用于构建 Docker 镜像时预下载所有模型
 
-- Paraformer 模型从 ModelScope 下载
+- 离线 VAD 与 CAM++ 模型从 ModelScope 下载
 - Qwen3-ASR 模型从 HuggingFace 下载 (CUDA vLLM / CPU Rust)
 """
 
@@ -24,6 +24,7 @@ from app.infrastructure import (
     is_huggingface_offline,
 )
 from app.services.asr.model_capabilities import (
+    ModelAsset,
     get_camplusplus_replacement_paths,
     get_download_modelscope_assets,
     get_enabled_qwen_huggingface_assets,
@@ -52,9 +53,14 @@ def _get_cache_path(model_id: str, source: str = "modelscope") -> Path:
     return Path(settings.MODELSCOPE_PATH) / model_id
 
 
-def check_model_exists(model_id: str, source: str = "modelscope") -> tuple[bool, str]:
+def check_model_exists(model_id: str, source: str = "modelscope", revision: Optional[str] = None) -> tuple[bool, str]:
     try:
         if source == "huggingface":
+            if revision:
+                snapshot_dir = _get_cache_path(model_id, source) / "snapshots" / revision
+                index = json.loads((snapshot_dir / "model.safetensors.index.json").read_text())
+                required = set(index["weight_map"].values()) | {"config.json", "preprocessor_config.json", "tokenizer.json", "tokenizer_config.json"}
+                return all((snapshot_dir / name).is_file() and (snapshot_dir / name).stat().st_size for name in required), str(snapshot_dir)
             snapshot_dir = find_huggingface_snapshot_dir(model_id)
             if snapshot_dir is not None:
                 return True, str(snapshot_dir)
@@ -71,15 +77,27 @@ def check_model_exists(model_id: str, source: str = "modelscope") -> tuple[bool,
     return False, ""
 
 
-def check_all_models() -> list[tuple[str, str, str, Optional[str]]]:
+def scoped_assets(scope):
+    if scope not in ("offline", "realtime", "all"):
+        raise ValueError("Unknown model scope")
+    ms_assets = get_download_modelscope_assets() if scope != "realtime" else []
+    hf_assets = _get_huggingface_assets() if scope != "realtime" else []
+    if scope != "offline":
+        from app.services.realtime.protocol import MODEL_REPOSITORY, MODEL_REVISION
+
+        hf_assets.append(ModelAsset(source="huggingface", model_id=MODEL_REPOSITORY,
+                                   description="Confucius4-R2T2", revision=MODEL_REVISION))
+    return ms_assets, hf_assets
+
+
+def check_all_models(scope: str = "offline") -> list[tuple[str, str, str, Optional[str]]]:
     """检查所有模型是否存在
 
     Returns:
         缺失的模型列表，每个元素为 (model_id, description, source, revision)
     """
     missing = []
-    ms_assets = get_download_modelscope_assets()
-    hf_assets = _get_huggingface_assets()
+    ms_assets, hf_assets = scoped_assets(scope)
 
     # Check ModelScope models.
     for asset in ms_assets:
@@ -87,11 +105,11 @@ def check_all_models() -> list[tuple[str, str, str, Optional[str]]]:
         if not exists:
             missing.append((asset.model_id, asset.description, "modelscope", asset.revision))
 
-    # Check Hugging Face models. HF assets currently do not use pinned revisions.
+    # Realtime uses an exact snapshot, not whichever revision refs/main selects.
     for asset in hf_assets:
-        exists, _ = check_model_exists(asset.model_id, source="huggingface")
+        exists, _ = check_model_exists(asset.model_id, source="huggingface", revision=asset.revision)
         if not exists:
-            missing.append((asset.model_id, asset.description, "huggingface", None))
+            missing.append((asset.model_id, asset.description, "huggingface", asset.revision))
 
     return missing
 
@@ -148,6 +166,7 @@ def fix_camplusplus_config() -> bool:
 def download_models(
     auto_mode: bool = False,
     export_dir: Optional[str] = None,
+    scope: str = "offline",
 ) -> bool:
     """下载所有需要的模型
 
@@ -161,9 +180,8 @@ def download_models(
     import shutil
 
     # Check missing models.
-    missing = check_all_models()
-    ms_assets = get_download_modelscope_assets()
-    hf_assets = _get_huggingface_assets()
+    missing = check_all_models(scope)
+    ms_assets, hf_assets = scoped_assets(scope)
 
     export_path = Path(export_dir) if export_dir else None
 
@@ -196,11 +214,11 @@ def download_models(
     failed = []
     downloaded = []
 
-    # Download ModelScope models (Paraformer).
+    # Download offline VAD and CAM++ assets from ModelScope.
     ms_missing = [(mid, desc, rev) for mid, desc, src, rev in missing if src == "modelscope"]
     if ms_missing:
         if not auto_mode:
-            print("\n📦 开始下载 ModelScope 模型 (Paraformer)...")
+            print("\n📦 开始下载 ModelScope 模型 (VAD / CAM++)...")
             print("-" * 60)
 
         for i, (model_id, desc, revision) in enumerate(ms_missing, 1):
@@ -232,14 +250,14 @@ def download_models(
             print("\n📦 开始下载 HuggingFace 模型 (Qwen3-ASR)...")
             print("-" * 60)
 
-        for i, (model_id, desc, _) in enumerate(hf_missing, 1):
+        for i, (model_id, desc, revision) in enumerate(hf_missing, 1):
             if not auto_mode:
                 print(f"\n[{i}/{len(hf_missing)}] {desc}")
                 print(f"    模型ID: {model_id}")
                 print(f"    📥 开始下载...", end="")
 
             try:
-                path = hf_snapshot_download(model_id)
+                path = hf_snapshot_download(model_id, revision=revision)
                 if not auto_mode:
                     print(f" ✅ 完成: {path}")
                 downloaded.append((model_id, "huggingface", path))
@@ -251,7 +269,7 @@ def download_models(
     # Fix CAM++ config files for offline environments.
     if not auto_mode:
         print("\n🔧 修复 CAM++ 配置文件...")
-    if fix_camplusplus_config():
+    if ms_assets and fix_camplusplus_config():
         if not auto_mode:
             print("  ✅ CAM++ 配置已修复（离线环境可用）")
     else:
@@ -293,6 +311,7 @@ def download_models(
                     if not auto_mode:
                         print(" ✅")
                 except Exception as e:
+                    failed.append((model_id, str(e)))
                     if not auto_mode:
                         print(f" ❌ {e}")
 
@@ -321,6 +340,7 @@ def download_models(
 def main() -> int:
     """CLI entrypoint for model download and export."""
     parser = argparse.ArgumentParser(description="Download or export Qwen3-ASR models")
+    parser.add_argument("--scope", choices=("offline", "realtime", "all"), default="offline")
     parser.add_argument(
         "--export-dir",
         default=None,
@@ -336,6 +356,7 @@ def main() -> int:
     success = download_models(
         auto_mode=args.auto_mode,
         export_dir=args.export_dir,
+        scope=args.scope,
     )
     return 0 if success else 1
 

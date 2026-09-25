@@ -143,10 +143,9 @@ class BaseASREngine(ABC):
         pass
 
     @property
-    @abstractmethod
     def supports_realtime(self) -> bool:
-        """是否支持实时识别"""
-        pass
+        """Local engines are offline only; realtime uses the remote service."""
+        return False
 
     def transcribe_segments(
         self,
@@ -246,23 +245,3 @@ class BaseASREngine(ABC):
         from app.core.device import detect_device
 
         return detect_device(device)
-
-
-class RealTimeASREngine(BaseASREngine):
-    """实时ASR引擎抽象基类"""
-
-    @property
-    def supports_realtime(self) -> bool:
-        """支持实时识别"""
-        return True
-
-    @abstractmethod
-    def transcribe_websocket(
-        self,
-        audio_chunk: bytes,
-        cache: Optional[Dict] = None,
-        is_final: bool = False,
-        **kwargs,
-    ) -> str:
-        """WebSocket流式语音识别"""
-        pass

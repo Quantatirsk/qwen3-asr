@@ -358,7 +358,7 @@ def _get_openai_model_description() -> str:
 @router.get(
     "/models",
     response_model=ModelsResponse,
-    summary="列出可用离线模型",
+    summary="列出可用模型",
     description=_get_openai_model_description(),
 )
 async def list_models(request: Request):
@@ -382,6 +382,13 @@ async def list_models(request: Request):
                 owned_by="qwen3-asr",
             ))
 
+        from ...services.realtime.client import get_capabilities
+        from ...services.realtime.protocol import MODEL_ID, StreamError
+        try:
+            if (await get_capabilities()).get("ready"):
+                model_objects.append(ModelObject(id=MODEL_ID, owned_by="netease-youdao"))
+        except StreamError:
+            pass  # Remote realtime availability must not break offline discovery.
         return ModelsResponse(data=model_objects)
     except Exception as e:
         logger.error(f"获取模型列表失败: {e}")
@@ -390,7 +397,7 @@ async def list_models(request: Request):
 
 def _get_transcription_description() -> str:
     """获取动态的转写端点描述"""
-    return f"""将音频文件转写为文本（完全兼容 OpenAI Audio API）。
+    return f"""将音频文件转写为文本（OpenAI Audio API 文件转写子集，不支持 Realtime 协议）。
 
 **支持的音频格式与常见含音轨视频容器：**
 `mp3`, `mp4`, `mpeg`, `mpga`, `m4a`, `wav`, `webm`, `flac`, `ogg`, `amr`, `pcm`, `mov`, `mkv`, `avi`
@@ -477,6 +484,7 @@ def _get_transcription_description() -> str:
 )
 async def create_transcription(
     request: Request,
+    model: Optional[str] = Form(None, description="使用服务端配置的离线 Qwen 模型；实时 R2T2 请使用 /v1/stream"),
     # 1. 音频输入（二选一）
     file: Optional[UploadFile] = File(
         default=None,
@@ -542,6 +550,13 @@ async def create_transcription(
                 message="Invalid authentication",
             )
             return JSONResponse(content=response_data, status_code=401)
+
+        from ...services.realtime.protocol import MODEL_ID, MODEL_REPOSITORY
+        if model and model.strip().lower() in (MODEL_ID, MODEL_REPOSITORY.lower()):
+            return JSONResponse(status_code=400, content={"error": {
+                "message": "R2T2 is realtime-only; use /v1/stream. /audio/transcriptions uses the configured offline Qwen model.",
+                "type": "invalid_request_error", "code": "model_not_supported", "param": "model",
+            }})
 
         audio_data = await file.read() if file is not None else None
         inference_task = await transcription_service.start_transcription(

@@ -8,7 +8,7 @@ from typing import Literal, Optional
 
 from app.core.config import settings
 from app.services.asr.manager import get_model_manager
-from app.services.asr.model_plan import get_active_qwen_model, get_runtime_model_ids
+from app.services.asr.model_plan import get_active_qwen_model
 
 
 ModelSource = Literal["modelscope", "huggingface"]
@@ -67,60 +67,18 @@ _DIARIZATION_ASSETS = (
     ),
 )
 
-_REALTIME_PARAFORMER_ASSETS = (
-    ModelAsset(
-        source="modelscope",
-        model_id="iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online",
-        description="Paraformer Large Realtime",
-        required_patterns=(
-            "configuration.json",
-            "config.yaml",
-            "model.pt",
-            "tokens.json",
-            "seg_dict",
-        ),
-        min_total_size_bytes=100_000_000,
-    ),
-    ModelAsset(
-        source="modelscope",
-        model_id=settings.PUNC_MODEL,
-        description="Punctuation Offline",
-        required_patterns=("configuration.json", "config.yaml", "model.pt", "tokens.json"),
-        min_total_size_bytes=50_000_000,
-    ),
-)
-
-_REALTIME_PUNC_ASSET = ModelAsset(
-    source="modelscope",
-    model_id=settings.PUNC_REALTIME_MODEL,
-    description="Punctuation Realtime",
-    required_patterns=("configuration.json", "config.yaml", "model.pt", "tokens.json"),
-    min_total_size_bytes=50_000_000,
-)
-
 
 def get_download_modelscope_assets() -> list[ModelAsset]:
     """Return the full static ModelScope export set used by predownload/export."""
     return [
         *_VAD_ASSETS,
         *_DIARIZATION_ASSETS,
-        *_REALTIME_PARAFORMER_ASSETS,
-        _REALTIME_PUNC_ASSET,
     ]
 
 
-def get_runtime_required_modelscope_assets(
-    *,
-    include_realtime_punc: bool,
-) -> list[ModelAsset]:
-    """Return ModelScope assets required by the current runtime plan."""
-    assets = [*_VAD_ASSETS, *_DIARIZATION_ASSETS]
-    runtime_models = get_runtime_model_ids()
-    if "paraformer-large" in runtime_models:
-        assets.extend(_REALTIME_PARAFORMER_ASSETS)
-        if include_realtime_punc:
-            assets.append(_REALTIME_PUNC_ASSET)
-    return assets
+def get_runtime_required_modelscope_assets() -> list[ModelAsset]:
+    """Return the offline VAD and speaker assets; realtime runs remotely."""
+    return [*_VAD_ASSETS, *_DIARIZATION_ASSETS]
 
 
 def get_enabled_qwen_huggingface_assets(

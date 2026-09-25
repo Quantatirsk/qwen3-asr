@@ -13,7 +13,6 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
 
 from app.infrastructure import resolve_huggingface_snapshot_dir
 
@@ -158,39 +157,6 @@ def _bind_ffi_signatures(lib: ctypes.CDLL) -> None:
     lib.qwen_asr_free.argtypes = [ctypes.c_void_p]
     lib.qwen_asr_free.restype = None
 
-    lib.qwen_asr_stream_new.argtypes = []
-    lib.qwen_asr_stream_new.restype = ctypes.c_void_p
-
-    lib.qwen_asr_stream_free.argtypes = [ctypes.c_void_p]
-    lib.qwen_asr_stream_free.restype = None
-
-    lib.qwen_asr_stream_push.argtypes = [
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.POINTER(ctypes.c_float),
-        ctypes.c_int,
-        ctypes.c_int,
-    ]
-    lib.qwen_asr_stream_push.restype = ctypes.c_void_p
-
-    lib.qwen_asr_stream_get_result.argtypes = [ctypes.c_void_p]
-    lib.qwen_asr_stream_get_result.restype = ctypes.c_void_p
-
-    lib.qwen_asr_stream_set_chunk_sec.argtypes = [ctypes.c_void_p, ctypes.c_float]
-    lib.qwen_asr_stream_set_chunk_sec.restype = None
-
-    lib.qwen_asr_stream_set_rollback.argtypes = [ctypes.c_void_p, ctypes.c_int]
-    lib.qwen_asr_stream_set_rollback.restype = None
-
-    lib.qwen_asr_stream_set_unfixed_chunks.argtypes = [ctypes.c_void_p, ctypes.c_int]
-    lib.qwen_asr_stream_set_unfixed_chunks.restype = None
-
-    lib.qwen_asr_stream_set_max_new_tokens.argtypes = [ctypes.c_void_p, ctypes.c_int]
-    lib.qwen_asr_stream_set_max_new_tokens.restype = None
-
-    lib.qwen_asr_stream_set_past_text.argtypes = [ctypes.c_void_p, ctypes.c_int]
-    lib.qwen_asr_stream_set_past_text.restype = None
-
 
 def load_qwenasr_library() -> ctypes.CDLL:
     global _SHARED_LIBRARY
@@ -245,26 +211,6 @@ def _decode_and_free_string(lib: ctypes.CDLL, raw_ptr: ctypes.c_void_p) -> Optio
         lib.qwen_asr_free_string(raw_ptr)
 
 
-class QwenASRRustStreamHandle:
-    """Owns a Rust streaming state pointer."""
-
-    def __init__(self, lib: ctypes.CDLL, handle: ctypes.c_void_p):
-        self._lib = lib
-        self.handle = handle
-        self.accumulated_text = ""
-
-    def close(self) -> None:
-        if self.handle:
-            self._lib.qwen_asr_stream_free(self.handle)
-            self.handle = ctypes.c_void_p()
-
-    def __del__(self) -> None:
-        try:
-            self.close()
-        except Exception:
-            pass
-
-
 class QwenASRRustBackend:
     """Thin Python wrapper around the QwenASR C API."""
 
@@ -300,20 +246,6 @@ class QwenASRRustBackend:
         if status != 0 and normalized:
             logger.warning("QwenASR rejected language hint: %s", normalized)
 
-    def _configure_stream(
-        self,
-        *,
-        chunk_size_sec: float,
-        unfixed_chunk_num: int,
-        rollback_tokens: int,
-        max_new_tokens: int,
-        past_text: bool,
-    ) -> None:
-        self._lib.qwen_asr_stream_set_chunk_sec(self._engine, ctypes.c_float(chunk_size_sec))
-        self._lib.qwen_asr_stream_set_unfixed_chunks(self._engine, int(unfixed_chunk_num))
-        self._lib.qwen_asr_stream_set_rollback(self._engine, int(rollback_tokens))
-        self._lib.qwen_asr_stream_set_max_new_tokens(self._engine, int(max_new_tokens))
-        self._lib.qwen_asr_stream_set_past_text(self._engine, 1 if past_text else 0)
 
     def transcribe_file(self, audio_path: str, language: Optional[str] = None) -> str:
         self._set_language(language)
@@ -356,70 +288,9 @@ class QwenASRRustBackend:
             if isinstance(item, dict) and str(item.get("text", "")).strip()
         ]
 
-    def create_stream(
-        self,
-        *,
-        chunk_size_sec: float = 2.0,
-        unfixed_chunk_num: int = 2,
-        rollback_tokens: int = 5,
-        max_new_tokens: int = 32,
-        language: Optional[str] = None,
-    ) -> QwenASRRustStreamHandle:
-        handle = self._lib.qwen_asr_stream_new()
-        if not handle:
-            raise RuntimeError("QwenASR failed to create stream state")
-
-        self._configure_stream(
-            chunk_size_sec=chunk_size_sec,
-            unfixed_chunk_num=unfixed_chunk_num,
-            rollback_tokens=rollback_tokens,
-            max_new_tokens=max_new_tokens,
-            past_text=True,
-        )
-        self._set_language(language)
-        return QwenASRRustStreamHandle(self._lib, handle)
-
-    def push_stream(
-        self,
-        stream: QwenASRRustStreamHandle,
-        samples: np.ndarray,
-        *,
-        chunk_size_sec: float,
-        unfixed_chunk_num: int,
-        rollback_tokens: int,
-        max_new_tokens: int,
-        language: Optional[str],
-        finalize: bool = False,
-    ) -> str:
-        self._configure_stream(
-            chunk_size_sec=chunk_size_sec,
-            unfixed_chunk_num=unfixed_chunk_num,
-            rollback_tokens=rollback_tokens,
-            max_new_tokens=max_new_tokens,
-            past_text=True,
-        )
-        self._set_language(language)
-
-        pcm = np.ascontiguousarray(samples, dtype=np.float32)
-        pointer = (
-            pcm.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
-            if len(pcm) > 0
-            else None
-        )
-        delta_ptr = self._lib.qwen_asr_stream_push(
-            self._engine,
-            stream.handle,
-            pointer,
-            len(pcm),
-            1 if finalize else 0,
-        )
-        delta_text = _decode_and_free_string(self._lib, delta_ptr) or ""
-        stream.accumulated_text += delta_text
-        return stream.accumulated_text
-
 
 class QwenASRRustRuntime:
-    """Higher-level Rust runtime bundle for ASR + aligner + streaming."""
+    """Higher-level Rust runtime bundle for offline ASR + aligner."""
 
     def __init__(
         self,
@@ -460,64 +331,4 @@ class QwenASRRustRuntime:
             audio_path=audio_path,
             text=transcript,
             language=guess_alignment_language(transcript, language),
-        )
-
-    def create_stream(
-        self,
-        *,
-        chunk_size_sec: float = 2.0,
-        unfixed_chunk_num: int = 2,
-        rollback_tokens: int = 5,
-        max_new_tokens: int = 32,
-        language: Optional[str] = None,
-    ) -> QwenASRRustStreamHandle:
-        return self._asr.create_stream(
-            chunk_size_sec=chunk_size_sec,
-            unfixed_chunk_num=unfixed_chunk_num,
-            rollback_tokens=rollback_tokens,
-            max_new_tokens=max_new_tokens,
-            language=language,
-        )
-
-    def push_stream(
-        self,
-        stream: QwenASRRustStreamHandle,
-        samples: np.ndarray,
-        *,
-        chunk_size_sec: float,
-        unfixed_chunk_num: int,
-        rollback_tokens: int,
-        max_new_tokens: int,
-        language: Optional[str],
-    ) -> str:
-        return self._asr.push_stream(
-            stream=stream,
-            samples=samples,
-            chunk_size_sec=chunk_size_sec,
-            unfixed_chunk_num=unfixed_chunk_num,
-            rollback_tokens=rollback_tokens,
-            max_new_tokens=max_new_tokens,
-            language=language,
-            finalize=False,
-        )
-
-    def finish_stream(
-        self,
-        stream: QwenASRRustStreamHandle,
-        *,
-        chunk_size_sec: float,
-        unfixed_chunk_num: int,
-        rollback_tokens: int,
-        max_new_tokens: int,
-        language: Optional[str],
-    ) -> str:
-        return self._asr.push_stream(
-            stream=stream,
-            samples=np.array([], dtype=np.float32),
-            chunk_size_sec=chunk_size_sec,
-            unfixed_chunk_num=unfixed_chunk_num,
-            rollback_tokens=rollback_tokens,
-            max_new_tokens=max_new_tokens,
-            language=language,
-            finalize=True,
         )

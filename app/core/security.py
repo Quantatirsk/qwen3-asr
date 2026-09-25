@@ -108,6 +108,9 @@ def extract_openai_token(request: Request) -> Optional[str]:
 def extract_websocket_token(websocket) -> Optional[str]:
     """从 WebSocket 连接中提取 token。"""
     if hasattr(websocket, "headers"):
+        token = extract_bearer_token(websocket)
+        if token:
+            return token
         token = normalize_token(websocket.headers.get(TOKEN_HEADER_NAME))
         if token:
             return token

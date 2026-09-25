@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from fastapi_offline import FastAPIOffline
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 
 from .core.config import settings
 from .core.exceptions import (
@@ -148,27 +149,9 @@ def create_app() -> FastAPI:
     app.include_router(api_router)
 
     # 根路径
-    @app.get("/", summary="根路径", description="API服务根路径")
+    @app.get("/", include_in_schema=False)
     async def root():
-        return {
-            "message": settings.APP_NAME,
-            "version": settings.APP_VERSION,
-            "description": settings.APP_DESCRIPTION,
-            "endpoints": {
-                # 阿里云兼容 API
-                "asr": "/stream/v1/asr",
-                "asr_models": "/stream/v1/asr/models",
-                "asr_health": "/stream/v1/asr/health",
-                "ws_asr": "/ws/v1/asr",
-                # Qwen3-ASR 专用 WebSocket 流式 (POC)
-                "ws_qwen3_asr": "/ws/v1/qwen3/asr",
-                # OpenAI 兼容 API
-                "openai_models": "/v1/models",
-                "openai_transcriptions": "/v1/audio/transcriptions",
-                # 文档
-                "docs": settings.docs_url or "禁用",
-            },
-        }
+        return RedirectResponse("realtime")
 
     return app
 

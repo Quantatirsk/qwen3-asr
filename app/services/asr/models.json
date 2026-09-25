@@ -1,19 +1,5 @@
 {
     "models": {
-        "paraformer-large": {
-            "name": "Paraformer Large",
-            "kind": "capability",
-            "engine": "funasr",
-            "description": "中文 WebSocket 实时识别能力（Paraformer realtime stack）",
-            "languages": [
-                "zh"
-            ],
-            "default": false,
-            "supports_realtime": true,
-            "models": {
-                "realtime": "iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online"
-            }
-        },
         "qwen3-asr-1.7b": {
             "name": "Qwen3-ASR-1.7B",
             "kind": "model",
@@ -37,7 +23,7 @@
                 "vi"
             ],
             "default": true,
-            "supports_realtime": true,
+            "supports_realtime": false,
             "models": {
                 "offline": "Qwen/Qwen3-ASR-1.7B"
             },
@@ -70,12 +56,12 @@
                 "vi"
             ],
             "default": false,
-            "supports_realtime": true,
+            "supports_realtime": false,
             "models": {
                 "offline": "Qwen/Qwen3-ASR-0.6B"
             },
             "extra_kwargs": {
-                "max_model_len": 16384,
+                "max_model_len": 8192,
                 "forced_aligner_path": "Qwen/Qwen3-ForcedAligner-0.6B",
                 "max_inference_batch_size": 16
             }

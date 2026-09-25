@@ -7,8 +7,8 @@ import importlib
 import importlib.util
 import logging
 import os
-import re
-from dataclasses import dataclass, field
+import time
+from dataclasses import dataclass
 from typing import Any, Optional
 
 import librosa
@@ -18,6 +18,7 @@ from app.infrastructure import resolve_huggingface_snapshot_dir
 from app.utils.text_processing import normalize_asr_text
 
 from .engines import ASRRawResult, ASRSegmentResult, WordToken
+from .qwen3_alignment import repair_timestamps, split_alignment_units
 
 logger = logging.getLogger(__name__)
 
@@ -98,22 +99,6 @@ def _parse_asr_output(raw_text: str, language: Optional[str]) -> tuple[str, str]
     return (language or ""), text
 
 
-def _split_alignment_units(text: str) -> list[str]:
-    if not text:
-        return []
-
-    # Mixed Chinese/English transcripts should not fall back to whitespace-only
-    # tokenization, otherwise a long CJK sentence with a single embedded English
-    # word can collapse into one giant alignment unit.
-    token_pattern = re.compile(
-        r"[\u4e00-\u9fff]"                    # CJK ideographs, align per character
-        r"|[A-Za-z0-9]+(?:['._+-][A-Za-z0-9]+)*"  # Latin / alnum words
-        r"|[^\w\s]",                         # punctuation and symbols
-        re.UNICODE,
-    )
-    return token_pattern.findall(text)
-
-
 def _resolve_forced_aligner_gpu_memory_utilization(primary_utilization: float) -> float:
     override = (os.getenv("QWEN_FORCE_ALIGNER_GPU_MEMORY_UTILIZATION") or "").strip()
     if override:
@@ -130,25 +115,23 @@ def _resolve_forced_aligner_gpu_memory_utilization(primary_utilization: float) -
     return primary_utilization
 
 
+def _shared_gpu_engine_options() -> dict[str, Any]:
+    options: dict[str, Any] = {}
+    max_seqs = os.getenv("QWEN_VLLM_MAX_NUM_SEQS")
+    if max_seqs:
+        count = int(max_seqs)
+        if count < 1:
+            raise ValueError("QWEN_VLLM_MAX_NUM_SEQS must be positive")
+        options.update(max_num_seqs=count, limit_mm_per_prompt={"audio": 1})
+    if os.getenv("QWEN_VLLM_ENFORCE_EAGER") == "1":
+        options["enforce_eager"] = True
+    return options
+
+
 @dataclass
 class _GeneratedTranscript:
     text: str
     language: str
-
-
-@dataclass
-class VLLMRealtimeState:
-    prompt_raw: str
-    language: str
-    chunk_size_sec: float
-    unfixed_chunk_num: int
-    unfixed_token_num: int
-    max_new_tokens: int
-    chunk_id: int = 0
-    text: str = ""
-    raw_decoded: str = ""
-    audio_buffer: np.ndarray = field(default_factory=lambda: np.array([], dtype=np.float32))
-    audio_accum: np.ndarray = field(default_factory=lambda: np.array([], dtype=np.float32))
 
 
 class Qwen3VLLMBackend:
@@ -190,6 +173,7 @@ class Qwen3VLLMBackend:
         llm_kwargs: dict[str, Any] = {
             "model": local_model_path,
             "gpu_memory_utilization": gpu_memory_utilization,
+            **_shared_gpu_engine_options(),
         }
         if max_model_len is not None:
             llm_kwargs["max_model_len"] = max_model_len
@@ -226,10 +210,12 @@ class Qwen3VLLMBackend:
                 self._forced_aligner_path,
                 forced_aligner_gpu_memory_utilization,
             )
+            aligner_options = _shared_gpu_engine_options()
+            aligner_options["enforce_eager"] = True
             self._forced_aligner = self._llm_cls(
                 model=self._forced_aligner_path,
                 runner="pooling",
-                enforce_eager=True,
+                **aligner_options,
                 gpu_memory_utilization=forced_aligner_gpu_memory_utilization,
                 hf_overrides={
                     "architectures": ["Qwen3ASRForcedAlignerForTokenClassification"],
@@ -339,7 +325,10 @@ class Qwen3VLLMBackend:
         results: list[ASRSegmentResult] = []
         for start in range(0, len(audios), self._max_inference_batch_size):
             chunk = audios[start:start + self._max_inference_batch_size]
+            stage_started = time.monotonic()
+            logger.info("Qwen GPU ASR batch started: segments=%s audio_seconds=%.2f", len(chunk), sum(len(a) for a in chunk) / _DEFAULT_SAMPLE_RATE)
             transcripts = self._run_generate([(audio, context, language) for audio in chunk])
+            logger.info("Qwen GPU ASR batch finished: segments=%s elapsed_seconds=%.2f", len(chunk), time.monotonic() - stage_started)
             for audio_path, audio, transcript in zip(audio_paths[start:start + len(chunk)], chunk, transcripts):
                 text = normalize_asr_text(transcript.text, enable_itn=enable_itn)
                 if not word_timestamps:
@@ -376,11 +365,13 @@ class Qwen3VLLMBackend:
         language: Optional[str] = None,
         audio: Optional[np.ndarray] = None,
     ) -> list[dict[str, float | str]]:
-        tokens = _split_alignment_units(text)
+        tokens = split_alignment_units(text)
         if not tokens:
             return []
 
         aligner = self._get_forced_aligner()
+        stage_started = time.monotonic()
+        logger.info("Qwen GPU alignment started: file=%s units=%s", os.path.basename(audio_path), len(tokens))
         prompt = _build_alignment_prompt(tokens)
         audio_array = audio if audio is not None else _load_audio(audio_path)
         outputs = aligner.encode(
@@ -389,7 +380,7 @@ class Qwen3VLLMBackend:
         )
         output = outputs[0]
         logits = output.outputs.data
-        predictions = logits.argmax(dim=-1) if hasattr(logits, "argmax") else np.argmax(logits, axis=-1)
+        predictions = logits.argmax(-1) if hasattr(logits, "argmax") else np.argmax(logits, axis=-1)
         ts_predictions = [
             float(pred.item() if hasattr(pred, "item") else pred) * float(self._timestamp_segment_time or 0.0)
             for tid, pred in zip(output.prompt_token_ids, predictions)
@@ -397,93 +388,25 @@ class Qwen3VLLMBackend:
         ]
 
         expected_timestamps = len(tokens) * 2
-        if len(ts_predictions) < expected_timestamps:
+        if len(ts_predictions) != expected_timestamps:
             raise RuntimeError(
-                "Forced aligner returned fewer timestamp predictions than expected: "
+                "Forced aligner timestamp count mismatch: "
                 f"expected={expected_timestamps}, got={len(ts_predictions)}, tokens={len(tokens)}"
             )
 
+        fixed_timestamps = repair_timestamps(
+            ts_predictions, len(audio_array) * 1000.0 / _DEFAULT_SAMPLE_RATE
+        )
+        repaired = sum(a != b for a, b in zip(ts_predictions, fixed_timestamps))
+        if repaired:
+            logger.warning(
+                "Repaired forced alignment timestamps: file=%s changed=%s total=%s",
+                os.path.basename(audio_path), repaired, expected_timestamps,
+            )
         aligned: list[dict[str, float | str]] = []
         for index, token in enumerate(tokens):
-            start_ms = ts_predictions[index * 2]
-            end_ms = ts_predictions[index * 2 + 1]
-            if end_ms < start_ms:
-                logger.warning(
-                    "Forced aligner produced reversed timestamps for token=%r: start_ms=%s end_ms=%s",
-                    token,
-                    start_ms,
-                    end_ms,
-                )
-                start_ms, end_ms = end_ms, start_ms
+            start_ms = fixed_timestamps[index * 2]
+            end_ms = fixed_timestamps[index * 2 + 1]
             aligned.append({"text": token, "start_ms": start_ms, "end_ms": end_ms})
+        logger.info("Qwen GPU alignment finished: units=%s elapsed_seconds=%.2f", len(aligned), time.monotonic() - stage_started)
         return aligned
-
-    def init_streaming_state(
-        self,
-        *,
-        context: str = "",
-        language: Optional[str] = None,
-        chunk_size_sec: float = 2.0,
-        unfixed_chunk_num: int = 2,
-        unfixed_token_num: int = 5,
-        max_new_tokens: int = 32,
-    ) -> VLLMRealtimeState:
-        normalized_language = _normalize_language_name(language) or ""
-        return VLLMRealtimeState(
-            prompt_raw=_build_chat_prompt(context=context, language=normalized_language or None),
-            language=normalized_language,
-            chunk_size_sec=chunk_size_sec,
-            unfixed_chunk_num=unfixed_chunk_num,
-            unfixed_token_num=unfixed_token_num,
-            max_new_tokens=max_new_tokens,
-            audio_buffer=np.array([], dtype=np.float32),
-            audio_accum=np.array([], dtype=np.float32),
-        )
-
-    def _decode_stream(self, state: VLLMRealtimeState) -> VLLMRealtimeState:
-        prefix = ""
-        if state.chunk_id >= state.unfixed_chunk_num and state.raw_decoded:
-            token_ids = self._tokenizer.encode(state.raw_decoded, add_special_tokens=False)
-            rollback = token_ids[-state.unfixed_token_num:] if state.unfixed_token_num > 0 else []
-            if rollback:
-                prefix = self._tokenizer.decode(rollback, skip_special_tokens=False).replace("\ufffd", "")
-
-        output = self._llm.generate(
-            [
-                {
-                    "prompt": state.prompt_raw + prefix,
-                    "multi_modal_data": {"audio": [state.audio_accum]},
-                }
-            ],
-            sampling_params=self._sampling_params_cls(
-                temperature=0.01,
-                max_tokens=state.max_new_tokens,
-            ),
-            use_tqdm=False,
-        )[0]
-        generated = str(output.outputs[0].text if output.outputs else "")
-        parsed_language, parsed_text = _parse_asr_output(prefix + generated, state.language or None)
-        state.raw_decoded = prefix + generated
-        state.text = parsed_text
-        state.language = parsed_language or state.language
-        state.chunk_id += 1
-        return state
-
-    def feed_stream(self, pcm: np.ndarray, state: VLLMRealtimeState) -> VLLMRealtimeState:
-        state.audio_buffer = np.concatenate([state.audio_buffer, pcm.astype(np.float32)])
-        segment_size = int(max(state.chunk_size_sec, 0.1) * _DEFAULT_SAMPLE_RATE)
-        while len(state.audio_buffer) >= segment_size:
-            segment = state.audio_buffer[:segment_size].copy()
-            state.audio_buffer = state.audio_buffer[segment_size:]
-            state.audio_accum = np.concatenate([state.audio_accum, segment])
-            state = self._decode_stream(state)
-        return state
-
-    def finish_stream(self, state: VLLMRealtimeState) -> VLLMRealtimeState:
-        if len(state.audio_buffer) > 0:
-            state.audio_accum = np.concatenate([state.audio_accum, state.audio_buffer])
-            state.audio_buffer = np.array([], dtype=np.float32)
-            state = self._decode_stream(state)
-        elif state.chunk_id == 0 and len(state.audio_accum) > 0:
-            state = self._decode_stream(state)
-        return state

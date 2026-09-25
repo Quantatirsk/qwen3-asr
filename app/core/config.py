@@ -49,14 +49,8 @@ class Settings:
     }
     ASR_MODELS_CONFIG: str = str(BASE_DIR / "app/services/asr/models.json")
     VAD_MODEL: str = "damo/speech_fsmn_vad_zh-cn-16k-common-pytorch"
-    PUNC_MODEL: str = "iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch"
-    PUNC_REALTIME_MODEL: str = (
-        "iic/punc_ct-transformer_zh-cn-common-vad_realtime-vocab272727"
-    )
-
-    # 流式ASR远场过滤配置
-    ASR_ENABLE_NEARFIELD_FILTER: bool = True  # 是否启用远场声音过滤
-    ASR_NEARFIELD_RMS_THRESHOLD: float = 0.01  # RMS能量阈值（宽松模式，适合大多数场景）
+    R2T2_URL: str = ""
+    R2T2_INTERNAL_TOKEN: str = ""
     # 音频处理配置
     MAX_AUDIO_SIZE: int = 2048 * 1024 * 1024  # 2GB
 
@@ -68,7 +62,6 @@ class Settings:
 
     # Runtime 并发配置（按 backend 独立控制）
     QWEN_RUST_CPU_WORKERS: int = 4
-    FUNASR_WORKERS: int = 1
 
     def __init__(self):
         """从环境变量读取配置"""
@@ -96,15 +89,8 @@ class Settings:
         # 设备配置
         self.DEVICE = os.getenv("DEVICE", self.DEVICE)
 
-        # 远场过滤配置
-        self.ASR_ENABLE_NEARFIELD_FILTER = (
-            os.getenv("ASR_ENABLE_NEARFIELD_FILTER", "true").lower() == "true"
-        )
-        self.ASR_NEARFIELD_RMS_THRESHOLD = float(
-            os.getenv(
-                "ASR_NEARFIELD_RMS_THRESHOLD", str(self.ASR_NEARFIELD_RMS_THRESHOLD)
-            )
-        )
+        self.R2T2_URL = os.getenv("R2T2_URL", "").strip().rstrip("/")
+        self.R2T2_INTERNAL_TOKEN = os.getenv("R2T2_INTERNAL_TOKEN", "").strip()
 
         # 音频处理配置
         # 支持简化格式：纯数字表示MB，或带单位（如 2048MB, 2GB）
@@ -122,9 +108,6 @@ class Settings:
 
         self.QWEN_RUST_CPU_WORKERS = int(
             os.getenv("QWEN_RUST_CPU_WORKERS", str(self.QWEN_RUST_CPU_WORKERS))
-        )
-        self.FUNASR_WORKERS = int(
-            os.getenv("FUNASR_WORKERS", str(self.FUNASR_WORKERS))
         )
 
 

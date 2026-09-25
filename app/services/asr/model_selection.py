@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Offline/realtime model selection helpers."""
+"""Offline model selection helpers."""
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List
 
 from ...core.exceptions import InvalidParameterException
 from .manager import get_model_manager
@@ -48,24 +48,3 @@ def get_default_offline_model_id() -> str:
         except InvalidParameterException:
             pass
     return get_active_qwen_model_id()
-
-
-def validate_realtime_model_id(model_id: Optional[str]) -> str:
-    """Validate realtime-capable model ids for websocket protocols."""
-    available_models = get_offline_model_ids()
-
-    if not model_id:
-        return get_default_offline_model_id()
-
-    if model_id.lower() == "qwen3-asr":
-        active_qwen_model = get_active_qwen_model_id()
-        if active_qwen_model.startswith("qwen") and active_qwen_model in available_models:
-            return active_qwen_model
-        raise InvalidParameterException("当前环境未启用 Qwen3-ASR 模型")
-
-    if model_id not in available_models:
-        raise InvalidParameterException(
-            f"不支持的模型ID: {model_id}。可用模型: {', '.join(available_models)}"
-        )
-
-    return model_id

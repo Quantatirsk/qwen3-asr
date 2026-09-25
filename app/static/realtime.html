@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>实时转写 · R2T2</title>
+<style>
+  :root { color-scheme: light; font-family: system-ui, sans-serif; color: #182e29; background: #f3f6f3; }
+  body { max-width: 820px; margin: 8vh auto; padding: 0 24px; }
+  header { margin-bottom: 32px; } h1 { font-size: 36px; letter-spacing: -1px; margin-bottom: 8px; }
+  p, #status { color: #5e706b; line-height: 1.6; }
+  main { background: white; padding: 28px; border: 1px solid #dce5df; border-radius: 18px; }
+  label { display: block; font-size: 14px; margin-bottom: 8px; }
+  input { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid #cbd8cf; border-radius: 8px; }
+  .buttons { display: flex; gap: 10px; margin: 22px 0 16px; }
+  button { border: 0; background: #19644c; color: white; border-radius: 9px; padding: 12px 22px; font: inherit; cursor: pointer; }
+  button.secondary { background: #e9f0ec; color: #294b3e; } button:disabled { opacity: .4; cursor: default; }
+  #text { min-height: 240px; font-size: 23px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #text:empty::before { content: '转写文字会出现在这里…'; color: #a1afa7; }
+  #status { font-size: 14px; } footer { margin-top: 18px; font-size: 13px; color: #74847b; }
+</style>
+<header><h1>实时转写</h1><p>开启麦克风，即时呈现文字。中英文自动识别，无需切换语言。</p></header>
+<main>
+  <label for="key">API Key（服务开启鉴权时填写）</label><input id="key" type="password" autocomplete="off" placeholder="可选">
+  <div class="buttons"><button id="start">开始录音</button><button id="stop" class="secondary" disabled>结束录音</button><button id="copy" class="secondary">复制文字</button></div>
+  <div id="status" role="status">准备就绪</div><hr style="border:0;border-top:1px solid #edf1ee;margin:20px 0">
+  <div id="text" aria-live="polite"></div>
+</main>
+<footer>R2T2 · 每个连接独立转写 · 停止录音后会补齐末尾文字</footer>
+<script type="module">
+const $ = id => document.getElementById(id);
+let ws, stream, context, node, timer, stopping = false;
+async function cleanup(reset = true) {
+  if (reset) clearTimeout(timer);
+  stream?.getTracks().forEach(t => t.stop());
+  node?.disconnect();
+  if (context && context.state !== 'closed') await context.close();
+  stream = context = node = null;
+  if (reset) { $('start').disabled = false; $('stop').disabled = true; $('key').disabled = false; }
+}
+function fail(message) { $('status').textContent = message; ws?.close(); cleanup(); }
+$('start').onclick = async () => {
+  $('start').disabled = true; $('key').disabled = true; $('text').textContent = ''; stopping = false;
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) throw Error('请通过 HTTPS 反向代理或 localhost 打开页面以使用麦克风。');
+    $('status').textContent = '正在连接…';
+    stream = await navigator.mediaDevices.getUserMedia({audio: {channelCount: 1, echoCancellation: true, noiseSuppression: true}});
+    context = new AudioContext({sampleRate: 16000});
+    await context.resume();
+    await context.audioWorklet.addModule('./realtime/recorder.js');
+    const url = new URL('./v1/stream', location.href);
+    url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    if ($('key').value.trim()) url.searchParams.set('token', $('key').value.trim());
+    ws = new WebSocket(url);
+    timer = setTimeout(() => fail('连接超时，请重试。'), 15000);
+    ws.onopen = () => ws.send('{}');
+    ws.onerror = () => fail('连接失败，请检查服务和 API Key。');
+    ws.onclose = () => { if ($('stop').disabled === false) $('status').textContent = '连接已关闭'; cleanup(); };
+    ws.onmessage = async ({data}) => {
+      const event = JSON.parse(data);
+      if (event.error) { fail(event.error); return; }
+      if (event.ready) {
+        clearTimeout(timer);
+        if (event.sample_rate !== context.sampleRate) { fail('音频采样率不匹配。'); return; }
+        node = new AudioWorkletNode(context, 'recorder');
+        node.port.onmessage = ({data}) => {
+          if (ws.readyState !== WebSocket.OPEN) return;
+          if (data === 'stopped') { ws.send('end'); cleanup(false); return; }
+          if (ws.bufferedAmount > 32000 * 5) { fail('网络过慢，请重新连接。'); return; }
+          ws.send(data);
+        };
+        context.createMediaStreamSource(stream).connect(node);
+        node.connect(context.destination);
+        $('stop').disabled = false; $('status').textContent = '正在聆听 · 自动识别中英文';
+      } else {
+        if (event.delta) $('text').append(document.createTextNode(event.delta));
+        if (event.done) {
+          $('text').textContent = event.text;
+          $('status').textContent = '转写完成'; ws.close(); await cleanup();
+        }
+      }
+    };
+  } catch (error) { fail(error.message); }
+};
+$('stop').onclick = () => {
+  if (stopping) return;
+  stopping = true; $('stop').disabled = true; $('status').textContent = '正在补齐末尾文字…';
+  node?.port.postMessage('stop');
+  timer = setTimeout(() => fail('转写结束超时，请重试。'), 30000);
+};
+$('copy').onclick = async () => {
+  try { await navigator.clipboard.writeText($('text').textContent); $('status').textContent = '已复制'; }
+  catch { $('status').textContent = '请选中文字后复制。'; }
+};
+window.addEventListener('pagehide', () => { ws?.close(); stream?.getTracks().forEach(t => t.stop()); });
+</script>
+</html>

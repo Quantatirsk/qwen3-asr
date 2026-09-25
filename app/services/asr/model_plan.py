@@ -95,10 +95,7 @@ def get_active_qwen_model(all_model_ids: Optional[list[str]] = None) -> str:
 def get_runtime_model_ids(all_model_ids: Optional[list[str]] = None) -> list[str]:
     """Return the runtime model/capability plan for the current machine."""
     model_ids = all_model_ids or load_supported_model_ids()
-    runtime_models = [get_active_qwen_model(model_ids)]
-    if "paraformer-large" in model_ids:
-        runtime_models.append("paraformer-large")
-    return runtime_models
+    return [get_active_qwen_model(model_ids)]
 
 
 def get_default_model_id(all_model_ids: Optional[list[str]] = None) -> str:
