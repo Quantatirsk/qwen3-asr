@@ -25,7 +25,6 @@ from ...core.exceptions import (
     create_error_response,
 )
 from ...services.asr.model_selection import (
-    get_default_offline_model_id,
     get_offline_model_ids,
 )
 from ...services.asr.offline_transcription_service import (
@@ -445,7 +444,7 @@ async def create_transcription(
     request: Request,
     model: Optional[str] = Form(
         None,
-        description="Model ID: confucius4-r2t2. Defaults to Confucius4-R2T2 when omitted.",
+        description="Accepted for client compatibility. Any value uses Confucius4-R2T2.",
     ),
     # 1. 音频输入（二选一）
     file: Optional[UploadFile] = File(
@@ -492,7 +491,7 @@ async def create_transcription(
 ):
     """音频转写 API (OpenAI Audio API 兼容)"""
     # 标记暂不支持的参数（保留以兼容 OpenAI API）
-    _ = (prompt, temperature, timestamp_granularities)
+    _ = (model, prompt, temperature, timestamp_granularities)
 
     logger.info(
         f"[OpenAI API] 收到转写请求: format={response_format}, "
@@ -516,19 +515,6 @@ async def create_transcription(
                 message="Invalid authentication",
             )
             return JSONResponse(content=response_data, status_code=401)
-
-        if model is not None and model != get_default_offline_model_id():
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "error": {
-                        "message": "Unsupported model. Use confucius4-r2t2.",
-                        "type": "invalid_request_error",
-                        "code": "model_not_supported",
-                        "param": "model",
-                    }
-                },
-            )
 
         transcription_service = get_offline_transcription_service()
         audio_data = await file.read() if file is not None else None

@@ -111,8 +111,10 @@ class APIContractTest(unittest.TestCase):
         self.assertIsNone(options["audio_data"])
         self.assertEqual(options["audio_address"], "https://example.test/audio.wav")
 
-    def test_unknown_and_legacy_models_rejected_before_inference(self) -> None:
+    def test_any_model_value_uses_configured_transcription_service(self) -> None:
         names = (
+            "",
+            "arbitrary-model",
             "qwen3-asr",
             "qwen3-asr-0.6b",
             "qwen3-asr-1.7b",
@@ -134,13 +136,10 @@ class APIContractTest(unittest.TestCase):
                         files={"file": ("test.wav", b"fake")},
                         data={"model": model},
                     )
-                    self.assertEqual(response.status_code, 400, response.text)
-                    self.assertEqual(response.json()["error"]["param"], "model")
-                    self.assertEqual(
-                        response.json()["error"]["code"], "model_not_supported"
-                    )
-        get_service.assert_not_called()
-        self.service.start_transcription.assert_not_called()
+                    self.assertEqual(response.status_code, 200, response.text)
+                    self.assertEqual(response.json()["text"], "hello")
+        self.assertEqual(get_service.call_count, len(names))
+        self.assertEqual(self.service.start_transcription.await_count, len(names))
 
     def test_models_do_not_probe_remote_availability(self) -> None:
         with patch(

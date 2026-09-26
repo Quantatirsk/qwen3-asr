@@ -11,10 +11,10 @@ class UnsupportedCPUExecutionTest(unittest.TestCase):
     def test_cpu_is_rejected_before_model_construction(self) -> None:
         with (
             patch.object(settings, "DEVICE", "cpu"),
-            patch("app.services.asr.r2t2_engine.R2T2VLLMBackend") as backend,
+            patch("app.services.asr.r2t2_engine.ForcedAligner") as backend,
+            self.assertRaisesRegex(RuntimeError, "CUDA"),
         ):
-            with self.assertRaisesRegex(RuntimeError, "CUDA"):
-                R2T2Engine()
+            R2T2Engine()
         backend.assert_not_called()
 
 

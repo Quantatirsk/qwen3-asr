@@ -1,6 +1,6 @@
 # R2T2 ASR
 
-本分支提供基于 Confucius4-R2T2 的实时与离线语音识别服务，仅支持 Linux x86_64 / NVIDIA CUDA。实时与离线使用同一固定版本的 R2T2 权重，各自独立推理。
+本分支提供基于 Confucius4-R2T2 的实时与离线语音识别服务，仅支持 Linux x86_64 / NVIDIA CUDA。实时与离线共用一个 R2T2 推理实例，权重只加载一次；各请求保留独立的音频与解码状态。
 
 离线流程为：完整录音 → CAM++ 说话人分离 → 按时间区间切段 → R2T2 重新识别 → 强制对齐 → 合并带说话人、时间戳的结果。离线识别不读取实时转写文本。保留 FSMN VAD 和 Qwen3-ForcedAligner-0.6B；强制对齐模型仅生成时间戳，不承担文字识别。
 
@@ -27,7 +27,7 @@ curl http://localhost:4174/v1/audio/transcriptions \
   -F enable_speaker_diarization=true
 ```
 
-唯一识别模型 ID 为 `confucius4-r2t2`。支持 `/v1/audio/transcriptions` 和 `/stream/v1/asr` 下的离线接口；完整参数以 `/docs` 为准。
+模型列表仅返回 `confucius4-r2t2`。文件转写请求中的 `model` 参数可填写任意值，服务忽略该参数并始终使用 R2T2，不按名称选择或路由模型。支持 `/v1/audio/transcriptions` 和 `/stream/v1/asr` 下的离线接口；完整参数以 `/docs` 为准。
 
 实时接口为 `/v1/stream`，使用 16 kHz 单声道 PCM，通过 WebSocket 返回追加式文本；协议见 [实时转写](docs/realtime.md)。实时不提供说话人标签和词级时间戳。
 

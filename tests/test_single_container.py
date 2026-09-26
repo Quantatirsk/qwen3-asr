@@ -49,16 +49,33 @@ class SingleContainerTest(unittest.TestCase):
         with patch.dict(
             os.environ,
             {
-                "R2T2_OFFLINE_GPU_MEMORY_UTILIZATION": "0.3",
+                "FORCED_ALIGNER_GPU_MEMORY_UTILIZATION": "0.15",
                 "R2T2_GPU_MEMORY_UTILIZATION": "0.25",
                 "CUDA_VISIBLE_DEVICES": "0",
             },
         ):
             engine, api = launcher.services()
-        self.assertEqual(api.env["R2T2_OFFLINE_GPU_MEMORY_UTILIZATION"], "0.3")
+        self.assertEqual(api.env["FORCED_ALIGNER_GPU_MEMORY_UTILIZATION"], "0.15")
         self.assertEqual(engine.env["R2T2_GPU_MEMORY_UTILIZATION"], "0.25")
         self.assertEqual(api.env["CUDA_VISIBLE_DEVICES"], "0")
         self.assertEqual(engine.env["CUDA_VISIBLE_DEVICES"], "0")
+
+    def test_healthcheck_requires_both_engine_and_api(self):
+        for engine_ready, api_ready in [(True, True), (False, True), (True, False)]:
+            with self.subTest(engine_ready=engine_ready, api_ready=api_ready):
+                with (
+                    patch.object(sys, "argv", ["start.py", "--healthcheck"]),
+                    patch.object(
+                        launcher,
+                        "healthy",
+                        side_effect=lambda url, key: (
+                            engine_ready if url == launcher.ENGINE_URL else api_ready
+                        ),
+                    ),
+                ):
+                    self.assertEqual(
+                        launcher.main(), 0 if engine_ready and api_ready else 1
+                    )
 
     def test_missing_cuda_prevents_model_download_and_processes(self):
         torch = SimpleNamespace(cuda=SimpleNamespace(is_available=lambda: False))

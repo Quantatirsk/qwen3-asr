@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import threading
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import torch
 
@@ -40,7 +41,7 @@ class RuntimeRouter:
         self._manager = get_model_manager()
         self._engine: R2T2Engine | None = None
         self._init_lock = threading.Lock()
-        # vLLM's synchronous LLM and its aligner cannot overlap calls.
+        # The synchronous forced aligner cannot overlap calls.
         self._inference_lock = asyncio.Lock()
 
     def resolve_model_id(self, model_id: str | None) -> str:

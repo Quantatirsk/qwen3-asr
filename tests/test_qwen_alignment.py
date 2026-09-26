@@ -2,12 +2,12 @@ import random
 import unittest
 from itertools import pairwise
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import numpy as np
 
+from app.services.asr.forced_aligner import ForcedAligner
 from app.services.asr.qwen3_alignment import repair_timestamps, split_alignment_units
-from app.services.asr.r2t2_vllm import R2T2VLLMBackend
 
 
 class TimestampRepairTest(unittest.TestCase):
@@ -67,7 +67,7 @@ class TimestampRepairTest(unittest.TestCase):
 
 class AlignmentAdapterTest(unittest.TestCase):
     def make_backend(self, bins):
-        backend = R2T2VLLMBackend.__new__(R2T2VLLMBackend)
+        backend = ForcedAligner.__new__(ForcedAligner)
         backend._timestamp_token_id = 42
         backend._timestamp_segment_time = 80
         # Non-timestamp tokens also have classifier outputs and must be ignored.
@@ -75,9 +75,7 @@ class AlignmentAdapterTest(unittest.TestCase):
             prompt_token_ids=[9] + [42] * len(bins) + [10],
             outputs=SimpleNamespace(data=np.eye(32)[[31] + bins + [31]]),
         )
-        backend._get_forced_aligner = Mock(
-            return_value=SimpleNamespace(encode=Mock(return_value=[output]))
-        )
+        backend._forced_aligner = SimpleNamespace(encode=Mock(return_value=[output]))
         return backend
 
     def test_units_follow_official_cleaning_for_chinese_and_english(self):
@@ -101,7 +99,7 @@ class AlignmentAdapterTest(unittest.TestCase):
         self.assertEqual([x["text"] for x in result], list("下午吃蛋"))
         self.assertEqual([x["start_ms"] for x in result], [80, 160, 240, 400])
         self.assertTrue(all(a["end_ms"] <= b["start_ms"] for a, b in pairwise(result)))
-        prompt = backend._get_forced_aligner().encode.call_args.args[0][0]["prompt"]
+        prompt = backend._forced_aligner.encode.call_args.args[0][0]["prompt"]
         self.assertNotIn("。", prompt)
         self.assertEqual(prompt.count("<timestamp>"), 8)
 
@@ -119,18 +117,7 @@ class AlignmentAdapterTest(unittest.TestCase):
     def test_punctuation_only_skips_inference(self):
         backend = self.make_backend([])
         self.assertEqual(backend.align_transcript("unused.wav", "。？！"), [])
-        backend._get_forced_aligner.assert_not_called()
-
-    def test_transcription_retains_punctuation_but_aligns_only_spoken_units(self):
-        backend = self.make_backend([1, 2, 3, 4])
-        backend._run_generate = Mock(return_value=[SimpleNamespace(text="你好。")])
-        with patch(
-            "app.services.asr.r2t2_vllm._load_audio", return_value=np.zeros(16000)
-        ):
-            backend._max_inference_batch_size = 4
-            result = backend.transcribe_batch(["unused.wav"], word_timestamps=True)[0]
-        self.assertEqual(result.text, "你好。")
-        self.assertEqual([word.text for word in result.word_tokens], ["你", "好"])
+        backend._forced_aligner.encode.assert_not_called()
 
 
 if __name__ == "__main__":

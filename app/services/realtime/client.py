@@ -3,15 +3,23 @@
 import asyncio
 import json
 from contextlib import asynccontextmanager
-from urllib.parse import urlsplit, urlunsplit
+from urllib.error import HTTPError
+from urllib.parse import urlencode, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
 
+import numpy as np
 import websockets
 from websockets.exceptions import ConnectionClosed
 
 from app.core.config import settings
 
-from .protocol import MODEL_ID, PROTOCOL_VERSION, SAMPLE_RATE, StreamError
+from .protocol import (
+    MODEL_ID,
+    OFFLINE_MAX_SAMPLES,
+    PROTOCOL_VERSION,
+    SAMPLE_RATE,
+    StreamError,
+)
 
 
 def endpoint(path, *, websocket=False):
@@ -41,19 +49,21 @@ def internal_headers():
     )
 
 
-async def get_capabilities():
-    def fetch():
+def get_engine_capabilities() -> dict[str, object]:
+    try:
         with urlopen(
             Request(endpoint("/v1/config"), headers=internal_headers()), timeout=5
         ) as response:
-            return json.loads(response.read(65536))
-
-    try:
-        result = await asyncio.to_thread(fetch)
+            data = response.read(65537)
+        if len(data) > 65536:
+            raise ValueError("Backend configuration exceeds response limit")
+        result = json.loads(data)
         if (
-            result.get("model") != MODEL_ID
+            not isinstance(result, dict)
+            or result.get("model") != MODEL_ID
             or result.get("sample_rate") != SAMPLE_RATE
             or result.get("protocol_version") != PROTOCOL_VERSION
+            or result.get("offline_transcription") is not True
         ):
             raise ValueError("Backend protocol/model mismatch")
         return result
@@ -62,8 +72,51 @@ async def get_capabilities():
     except Exception as error:
         raise StreamError(
             "realtime_unavailable",
-            "Realtime backend is unavailable or incompatible",
+            "Shared R2T2 backend is unavailable or incompatible",
             503,
+        ) from error
+
+
+async def get_capabilities() -> dict[str, object]:
+    return await asyncio.to_thread(get_engine_capabilities)
+
+
+def transcribe_segment(audio: np.ndarray, context: str = "") -> str:
+    if (
+        audio.ndim != 1
+        or not 0 < len(audio) <= OFFLINE_MAX_SAMPLES
+        or not np.isfinite(audio).all()
+    ):
+        raise ValueError("Expected 1 sample to 60 seconds of finite mono 16 kHz audio")
+    if len(context) > 2048:
+        raise ValueError("Transcription context exceeds 2048 characters")
+    request = Request(
+        endpoint("/v1/transcribe") + "?" + urlencode({"context": context}),
+        data=audio.astype("<f4").tobytes(),
+        headers={**internal_headers(), "Content-Type": "application/octet-stream"},
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=180) as response:
+            payload = response.read(1024 * 1024 + 1)
+        if len(payload) > 1024 * 1024:
+            raise ValueError("Offline response exceeds response limit")
+        result = json.loads(payload)
+        if (
+            not isinstance(result, dict)
+            or result.get("error")
+            or not isinstance(result.get("text"), str)
+        ):
+            raise ValueError("Invalid offline response")
+        return result["text"]
+    except HTTPError as error:
+        error.close()
+        raise StreamError(
+            "upstream_error", "Shared R2T2 transcription request failed", error.code
+        ) from error
+    except Exception as error:
+        raise StreamError(
+            "upstream_error", "Shared R2T2 transcription failed", 502
         ) from error
 
 

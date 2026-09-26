@@ -189,9 +189,12 @@ def preload_models() -> dict[str, Any]:
     from app.services.asr.engines import get_global_vad_model
     from app.services.asr.runtime import get_runtime_router
     from app.services.realtime.protocol import MODEL_ID
+    from app.services.realtime.client import get_engine_capabilities
     from app.utils.download_models import fix_camplusplus_config
     from app.utils.speaker_diarizer import get_global_diarization_pipeline
 
+    if not get_engine_capabilities().get("ready"):
+        raise RuntimeError("Shared R2T2 engine is not ready")
     device = detect_device(settings.DEVICE)
     fix_camplusplus_config()
     get_runtime_router().warmup_model(MODEL_ID)

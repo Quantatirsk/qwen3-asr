@@ -107,6 +107,12 @@ class Model:
             n: SamplingParams(temperature=0, max_tokens=n, skip_special_tokens=True)
             for n in (*range(4, 17), 128)
         }
+        self.offline_sampling = SamplingParams(
+            temperature=0, max_tokens=4096, skip_special_tokens=True
+        )
+        max_model_len = int(os.getenv("R2T2_MAX_MODEL_LEN", "16384"))
+        if max_model_len <= 4096:
+            raise ValueError("R2T2_MAX_MODEL_LEN must exceed the offline output budget")
         self.engine = AsyncLLM.from_engine_args(
             AsyncEngineArgs(
                 model=path,
@@ -114,9 +120,11 @@ class Model:
                 gpu_memory_utilization=float(
                     os.getenv("R2T2_GPU_MEMORY_UTILIZATION", "0.30")
                 ),
-                max_model_len=4096,
-                max_num_seqs=max_sessions,
+                max_model_len=max_model_len,
+                max_num_seqs=max_sessions + 1,
                 max_num_batched_tokens=2048,
+                enable_chunked_prefill=True,
+                scheduling_policy="priority",
                 mm_processor_cache_gb=0,  # Each growing audio window is unique.
                 enable_prefix_caching=False,
                 enforce_eager=os.getenv("R2T2_ENFORCE_EAGER", "0") == "1",
@@ -124,17 +132,46 @@ class Model:
             )
         )
 
-    def new_session(self, config):
-        prompt = self.processor.apply_chat_template(
+    def _prompt(self, context: str) -> str:
+        return self.processor.apply_chat_template(
             [
-                {"role": "system", "content": config.context},
+                {"role": "system", "content": context},
                 {"role": "user", "content": [{"type": "audio", "audio": ""}]},
             ],
             add_generation_prompt=True,
             tokenize=False,
         )
+
+    def new_session(self, config):
         # No forced language. The model detects Chinese, English, or mixed speech.
-        return Session(prompt)
+        return Session(self._prompt(config.context))
+
+    async def transcribe(self, audio: np.ndarray, context: str) -> str:
+        """Recognize a whole offline segment without any streaming session state."""
+        request_id = f"offline-{uuid.uuid4().hex}"
+        prompt = {
+            "prompt": self._prompt(context),
+            "multi_modal_data": {"audio": [audio]},
+        }
+        result = None
+        completed = False
+        try:
+            async for result in self.engine.generate(
+                prompt, self.offline_sampling, request_id=request_id, priority=10
+            ):
+                pass
+            if result is None or not result.outputs:
+                raise RuntimeError("R2T2 returned no offline output")
+            if result.outputs[0].finish_reason == "length":
+                raise RuntimeError("R2T2 offline decoding exceeded its token budget")
+            raw = result.outputs[0].text.split("|", 1)[0].strip()
+            if TAG not in raw:
+                raise RuntimeError("R2T2 offline output has no language header")
+            completed = True
+            return raw.split(TAG, 1)[1].strip()
+        finally:
+            if not completed:
+                await self.engine.abort(request_id)
 
     async def push(self, session, audio, *, final=False):
         session.append(audio)
@@ -163,6 +200,7 @@ class Model:
                 prompt,
                 self.sampling[128 if final else session.budget],
                 request_id=request_id,
+                priority=0,
             ):
                 pass
             if result is None or not result.outputs:

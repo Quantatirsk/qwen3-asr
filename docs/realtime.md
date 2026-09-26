@@ -1,10 +1,10 @@
 # R2T2 实时转写
 
-离线文件与实时音频均使用 Confucius4-R2T2，各自独立推理。实时只提供一个 WebSocket 协议，默认自动识别语言，支持中英文及混合输入。没有旧协议别名，也没有 Chat 音频适配层。
+离线文件与实时音频共用一个 Confucius4-R2T2 推理实例，各自保留独立的音频与解码状态。实时只提供一个 WebSocket 协议，默认自动识别语言，支持中英文及混合输入。没有旧协议别名，也没有 Chat 音频适配层。
 
 ## 架构
 
-一个容器、一个 Python 环境、两个进程：公共 API 提供离线接口和 WebSocket 转发；私有 R2T2 进程持有一个 vLLM AsyncLLM 引擎。多个连接的解码请求由 vLLM 连续批处理，各自独立保存音频、提示词和已确认文本。私有进程统一限制接入数量，公共 API 增加 worker 不会绕过限额。
+一个容器、一个 Python 环境、两个进程：公共 API 提供离线接口和 WebSocket 转发；私有 R2T2 进程持有一个 vLLM AsyncLLM 引擎。实时和离线解码请求均由这个引擎调度，R2T2 权重只加载一次；公共 API 另行加载 VAD、CAM++ 和强制对齐模型。多个实时连接的解码请求由 vLLM 连续批处理，各自独立保存音频、提示词和已确认文本。私有进程统一限制接入数量，公共 API 增加 worker 不会绕过限额。
 
 核心代码：`app/services/realtime/engine.py`（解码），`server.py`（接入与生命周期），`protocol.py`（音频协议与队列），`client.py` / `gateway.py`（转发）。`deploy/entrypoint.py` 管理两个进程，任一进程退出即关闭容器，由容器策略重启。
 
@@ -15,7 +15,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-默认使用 GPU 0，公共端口 4174；模型缓存、显存预算和鉴权配置见 [部署说明](deployment.md)。浏览器麦克风需要 HTTPS 或 localhost。实时和离线引擎共享 GPU 计算资源，需要用真实并发工作负载验收延迟。
+默认使用 GPU 0，公共端口 4174；模型缓存、显存预算和鉴权配置见 [部署说明](deployment.md)。浏览器麦克风需要 HTTPS 或 localhost。实时请求在共享引擎中使用较高调度优先级，离线一次处理一个片段；两者及强制对齐仍共享 GPU 计算资源，需要用真实并发工作负载验收延迟。
 
 ## 协议
 

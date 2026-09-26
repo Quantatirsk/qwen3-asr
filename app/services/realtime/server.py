@@ -8,7 +8,7 @@ import time
 from contextlib import asynccontextmanager, suppress
 
 import numpy as np
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
@@ -18,6 +18,7 @@ from .protocol import (
     MAX_SECONDS,
     MODEL_ID,
     MODEL_REVISION,
+    OFFLINE_MAX_BYTES,
     PROTOCOL_VERSION,
     SAMPLE_RATE,
     AudioQueue,
@@ -28,6 +29,30 @@ from .protocol import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+async def offline_result(
+    request: Request, model: Model, audio: np.ndarray, context: str
+) -> str:
+    async def disconnected() -> None:
+        while (await request.receive())["type"] != "http.disconnect":
+            pass
+
+    inference = asyncio.create_task(model.transcribe(audio, context))
+    disconnect = asyncio.create_task(disconnected())
+    try:
+        done, _ = await asyncio.wait(
+            {inference, disconnect}, timeout=120, return_when=asyncio.FIRST_COMPLETED
+        )
+        if inference in done:
+            return inference.result()
+        if disconnect in done:
+            raise StreamError("client_disconnected", "Offline client disconnected", 499)
+        raise StreamError("inference_timeout", "Offline inference timed out", 504)
+    finally:
+        for task in (inference, disconnect):
+            task.cancel()
+        await asyncio.gather(inference, disconnect, return_exceptions=True)
 
 
 def create_app(model_factory=Model, *, max_sessions=None):
@@ -55,6 +80,7 @@ def create_app(model_factory=Model, *, max_sessions=None):
     app = FastAPI(title="R2T2 inference", lifespan=lifespan)
     app.state.active = 0
     app.state.ready = False
+    app.state.offline_active = False
 
     def authorized(headers):
         return not token or hmac.compare_digest(
@@ -77,6 +103,8 @@ def create_app(model_factory=Model, *, max_sessions=None):
             "language": "auto",
             "word_timestamps": False,
             "speaker_diarization": False,
+            "offline_transcription": True,
+            "offline_max_seconds": 60,
         }
 
     @app.get("/health")
@@ -91,6 +119,52 @@ def create_app(model_factory=Model, *, max_sessions=None):
         if not authorized(request.headers):
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
         return capabilities()
+
+    @app.post("/v1/transcribe")
+    async def transcribe(request: Request, context: str = Query("", max_length=2048)):
+        if not authorized(request.headers):
+            return JSONResponse({"error": "Unauthorized"}, status_code=401)
+        if not app.state.ready or app.state.offline_active:
+            return JSONResponse(
+                {"error": "Offline inference capacity is exhausted"}, status_code=503
+            )
+        # Reserve before reading the body, bounding both retained audio and GPU jobs.
+        app.state.offline_active = True
+        try:
+            if request.headers.get("content-type") != "application/octet-stream":
+                raise StreamError("invalid_audio", "Expected float32 PCM audio")
+
+            async def read_audio() -> bytes:
+                data = bytearray()
+                async for chunk in request.stream():
+                    if len(data) + len(chunk) > OFFLINE_MAX_BYTES:
+                        raise StreamError(
+                            "invalid_audio", "Offline segment exceeds 60 seconds", 413
+                        )
+                    data.extend(chunk)
+                if not data or len(data) % 4:
+                    raise StreamError("invalid_audio", "Expected nonempty float32 PCM")
+                return bytes(data)
+
+            data = await asyncio.wait_for(read_audio(), 30)
+            audio = np.frombuffer(data, dtype="<f4")
+            if not np.isfinite(audio).all():
+                raise StreamError("invalid_audio", "Audio samples must be finite")
+            text = await offline_result(request, app.state.model, audio, context)
+            return {"text": text}
+        except StreamError as error:
+            return JSONResponse(
+                {"error": str(error), "code": error.code}, status_code=error.status
+            )
+        except asyncio.TimeoutError:
+            return JSONResponse(
+                {"error": "Offline audio upload timed out"}, status_code=408
+            )
+        except Exception:
+            logger.exception("Offline R2T2 inference failed")
+            return JSONResponse({"error": "Offline inference failed"}, status_code=500)
+        finally:
+            app.state.offline_active = False
 
     @app.websocket("/v1/stream")
     async def stream(ws: WebSocket):

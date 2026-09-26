@@ -206,7 +206,7 @@ def main() -> int:
         logger.error("This deployment requires CUDA; refusing CPU fallback")
         return 1
     logger.info(
-        "GPU runtime: %s; offline and streaming R2T2",
+        "GPU runtime: %s; shared offline/streaming R2T2 and independent aligner",
         torch.cuda.get_device_name(0),
     )
     from app.bootstrap import ensure_models_downloaded

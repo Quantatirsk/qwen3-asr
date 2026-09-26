@@ -57,9 +57,6 @@ class Settings:
     # 音频处理配置
     MAX_AUDIO_SIZE: int = 2048 * 1024 * 1024  # 2GB
 
-    # 批处理推理配置（GPU 真并行）
-    ASR_BATCH_SIZE: int = 4  # ASR 批处理大小（同时推理的片段数），建议 2-8
-
     # 音频分段配置
     MAX_SEGMENT_SEC: float = 60.0  # Max offline ASR segment duration in seconds.
 
@@ -98,13 +95,9 @@ class Settings:
         if max_audio_size_str:
             self.MAX_AUDIO_SIZE = self._parse_size(max_audio_size_str)
 
-        self.ASR_BATCH_SIZE = int(os.getenv("ASR_BATCH_SIZE", str(self.ASR_BATCH_SIZE)))
-
         self.MAX_SEGMENT_SEC = float(
             os.getenv("MAX_SEGMENT_SEC", str(self.MAX_SEGMENT_SEC))
         )
-        if self.ASR_BATCH_SIZE < 1:
-            raise ValueError("ASR_BATCH_SIZE must be positive")
         if (
             not math.isfinite(self.MAX_SEGMENT_SEC)
             or not 0 < self.MAX_SEGMENT_SEC <= 60
