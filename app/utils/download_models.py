@@ -39,10 +39,16 @@ def check_model_exists(
                 snapshot_dir = (
                     _get_cache_path(model_id, source) / "snapshots" / revision
                 )
-                index = json.loads(
-                    (snapshot_dir / "model.safetensors.index.json").read_text()
-                )
-                required = set(index["weight_map"].values()) | {
+                if (snapshot_dir / "model.safetensors").is_file():
+                    weights = {"model.safetensors"}
+                else:
+                    index = json.loads(
+                        (snapshot_dir / "model.safetensors.index.json").read_text()
+                    )
+                    weights = set(index["weight_map"].values())
+                    if not weights:
+                        return False, ""
+                required = weights | {
                     "config.json",
                     "preprocessor_config.json",
                     "tokenizer.json",
