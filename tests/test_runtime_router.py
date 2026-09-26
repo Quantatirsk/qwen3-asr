@@ -9,7 +9,6 @@ from unittest.mock import patch
 from app.services.asr.engines import ASRFullResult
 from app.services.asr.long_audio import OfflineASRRequest
 from app.services.asr.runtime.router import (
-    RuntimeFamily,
     RuntimeRouter,
 )
 
@@ -40,16 +39,12 @@ class RuntimeRouterTest(unittest.IsolatedAsyncioTestCase):
         engine = _StatefulEngine()
         with patch("app.services.asr.runtime.router.get_model_manager"):
             router = RuntimeRouter()
-        semaphore = asyncio.Semaphore(8)
-        router._resolve_family = lambda _model_id: RuntimeFamily.QWEN_VLLM  # type: ignore[method-assign]
-        router._get_shared_engine = lambda _family, _model_id: (  # type: ignore[method-assign]
-            engine,
-            semaphore,
-        )
+        router.resolve_model_id = lambda model_id: model_id
+        router._get_engine = lambda _model_id: engine
 
         requests = [
             OfflineASRRequest(
-                model_id="qwen3-asr-test",
+                model_id="confucius4-r2t2",
                 audio_path=f"request-{index}",
             )
             for index in range(8)

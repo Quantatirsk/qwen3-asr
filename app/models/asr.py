@@ -14,7 +14,6 @@ from .common import (
     ErrorResponse,
 )
 
-
 # ============= 请求模型 =============
 
 
@@ -39,7 +38,7 @@ class ASRQueryParams(BaseModel):
 
     word_timestamps: Optional[bool] = Field(
         default=False,
-        description="是否返回字词级时间戳（默认关闭；Qwen CUDA vLLM / CPU Rust 会在启用时自动调用 forced aligner）",
+        description="Return word timestamps using the forced aligner (disabled by default).",
     )
 
     vocabulary_id: Optional[str] = Field(
@@ -144,8 +143,18 @@ class ASRSuccessResponse(BaseResponse):
                 "task_id": "cf7b0c5339244ee29cd4e43fb97f1234",
                 "result": "今天天气不错。明天可能会下雨。",
                 "segments": [
-                    {"text": "今天天气不错。", "start_time": 0.0, "end_time": 2.5, "speaker_id": "说话人1"},
-                    {"text": "明天可能会下雨。", "start_time": 3.2, "end_time": 5.8, "speaker_id": "说话人2"},
+                    {
+                        "text": "今天天气不错。",
+                        "start_time": 0.0,
+                        "end_time": 2.5,
+                        "speaker_id": "说话人1",
+                    },
+                    {
+                        "text": "明天可能会下雨。",
+                        "start_time": 3.2,
+                        "end_time": 5.8,
+                        "speaker_id": "说话人2",
+                    },
                 ],
                 "duration": 5.8,
                 "status": 200,
@@ -184,7 +193,7 @@ class ASRHealthCheckResponse(HealthCheckResponse):
                 "device": "cuda:0",
                 "version": "1.0.0",
                 "message": "ASR service is running normally",
-                "loaded_models": ["qwen3-asr-1.7b"],
+                "loaded_models": ["confucius4-r2t2"],
                 "memory_usage": {
                     "gpu_memory_used": "2.1GB",
                     "gpu_memory_total": "8.0GB",
@@ -195,7 +204,9 @@ class ASRHealthCheckResponse(HealthCheckResponse):
 
     model_loaded: bool = Field(..., description="模型是否已加载")
     device: str = Field(..., description="推理设备")
-    loaded_models: Optional[List[str]] = Field(default=[], description="已加载的模型列表")
+    loaded_models: Optional[List[str]] = Field(
+        default=[], description="已加载的模型列表"
+    )
     memory_usage: Optional[dict] = Field(default=None, description="内存使用情况")
 
 
@@ -219,19 +230,22 @@ class ASRDeclaredEntryInfo(BaseModel):
     model_config = {
         "json_schema_extra": {
             "example": {
-                "id": "qwen3-asr-1.7b",
+                "id": "confucius4-r2t2",
                 "kind": "model",
-                "name": "Qwen3-ASR-1.7B",
-                "engine": "qwen3",
-                "description": "多语言离线语音识别模型",
+                "name": "Confucius4-R2T2",
+                "engine": "r2t2",
+                "description": "CUDA R2T2 offline and realtime transcription",
                 "languages": ["zh", "en"],
                 "default": True,
                 "supports_realtime": True,
                 "offline_model": {
-                    "path": "Qwen/Qwen3-ASR-1.7B",
+                    "path": "netease-youdao/Confucius4-R2T2",
                     "exists": True,
                 },
-                "realtime_model": None,
+                "realtime_model": {
+                    "path": "netease-youdao/Confucius4-R2T2",
+                    "exists": True,
+                },
             }
         }
     }
@@ -240,16 +254,20 @@ class ASRDeclaredEntryInfo(BaseModel):
 class ASRRuntimeInfo(BaseModel):
     """运行时视角的模型加载状态。"""
 
-    loaded_model_ids: List[str] = Field(default_factory=list, description="当前已加载模型 ID 列表")
+    loaded_model_ids: List[str] = Field(
+        default_factory=list, description="当前已加载模型 ID 列表"
+    )
     loaded_count: int = Field(..., description="已加载模型数量")
-    default_offline_model_id: Optional[str] = Field(default=None, description="当前默认离线模型 ID")
+    default_offline_model_id: Optional[str] = Field(
+        default=None, description="当前默认离线模型 ID"
+    )
 
     model_config = {
         "json_schema_extra": {
             "example": {
-                "loaded_model_ids": ["qwen3-asr-1.7b"],
+                "loaded_model_ids": ["confucius4-r2t2"],
                 "loaded_count": 1,
-                "default_offline_model_id": "qwen3-asr-1.7b",
+                "default_offline_model_id": "confucius4-r2t2",
             }
         }
     }
@@ -258,7 +276,9 @@ class ASRRuntimeInfo(BaseModel):
 class ASRModelsResponse(BaseModel):
     """ASR 模型列表响应，分离声明视角与运行时视角。"""
 
-    declared_entries: List[ASRDeclaredEntryInfo] = Field(..., description="声明的模型与 capability 列表")
+    declared_entries: List[ASRDeclaredEntryInfo] = Field(
+        ..., description="声明的模型与 capability 列表"
+    )
     declared_count: int = Field(..., description="声明条目总数")
     runtime: ASRRuntimeInfo = Field(..., description="运行时加载状态")
 
@@ -267,26 +287,29 @@ class ASRModelsResponse(BaseModel):
             "example": {
                 "declared_entries": [
                     {
-                        "id": "qwen3-asr-1.7b",
+                        "id": "confucius4-r2t2",
                         "kind": "model",
-                        "name": "Qwen3-ASR-1.7B",
-                        "engine": "qwen3",
-                        "description": "多语言离线语音识别模型",
+                        "name": "Confucius4-R2T2",
+                        "engine": "r2t2",
+                        "description": "CUDA R2T2 offline and realtime transcription",
                         "languages": ["zh", "en"],
                         "default": True,
-                        "supports_realtime": False,
+                        "supports_realtime": True,
                         "offline_model": {
-                            "path": "Qwen/Qwen3-ASR-1.7B",
+                            "path": "netease-youdao/Confucius4-R2T2",
                             "exists": True,
                         },
-                        "realtime_model": None,
+                        "realtime_model": {
+                            "path": "netease-youdao/Confucius4-R2T2",
+                            "exists": True,
+                        },
                     }
                 ],
-                "declared_count": 2,
+                "declared_count": 1,
                 "runtime": {
-                    "loaded_model_ids": ["qwen3-asr-1.7b"],
+                    "loaded_model_ids": ["confucius4-r2t2"],
                     "loaded_count": 1,
-                    "default_offline_model_id": "qwen3-asr-1.7b",
+                    "default_offline_model_id": "confucius4-r2t2",
                 },
             }
         }

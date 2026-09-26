@@ -112,7 +112,7 @@ class Model:
                 model=path,
                 revision=revision,
                 gpu_memory_utilization=float(
-                    os.getenv("R2T2_GPU_MEMORY_UTILIZATION", "0.12")
+                    os.getenv("R2T2_GPU_MEMORY_UTILIZATION", "0.30")
                 ),
                 max_model_len=4096,
                 max_num_seqs=max_sessions,

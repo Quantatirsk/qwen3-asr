@@ -7,9 +7,7 @@ from dataclasses import dataclass
 from typing import Literal, Optional
 
 from app.core.config import settings
-from app.services.asr.manager import get_model_manager
-from app.services.asr.model_plan import get_active_qwen_model
-
+from app.services.realtime.protocol import MODEL_REPOSITORY, MODEL_REVISION
 
 ModelSource = Literal["modelscope", "huggingface"]
 
@@ -55,14 +53,22 @@ _DIARIZATION_ASSETS = (
         source="modelscope",
         model_id="damo/speech_campplus_sv_zh-cn_16k-common",
         description="CAM++ Speaker Verification",
-        required_patterns=("configuration.json", "config.yaml", "campplus_cn_common.bin"),
+        required_patterns=(
+            "configuration.json",
+            "config.yaml",
+            "campplus_cn_common.bin",
+        ),
         min_total_size_bytes=10_000_000,
     ),
     ModelAsset(
         source="modelscope",
         model_id="damo/speech_campplus-transformer_scl_zh-cn_16k-common",
         description="CAM++ Transformer",
-        required_patterns=("configuration.json", "campplus_cn_encoder.pt", "transformer_backend.pt"),
+        required_patterns=(
+            "configuration.json",
+            "campplus_cn_encoder.pt",
+            "transformer_backend.pt",
+        ),
         min_total_size_bytes=10_000_000,
     ),
 )
@@ -81,45 +87,34 @@ def get_runtime_required_modelscope_assets() -> list[ModelAsset]:
     return [*_VAD_ASSETS, *_DIARIZATION_ASSETS]
 
 
-def get_enabled_qwen_huggingface_assets(
-    *,
-    include_forced_aligner: bool = True,
-) -> list[ModelAsset]:
-    """Return HuggingFace assets required by the runtime Qwen plan."""
-    manager = get_model_manager()
-    assets: list[ModelAsset] = []
-    model_id = get_active_qwen_model()
-    model_config = manager.get_declared_entry_config(model_id)
-    offline_model = model_config.offline_model_path
-    if offline_model:
-        assets.append(
-            ModelAsset(
-                source="huggingface",
-                model_id=offline_model,
-                description=f"{model_config.name} Offline",
-                required_patterns=("snapshots/*/config.json",),
-                alternative_required_patterns=(
-                    ("snapshots/*/model.safetensors",),
-                    (
-                        "snapshots/*/model.safetensors.index.json",
-                        "snapshots/*/model-*.safetensors",
-                    ),
-                ),
-                min_total_size_bytes=500_000_000,
-            )
-        )
-    forced_aligner = str(model_config.extra_kwargs.get("forced_aligner_path") or "").strip()
-    if forced_aligner and include_forced_aligner:
-        assets.append(
-            ModelAsset(
-                source="huggingface",
-                model_id=forced_aligner,
-                description=f"{model_config.name} Forced Aligner",
-                required_patterns=("snapshots/*/config.json", "snapshots/*/model.safetensors"),
-                min_total_size_bytes=500_000_000,
-            )
-        )
-    return assets
+def get_huggingface_assets() -> list[ModelAsset]:
+    """One shared ASR checkpoint and an independent timestamp aligner."""
+    return [
+        ModelAsset(
+            source="huggingface",
+            model_id=MODEL_REPOSITORY,
+            description="Confucius4-R2T2",
+            revision=MODEL_REVISION,
+            required_patterns=(
+                "config.json",
+                "preprocessor_config.json",
+                "tokenizer.json",
+                "tokenizer_config.json",
+            ),
+            alternative_required_patterns=(
+                ("model.safetensors",),
+                ("model.safetensors.index.json", "model-*.safetensors"),
+            ),
+            min_total_size_bytes=500_000_000,
+        ),
+        ModelAsset(
+            source="huggingface",
+            model_id="Qwen/Qwen3-ForcedAligner-0.6B",
+            description="Forced Aligner",
+            required_patterns=("config.json", "model.safetensors"),
+            min_total_size_bytes=500_000_000,
+        ),
+    ]
 
 
 def get_camplusplus_replacement_paths(cache_dir: str) -> dict[str, str]:

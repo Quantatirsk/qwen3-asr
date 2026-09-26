@@ -312,28 +312,6 @@ class SpeakerDiarizer:
             return segments
 
         except Exception as e:
-            error_msg = str(e).lower()
-
-            # 音频太短时，返回默认的单说话人片段
-            if "too short" in error_msg:
-                logger.warning(f"音频时长过短，CAM++ 无法处理，返回单说话人片段: {e}")
-
-                # 获取音频时长
-                try:
-                    audio_duration_ms = int(librosa.get_duration(path=audio_path) * 1000)
-                except Exception:
-                    # 无法获取时长时使用默认值
-                    audio_duration_ms = 5000
-
-                return [
-                    SpeakerSegment(
-                        start_ms=0,
-                        end_ms=audio_duration_ms,
-                        speaker_id="说话人1",
-                    )
-                ]
-
-            # 其他异常正常抛出
             logger.error(f"说话人分离失败: {e}")
             raise DefaultServerErrorException(f"说话人分离失败: {str(e)}")
 

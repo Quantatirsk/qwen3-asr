@@ -63,13 +63,13 @@ class AudioSplitter:
     def __init__(
         self,
         min_segment_sec: float = DEFAULT_MIN_SEGMENT_SEC,
-        device: str = "auto",
+        device: str = "cuda:0",
     ):
         """初始化音频分割器
 
         Args:
             min_segment_sec: 每段最小时长（秒）
-            device: 计算设备（"cuda", "cpu", "auto"）
+            device: CUDA inference device
         """
         split_trigger_sec = settings.MAX_SEGMENT_SEC
 
@@ -336,7 +336,7 @@ class AudioSplitter:
 
 def split_long_audio(
     audio_path: str,
-    device: str = "auto",
+    device: str = "cuda:0",
 ) -> List[AudioSegment]:
     """分割长音频的便捷函数
 

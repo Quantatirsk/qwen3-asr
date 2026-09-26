@@ -1,23 +1,26 @@
 # -*- coding: utf-8 -*-
-"""Official vLLM adapter for CUDA Qwen3-ASR."""
+"""Native offline R2T2 generation and independent Qwen forced alignment."""
 
 from __future__ import annotations
 
 import importlib
-import importlib.util
 import logging
 import os
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Optional
 
 import librosa
 import numpy as np
+from huggingface_hub import snapshot_download
 
 from app.infrastructure import resolve_huggingface_snapshot_dir
+from app.infrastructure.model_utils import get_huggingface_cache_root
+from app.services.realtime.protocol import MODEL_REVISION
 from app.utils.text_processing import normalize_asr_text
 
-from .engines import ASRRawResult, ASRSegmentResult, WordToken
+from .engines import ASRSegmentResult, WordToken
 from .qwen3_alignment import repair_timestamps, split_alignment_units
 
 logger = logging.getLogger(__name__)
@@ -43,11 +46,6 @@ _LANGUAGE_ALIASES = {
 }
 
 
-def is_vllm_available() -> bool:
-    """Return True when the official vLLM runtime is installed."""
-    return importlib.util.find_spec("vllm") is not None
-
-
 def _normalize_language_name(language: Optional[str]) -> Optional[str]:
     if not language:
         return None
@@ -67,22 +65,6 @@ def _load_audio(audio_path: str) -> np.ndarray:
     return audio.astype(np.float32)
 
 
-def _build_chat_prompt(context: str = "", language: Optional[str] = None) -> str:
-    instructions: list[str] = []
-    if language:
-        instructions.append(f"Transcribe the speech in {language}.")
-    else:
-        instructions.append("Transcribe the speech accurately.")
-    if context.strip():
-        instructions.append(f"Use this context when resolving named entities: {context.strip()}")
-    system_text = " ".join(instructions).strip()
-    return (
-        f"<|im_start|>system\n{system_text}<|im_end|>\n"
-        "<|im_start|>user\n<|audio_start|><|audio_pad|><|audio_end|><|im_end|>\n"
-        "<|im_start|>assistant\n"
-    )
-
-
 def _build_alignment_prompt(tokens: list[str]) -> str:
     body = "<timestamp><timestamp>".join(tokens) + "<timestamp><timestamp>"
     return f"<|audio_start|><|audio_pad|><|audio_end|>{body}"
@@ -99,33 +81,36 @@ def _parse_asr_output(raw_text: str, language: Optional[str]) -> tuple[str, str]
     return (language or ""), text
 
 
-def _resolve_forced_aligner_gpu_memory_utilization(primary_utilization: float) -> float:
-    override = (os.getenv("QWEN_FORCE_ALIGNER_GPU_MEMORY_UTILIZATION") or "").strip()
-    if override:
-        try:
-            value = float(override)
-            if 0.0 < value <= 1.0:
-                return value
-        except ValueError:
-            logger.warning(
-                "Invalid QWEN_FORCE_ALIGNER_GPU_MEMORY_UTILIZATION=%s, ignoring override",
-                override,
-            )
-
-    return primary_utilization
+def _gpu_memory_utilization(name: str, default: float) -> float:
+    value = float(os.getenv(name, str(default)))
+    if not 0.0 < value <= 1.0:
+        raise ValueError(f"{name} must be greater than zero and at most one")
+    return value
 
 
 def _shared_gpu_engine_options() -> dict[str, Any]:
-    options: dict[str, Any] = {}
-    max_seqs = os.getenv("QWEN_VLLM_MAX_NUM_SEQS")
-    if max_seqs:
-        count = int(max_seqs)
-        if count < 1:
-            raise ValueError("QWEN_VLLM_MAX_NUM_SEQS must be positive")
-        options.update(max_num_seqs=count, limit_mm_per_prompt={"audio": 1})
-    if os.getenv("QWEN_VLLM_ENFORCE_EAGER") == "1":
-        options["enforce_eager"] = True
-    return options
+    count = int(os.getenv("R2T2_OFFLINE_MAX_NUM_SEQS", "4"))
+    if count < 1:
+        raise ValueError("R2T2_OFFLINE_MAX_NUM_SEQS must be positive")
+    eager = os.getenv("R2T2_OFFLINE_ENFORCE_EAGER", "1")
+    if eager not in {"0", "1"}:
+        raise ValueError("R2T2_OFFLINE_ENFORCE_EAGER must be 0 or 1")
+    return {
+        "max_num_seqs": count,
+        "limit_mm_per_prompt": {"audio": 1},
+        "enforce_eager": eager == "1",
+    }
+
+
+def _resolve_checkpoint(model_path: str) -> str:
+    if Path(model_path).is_dir():
+        return str(Path(model_path).resolve())
+    return snapshot_download(
+        repo_id=model_path,
+        revision=MODEL_REVISION,
+        local_files_only=True,
+        cache_dir=str(get_huggingface_cache_root()),
+    )
 
 
 @dataclass
@@ -134,8 +119,8 @@ class _GeneratedTranscript:
     language: str
 
 
-class Qwen3VLLMBackend:
-    """Thin adapter over official vLLM APIs for Qwen3-ASR."""
+class R2T2VLLMBackend:
+    """Generate a fresh transcript from each complete diarized audio segment."""
 
     def __init__(
         self,
@@ -148,14 +133,16 @@ class Qwen3VLLMBackend:
     ) -> None:
         try:
             vllm_module = importlib.import_module("vllm")
-            transformers_module = importlib.import_module("transformers")
+            processor_module = importlib.import_module(
+                "vllm.transformers_utils.processors.qwen3_asr"
+            )
         except ImportError as exc:
             raise RuntimeError(
-                "CUDA Qwen3-ASR now requires official vLLM with Qwen3 forced aligner support. "
+                "CUDA R2T2 requires official vLLM with Qwen3 forced aligner support. "
                 "Install it with: pip install 'vllm[audio]==0.19.0'"
             ) from exc
 
-        local_model_path = str(resolve_huggingface_snapshot_dir(model_path))
+        local_model_path = _resolve_checkpoint(model_path)
         local_forced_aligner_path = (
             str(resolve_huggingface_snapshot_dir(forced_aligner_path))
             if forced_aligner_path
@@ -164,11 +151,15 @@ class Qwen3VLLMBackend:
 
         self._llm_cls = getattr(vllm_module, "LLM")
         self._sampling_params_cls = getattr(vllm_module, "SamplingParams")
-        self._tokenizer = getattr(transformers_module, "AutoTokenizer").from_pretrained(
-            local_model_path,
-            trust_remote_code=True,
-            local_files_only=True,
+        self._processor = processor_module.Qwen3ASRProcessor.from_pretrained(
+            local_model_path, fix_mistral_regex=True, local_files_only=True
         )
+        if max_inference_batch_size < 1 or max_new_tokens < 1:
+            raise ValueError("Batch size and generation token budget must be positive")
+        if max_model_len is None:
+            max_model_len = int(os.getenv("R2T2_OFFLINE_MAX_MODEL_LEN", "16384"))
+        if max_model_len <= max_new_tokens:
+            raise ValueError("Model context length must exceed generation token budget")
 
         llm_kwargs: dict[str, Any] = {
             "model": local_model_path,
@@ -180,8 +171,9 @@ class Qwen3VLLMBackend:
 
         self._llm = self._llm_cls(**llm_kwargs)
         self._sampling_params = self._sampling_params_cls(
-            temperature=0.01,
+            temperature=0,
             max_tokens=max_new_tokens,
+            skip_special_tokens=True,
         )
         self._max_inference_batch_size = max_inference_batch_size
         self._gpu_memory_utilization = gpu_memory_utilization
@@ -191,7 +183,9 @@ class Qwen3VLLMBackend:
         self._timestamp_segment_time: float | None = None
 
     def _get_forced_aligner_gpu_memory_utilization(self) -> float:
-        configured = _resolve_forced_aligner_gpu_memory_utilization(self._gpu_memory_utilization)
+        configured = _gpu_memory_utilization(
+            "FORCED_ALIGNER_GPU_MEMORY_UTILIZATION", 0.15
+        )
         logger.info(
             "Resolved forced aligner gpu_memory_utilization=%s (primary=%s)",
             configured,
@@ -201,10 +195,14 @@ class Qwen3VLLMBackend:
 
     def _get_forced_aligner(self) -> Any:
         if not self._forced_aligner_path:
-            raise RuntimeError("word_timestamps requires a configured forced aligner model")
+            raise RuntimeError(
+                "word_timestamps requires a configured forced aligner model"
+            )
 
         if self._forced_aligner is None:
-            forced_aligner_gpu_memory_utilization = self._get_forced_aligner_gpu_memory_utilization()
+            forced_aligner_gpu_memory_utilization = (
+                self._get_forced_aligner_gpu_memory_utilization()
+            )
             logger.info(
                 "Loading Qwen3 forced aligner via official vLLM: %s (gpu_memory_utilization=%s)",
                 self._forced_aligner_path,
@@ -223,7 +221,9 @@ class Qwen3VLLMBackend:
             )
             llm_engine = getattr(self._forced_aligner, "llm_engine", None)
             if llm_engine is None:
-                raise RuntimeError("Forced aligner did not expose a vLLM engine instance")
+                raise RuntimeError(
+                    "Forced aligner did not expose a vLLM engine instance"
+                )
             config = llm_engine.vllm_config.model_config.hf_config
             self._timestamp_token_id = int(config.timestamp_token_id)
             self._timestamp_segment_time = float(config.timestamp_segment_time)
@@ -234,6 +234,20 @@ class Qwen3VLLMBackend:
         if self._forced_aligner_path:
             self._get_forced_aligner()
 
+    def _build_prompt(self, context: str, language: Optional[str]) -> str:
+        prompt = self._processor.apply_chat_template(
+            [
+                {"role": "system", "content": context or ""},
+                {"role": "user", "content": [{"type": "audio", "audio": ""}]},
+            ],
+            add_generation_prompt=True,
+            tokenize=False,
+        )
+        language = _normalize_language_name(language)
+        if language:
+            prompt += f"language {language}<asr_text>"
+        return prompt
+
     def _run_generate(
         self,
         audio_items: list[tuple[np.ndarray, str, Optional[str]]],
@@ -242,7 +256,7 @@ class Qwen3VLLMBackend:
         for audio, context, language in audio_items:
             prompts.append(
                 {
-                    "prompt": _build_chat_prompt(context=context, language=_normalize_language_name(language)),
+                    "prompt": self._build_prompt(context, language),
                     "multi_modal_data": {"audio": [audio]},
                 }
             )
@@ -254,64 +268,21 @@ class Qwen3VLLMBackend:
         )
 
         transcripts: list[_GeneratedTranscript] = []
-        for output, (_audio, _context, language) in zip(outputs, audio_items):
-            raw_text = str(output.outputs[0].text if output.outputs else "")
-            parsed_language, parsed_text = _parse_asr_output(raw_text, _normalize_language_name(language))
-            transcripts.append(_GeneratedTranscript(text=parsed_text, language=parsed_language))
+        for output, (_audio, _context, language) in zip(
+            outputs, audio_items, strict=True
+        ):
+            if not output.outputs:
+                raise RuntimeError("R2T2 returned no offline output")
+            completion = output.outputs[0]
+            if completion.finish_reason == "length":
+                raise RuntimeError("R2T2 offline decoding exceeded its token budget")
+            parsed_language, parsed_text = _parse_asr_output(
+                str(completion.text), _normalize_language_name(language)
+            )
+            transcripts.append(
+                _GeneratedTranscript(text=parsed_text, language=parsed_language)
+            )
         return transcripts
-
-    def transcribe_text(
-        self,
-        audio_path: str,
-        context: str = "",
-        language: Optional[str] = None,
-        enable_itn: bool = False,
-    ) -> str:
-        transcript = self._run_generate([(_load_audio(audio_path), context, language)])[0]
-        return normalize_asr_text(transcript.text, enable_itn=enable_itn)
-
-    def transcribe_raw(
-        self,
-        audio_path: str,
-        context: str = "",
-        language: Optional[str] = None,
-        word_timestamps: bool = False,
-        enable_itn: bool = False,
-    ) -> ASRRawResult:
-        audio = _load_audio(audio_path)
-        transcript = self._run_generate([(audio, context, language)])[0]
-        text = normalize_asr_text(transcript.text, enable_itn=enable_itn)
-        if not word_timestamps:
-            return ASRRawResult(
-                text=text,
-                segments=[ASRSegmentResult(text=text, start_time=0.0, end_time=0.0)] if text else [],
-            )
-
-        aligned = self.align_transcript(audio_path=audio_path, text=text, language=language, audio=audio)
-        word_tokens = [
-            WordToken(
-                text=str(item["text"]),
-                start_time=round(float(item["start_ms"]) / 1000.0, 3),
-                end_time=round(float(item["end_ms"]) / 1000.0, 3),
-            )
-            for item in aligned
-        ]
-        if not word_tokens:
-            return ASRRawResult(
-                text=text,
-                segments=[ASRSegmentResult(text=text, start_time=0.0, end_time=0.0)] if text else [],
-            )
-        return ASRRawResult(
-            text=text,
-            segments=[
-                ASRSegmentResult(
-                    text=text,
-                    start_time=word_tokens[0].start_time,
-                    end_time=word_tokens[-1].end_time,
-                    word_tokens=word_tokens,
-                )
-            ],
-        )
 
     def transcribe_batch(
         self,
@@ -324,15 +295,29 @@ class Qwen3VLLMBackend:
         audios = [_load_audio(path) for path in audio_paths]
         results: list[ASRSegmentResult] = []
         for start in range(0, len(audios), self._max_inference_batch_size):
-            chunk = audios[start:start + self._max_inference_batch_size]
+            chunk = audios[start : start + self._max_inference_batch_size]
             stage_started = time.monotonic()
-            logger.info("Qwen GPU ASR batch started: segments=%s audio_seconds=%.2f", len(chunk), sum(len(a) for a in chunk) / _DEFAULT_SAMPLE_RATE)
-            transcripts = self._run_generate([(audio, context, language) for audio in chunk])
-            logger.info("Qwen GPU ASR batch finished: segments=%s elapsed_seconds=%.2f", len(chunk), time.monotonic() - stage_started)
-            for audio_path, audio, transcript in zip(audio_paths[start:start + len(chunk)], chunk, transcripts):
+            logger.info(
+                "R2T2 offline ASR batch started: segments=%s audio_seconds=%.2f",
+                len(chunk),
+                sum(len(a) for a in chunk) / _DEFAULT_SAMPLE_RATE,
+            )
+            transcripts = self._run_generate(
+                [(audio, context, language) for audio in chunk]
+            )
+            logger.info(
+                "R2T2 offline ASR batch finished: segments=%s elapsed_seconds=%.2f",
+                len(chunk),
+                time.monotonic() - stage_started,
+            )
+            for audio_path, audio, transcript in zip(
+                audio_paths[start : start + len(chunk)], chunk, transcripts, strict=True
+            ):
                 text = normalize_asr_text(transcript.text, enable_itn=enable_itn)
                 if not word_timestamps:
-                    results.append(ASRSegmentResult(text=text, start_time=0.0, end_time=0.0))
+                    results.append(
+                        ASRSegmentResult(text=text, start_time=0.0, end_time=0.0)
+                    )
                     continue
                 aligned = self.align_transcript(
                     audio_path=audio_path,
@@ -371,7 +356,11 @@ class Qwen3VLLMBackend:
 
         aligner = self._get_forced_aligner()
         stage_started = time.monotonic()
-        logger.info("Qwen GPU alignment started: file=%s units=%s", os.path.basename(audio_path), len(tokens))
+        logger.info(
+            "Qwen GPU alignment started: file=%s units=%s",
+            os.path.basename(audio_path),
+            len(tokens),
+        )
         prompt = _build_alignment_prompt(tokens)
         audio_array = audio if audio is not None else _load_audio(audio_path)
         outputs = aligner.encode(
@@ -380,9 +369,14 @@ class Qwen3VLLMBackend:
         )
         output = outputs[0]
         logits = output.outputs.data
-        predictions = logits.argmax(-1) if hasattr(logits, "argmax") else np.argmax(logits, axis=-1)
+        predictions = (
+            logits.argmax(-1)
+            if hasattr(logits, "argmax")
+            else np.argmax(logits, axis=-1)
+        )
         ts_predictions = [
-            float(pred.item() if hasattr(pred, "item") else pred) * float(self._timestamp_segment_time or 0.0)
+            float(pred.item() if hasattr(pred, "item") else pred)
+            * float(self._timestamp_segment_time or 0.0)
             for tid, pred in zip(output.prompt_token_ids, predictions)
             if int(tid) == int(self._timestamp_token_id or -1)
         ]
@@ -401,12 +395,18 @@ class Qwen3VLLMBackend:
         if repaired:
             logger.warning(
                 "Repaired forced alignment timestamps: file=%s changed=%s total=%s",
-                os.path.basename(audio_path), repaired, expected_timestamps,
+                os.path.basename(audio_path),
+                repaired,
+                expected_timestamps,
             )
         aligned: list[dict[str, float | str]] = []
         for index, token in enumerate(tokens):
             start_ms = fixed_timestamps[index * 2]
             end_ms = fixed_timestamps[index * 2 + 1]
             aligned.append({"text": token, "start_ms": start_ms, "end_ms": end_ms})
-        logger.info("Qwen GPU alignment finished: units=%s elapsed_seconds=%.2f", len(aligned), time.monotonic() - stage_started)
+        logger.info(
+            "Qwen GPU alignment finished: units=%s elapsed_seconds=%.2f",
+            len(aligned),
+            time.monotonic() - stage_started,
+        )
         return aligned

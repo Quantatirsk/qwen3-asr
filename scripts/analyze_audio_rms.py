@@ -92,7 +92,7 @@ def load_audio(file_path: str, channel: str = 'stereo') -> tuple:
             return audio_float, sample_rate
 
         except ImportError:
-            print("错误: 请先运行 ./scripts/sync_cpu_env.sh 安装 soundfile 依赖")
+            print("Install dependencies first: ./scripts/sync_gpu_env.sh")
             sys.exit(1)
 
 

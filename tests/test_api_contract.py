@@ -10,7 +10,6 @@ from starlette.websockets import WebSocketDisconnect
 from app.api.v1 import api_router
 from app.core.config import settings
 from app.services.asr.engines import ASRFullResult, ASRSegmentResult, WordToken
-from app.services.asr.model_selection import get_default_offline_model_id
 from app.services.realtime.protocol import MODEL_ID, StreamError
 
 
@@ -25,6 +24,7 @@ class APIContractTest(unittest.TestCase):
             [ASRSegmentResult("hello", 0, 1, "speaker1", [WordToken("hello", 0, 1)])],
             1,
         )
+
         async def start_transcription(**kwargs):
             async def transcribe():
                 return result
@@ -46,7 +46,7 @@ class APIContractTest(unittest.TestCase):
                         "/v1/audio/transcriptions",
                         files={"file": ("test.wav", b"fake", "audio/wav")},
                         data={
-                            "model": get_default_offline_model_id(),
+                            "model": MODEL_ID,
                             "response_format": fmt,
                             "word_timestamps": "true",
                         },
@@ -78,72 +78,115 @@ class APIContractTest(unittest.TestCase):
         )
         self.service.start_transcription.assert_awaited_once()
 
-    def test_legacy_offline_model_names_keep_server_default(self):
-        names = (None, "", "qwen3-asr", "qwen3-asr-0.6b", "qwen3-asr-1.7b",
-                 "Qwen/Qwen3-ASR-1.7B", "whisper-1", "paraformer-large", "custom-local-model")
-        with patch("app.api.v1.openai_compatible.get_offline_transcription_service", return_value=self.service):
-            for model in names:
-                for fmt in ("json", "verbose_json", "text", "srt", "vtt"):
-                    with self.subTest(model=model, format=fmt):
-                        data = {"response_format": fmt, "word_timestamps": "true"}
-                        if model is not None:
-                            data["model"] = model
-                        response = self.client.post("/v1/audio/transcriptions",
-                            files={"file": ("test.wav", b"fake")}, data=data)
-                        self.assertEqual(response.status_code, 200, response.text)
-                        self.assertIn("hello", response.text)
-        self.assertEqual(self.service.start_transcription.await_count, len(names) * 5)
-
-    def test_legacy_model_name_with_audio_url(self):
-        with patch("app.api.v1.openai_compatible.get_offline_transcription_service", return_value=self.service):
-            response = self.client.post("/v1/audio/transcriptions", data={
-                "model": "whisper-1", "audio_address": "https://example.test/audio.wav",
-                "response_format": "verbose_json", "word_timestamps": "true"})
-        self.assertEqual(response.status_code, 200, response.text)
-        self.assertEqual(response.json()["words"][0]["word"], "hello")
-        self.service.start_transcription.assert_awaited_once()
-        self.assertIsNone(self.service.start_transcription.call_args.kwargs["audio_data"])
-        self.assertEqual(self.service.start_transcription.call_args.kwargs["audio_address"],
-                         "https://example.test/audio.wav")
-
-    def test_r2t2_cannot_route_to_offline(self):
+    def test_offline_default_model(self) -> None:
         with patch(
             "app.api.v1.openai_compatible.get_offline_transcription_service",
             return_value=self.service,
         ):
-            for model in (MODEL_ID, "netease-youdao/Confucius4-R2T2"):
+            response = self.client.post(
+                "/v1/audio/transcriptions",
+                files={"file": ("test.wav", b"fake")},
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.service.start_transcription.assert_awaited_once()
+
+    def test_r2t2_model_with_audio_url(self) -> None:
+        with patch(
+            "app.api.v1.openai_compatible.get_offline_transcription_service",
+            return_value=self.service,
+        ):
+            response = self.client.post(
+                "/v1/audio/transcriptions",
+                data={
+                    "model": MODEL_ID,
+                    "audio_address": "https://example.test/audio.wav",
+                    "response_format": "verbose_json",
+                    "word_timestamps": "true",
+                },
+            )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["words"][0]["word"], "hello")
+        self.service.start_transcription.assert_awaited_once()
+        options = self.service.start_transcription.call_args.kwargs
+        self.assertIsNone(options["audio_data"])
+        self.assertEqual(options["audio_address"], "https://example.test/audio.wav")
+
+    def test_unknown_and_legacy_models_rejected_before_inference(self) -> None:
+        names = (
+            "qwen3-asr",
+            "qwen3-asr-0.6b",
+            "qwen3-asr-1.7b",
+            "Qwen/Qwen3-ASR-1.7B",
+            "whisper-1",
+            "paraformer-large",
+            "custom-local-model",
+            "netease-youdao/Confucius4-R2T2",
+            "Confucius4-R2T2",
+        )
+        with patch(
+            "app.api.v1.openai_compatible.get_offline_transcription_service",
+            return_value=self.service,
+        ) as get_service:
+            for model in names:
                 with self.subTest(model=model):
                     response = self.client.post(
                         "/v1/audio/transcriptions",
                         files={"file": ("test.wav", b"fake")},
                         data={"model": model},
                     )
-                    self.assertEqual(response.status_code, 400)
+                    self.assertEqual(response.status_code, 400, response.text)
+                    self.assertEqual(response.json()["error"]["param"], "model")
+                    self.assertEqual(
+                        response.json()["error"]["code"], "model_not_supported"
+                    )
+        get_service.assert_not_called()
         self.service.start_transcription.assert_not_called()
 
-    def test_offline_models_survive_remote_failure(self):
+    def test_models_do_not_probe_remote_availability(self) -> None:
         with patch(
             "app.services.realtime.client.get_capabilities",
             side_effect=StreamError("unavailable", "test", 503),
-        ):
+        ) as get_capabilities:
             response = self.client.get("/v1/models")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            [m["id"] for m in response.json()["data"]], [get_default_offline_model_id()]
+        self.assertEqual([model["id"] for model in response.json()["data"]], [MODEL_ID])
+        self.assertEqual(response.json()["data"][0]["owned_by"], "netease-youdao")
+        get_capabilities.assert_not_called()
+
+    def test_declared_models_share_one_offline_and_realtime_entry(self) -> None:
+        runtime = SimpleNamespace(
+            resolve_model_id=Mock(return_value=MODEL_ID),
+            get_loaded_model_ids=Mock(return_value=[MODEL_ID]),
         )
+        with patch("app.api.v1.asr.get_runtime_router", return_value=runtime):
+            response = self.client.get("/stream/v1/asr/models")
+        self.assertEqual(response.status_code, 200, response.text)
+        metadata = response.json()
+        self.assertEqual(metadata["declared_count"], 1)
+        entry = metadata["declared_entries"][0]
+        self.assertEqual(entry["id"], MODEL_ID)
+        self.assertTrue(entry["supports_realtime"])
+        self.assertEqual(entry["offline_model"], entry["realtime_model"])
+        self.assertEqual(metadata["runtime"]["loaded_model_ids"], [MODEL_ID])
 
     def test_health_does_not_borrow_busy_offline_engine(self):
         runtime = SimpleNamespace(
-            resolve_model_id=Mock(return_value="qwen3-asr-1.7b"),
-            get_loaded_model_ids=Mock(return_value=["qwen3-asr-1.7b"]),
+            resolve_model_id=Mock(return_value=MODEL_ID),
+            get_loaded_model_ids=Mock(return_value=[MODEL_ID]),
             get_memory_usage=Mock(return_value={}),
-            acquire_engine=AsyncMock(side_effect=AssertionError("health borrowed engine")),
+            acquire_engine=AsyncMock(
+                side_effect=AssertionError("health borrowed engine")
+            ),
         )
         with patch("app.api.v1.asr.get_runtime_router", return_value=runtime):
-            with patch("app.api.v1.asr.detect_device", return_value="cpu"):
-                self.assertTrue(self.client.get("/stream/v1/asr/health").json()["model_loaded"])
+            with patch("app.api.v1.asr.detect_device", return_value="cuda:0"):
+                self.assertTrue(
+                    self.client.get("/stream/v1/asr/health").json()["model_loaded"]
+                )
                 runtime.get_loaded_model_ids.return_value = []
-                self.assertFalse(self.client.get("/stream/v1/asr/health").json()["model_loaded"])
+                self.assertFalse(
+                    self.client.get("/stream/v1/asr/health").json()["model_loaded"]
+                )
         runtime.acquire_engine.assert_not_called()
 
     def test_realtime_auth_and_removed_chat_route(self):

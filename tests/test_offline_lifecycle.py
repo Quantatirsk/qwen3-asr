@@ -17,18 +17,18 @@ from app.services.asr.offline_transcription_service import (
     OfflineTranscriptionOptions,
     OfflineTranscriptionService,
 )
-from app.services.asr.runtime.router import RuntimeFamily, RuntimeRouter
+from app.services.asr.runtime.router import RuntimeRouter
 from app.utils.audio import NormalizedAudio
 from app.utils.audio import normalize_audio_for_asr
 
 with (
     patch(
         "app.services.asr.model_selection.get_offline_model_ids",
-        return_value=["qwen3-asr-0.6b"],
+        return_value=["confucius4-r2t2"],
     ),
     patch(
         "app.services.asr.model_selection.get_default_offline_model_id",
-        return_value="qwen3-asr-0.6b",
+        return_value="confucius4-r2t2",
     ),
 ):
     from app.api.v1 import asr, openai_compatible
@@ -148,16 +148,11 @@ class OfflineLifecycleTests(unittest.IsolatedAsyncioTestCase):
             self.addCleanup(patcher.stop)
         router = RuntimeRouter()
         for patcher in [
-            patch.object(
-                router, "_resolve_family", return_value=RuntimeFamily.QWEN_VLLM
-            ),
+            patch.object(router, "resolve_model_id", return_value="confucius4-r2t2"),
             patch.object(
                 router,
-                "_get_shared_engine",
-                return_value=(
-                    SimpleNamespace(transcribe_long_audio=infer),
-                    asyncio.Semaphore(1),
-                ),
+                "_get_engine",
+                return_value=SimpleNamespace(transcribe_long_audio=infer),
             ),
             patch(
                 "app.services.asr.offline_transcription_service.get_runtime_router",

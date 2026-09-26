@@ -3,12 +3,7 @@
 ASR API路由
 """
 
-from fastapi import (
-    APIRouter,
-    Request,
-    HTTPException,
-    Depends
-)
+from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from typing import Annotated
 import time
@@ -108,7 +103,7 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
 如果请求体和 `audio_address` 同时存在，服务会优先使用请求体，并忽略 `audio_address`。
 
 ## 注意事项
-- 离线路径固定使用服务当前启用的 Qwen3-ASR 模型；通过 `QWEN3_ASR_MODEL` 控制型号
+- Offline transcription uses Confucius4-R2T2 on CUDA.
 - `vocabulary_id` 参数用于传递无权重热词上下文（如：`阿里巴巴 腾讯`）。[Deprecated] 数字权重语法不受支持，传入时会被忽略
 - 音频会自动转换为 16kHz 采样率进行识别
 """,
@@ -159,7 +154,7 @@ async def get_asr_params(request: Request) -> ASRQueryParams:
                     "default": False,
                     "example": False,
                 },
-                "description": "是否返回字词级时间戳（默认关闭；Qwen CUDA vLLM / CPU Rust 在启用时会自动调用 forced aligner）",
+                "description": "Return word timestamps using the forced aligner (disabled by default).",
             },
             # 5. 增强选项
             {
@@ -233,7 +228,9 @@ async def asr_transcribe(
         )
         asr_result = await inference_task
 
-        logger.info(f"[{task_id}] 识别完成，共 {len(asr_result.segments)} 个分段，总字符: {len(asr_result.text)}")
+        logger.info(
+            f"[{task_id}] 识别完成，共 {len(asr_result.segments)} 个分段，总字符: {len(asr_result.text)}"
+        )
 
         # 构建分段结果（始终返回 segments，短音频也是 1 个 segment）
         segments_data = []
@@ -296,6 +293,7 @@ async def asr_transcribe(
 
         # 使用标准错误格式
         from ...core.exceptions import create_error_response
+
         response_data = create_error_response(
             error_code="DEFAULT_SERVER_ERROR",
             message=f"内部服务错误: {str(e)}",
@@ -314,7 +312,7 @@ async def asr_transcribe(
 ## 返回信息
 - **status**: 服务状态（healthy/unhealthy/error）
 - **model_loaded**: 默认模型是否已加载
-- **device**: 当前推理设备（cuda:0/cpu）
+- **device**: CUDA inference device
 - **loaded_models**: 已加载的模型列表
 - **memory_usage**: GPU 显存使用情况（仅 GPU 模式）
 """,
@@ -357,19 +355,19 @@ async def health_check(request: Request):
             "message": str(e),
         }
 
+
 @router.get(
     "/asr/models",
     response_model=ASRModelsResponse,
     summary="获取声明条目列表",
     description="""
-返回系统声明的离线模型与 realtime capability 信息。
+Return the Confucius4-R2T2 model and its runtime status.
 
 ## 条目说明
 
 | ID | 类型 | 说明 |
 |----|------|------|
-| qwen3-asr-1.7b | model | 离线/实时共用的 Qwen3-ASR 模型条目 |
-| qwen3-asr-0.6b | model | 轻量版 Qwen3-ASR 模型条目 |
+| confucius4-r2t2 | model | Confucius4-R2T2 for offline and realtime transcription |
 
 ## 返回信息
 - **declared_entries**: 声明的模型与 capability 列表

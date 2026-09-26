@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""ASR runtime routing and pooling layer."""
+"""Serialized offline R2T2 runtime."""
 
 from .router import (
     RuntimeEngineLease,

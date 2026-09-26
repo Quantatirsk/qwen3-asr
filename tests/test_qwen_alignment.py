@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import numpy as np
 
 from app.services.asr.qwen3_alignment import repair_timestamps, split_alignment_units
-from app.services.asr.qwen3_vllm import Qwen3VLLMBackend
+from app.services.asr.r2t2_vllm import R2T2VLLMBackend
 
 
 class TimestampRepairTest(unittest.TestCase):
@@ -67,7 +67,7 @@ class TimestampRepairTest(unittest.TestCase):
 
 class AlignmentAdapterTest(unittest.TestCase):
     def make_backend(self, bins):
-        backend = Qwen3VLLMBackend.__new__(Qwen3VLLMBackend)
+        backend = R2T2VLLMBackend.__new__(R2T2VLLMBackend)
         backend._timestamp_token_id = 42
         backend._timestamp_segment_time = 80
         # Non-timestamp tokens also have classifier outputs and must be ignored.
@@ -125,14 +125,12 @@ class AlignmentAdapterTest(unittest.TestCase):
         backend = self.make_backend([1, 2, 3, 4])
         backend._run_generate = Mock(return_value=[SimpleNamespace(text="你好。")])
         with patch(
-            "app.services.asr.qwen3_vllm._load_audio", return_value=np.zeros(16000)
+            "app.services.asr.r2t2_vllm._load_audio", return_value=np.zeros(16000)
         ):
-            result = backend.transcribe_raw("unused.wav", word_timestamps=True)
+            backend._max_inference_batch_size = 4
+            result = backend.transcribe_batch(["unused.wav"], word_timestamps=True)[0]
         self.assertEqual(result.text, "你好。")
-        self.assertEqual(result.segments[0].text, "你好。")
-        self.assertEqual(
-            [word.text for word in result.segments[0].word_tokens], ["你", "好"]
-        )
+        self.assertEqual([word.text for word in result.word_tokens], ["你", "好"])
 
 
 if __name__ == "__main__":

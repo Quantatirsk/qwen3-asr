@@ -1,449 +1,48 @@
-<div align="center">
+# R2T2 ASR
 
-<h1>Qwen3-ASR</h1>
-<h3>Ready-to-use Local Speech Recognition API Service</h3>
+本分支提供基于 Confucius4-R2T2 的实时与离线语音识别服务，仅支持 Linux x86_64 / NVIDIA CUDA。实时与离线使用同一固定版本的 R2T2 权重，各自独立推理。
 
-Speech recognition API service with Qwen3-ASR offline inference (CUDA vLLM or CPU Rust) and independent R2T2 streaming inference. Offline Alibaba Cloud and OpenAI Audio interfaces remain available; R2T2 provides an auto-language, concurrent native WebSocket interface.
+离线流程为：完整录音 → CAM++ 说话人分离 → 按时间区间切段 → R2T2 重新识别 → 强制对齐 → 合并带说话人、时间戳的结果。离线识别不读取实时转写文本。保留 FSMN VAD 和 Qwen3-ForcedAligner-0.6B；强制对齐模型仅生成时间戳，不承担文字识别。
 
-[简体中文](./docs/README_zh.md)
+## 启动
 
----
-
-![Static Badge](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
-![Static Badge](https://img.shields.io/badge/Torch-2.10.0-%23EE4C2C?logo=pytorch&logoColor=white)
-![Static Badge](https://img.shields.io/badge/CUDA-12.8_default-%2376B900?logo=nvidia&logoColor=white)
-
-</div>
-
-## Live Demo Site
-
-- **Web Demo**: https://asr.vect.one
-
-## Demo
-
-[![Demo](./demo/demo.png)](https://media.cdn.vect.one/qwenasr_client_demo.mp4)
-
-## Contact Author
-
-- **Email**: [pengzhia@gmail.com](mailto:pengzhia@gmail.com)
-- **WeChat**:
-
-<img src="./demo/contact.jpg" alt="WeChat QR code" width="220">
-
-## Release 1.0.3
-
-> `v1.0.3` removes the voiceprint database and sqlite-vec dependency, unifies
-> offline deployment under `HF_HUB_OFFLINE`, and reduces the default deployment
-> configuration to the settings in `.env.example`.
->
-> `v1.0.0` introduced a large breaking refactor relative to the earlier `main` branch.
-> If you are upgrading from `main`, read the release notes before reusing old deployment assumptions.
->
-> Key breaking changes:
-> - Python dependency management is now `uv`-based (`pyproject.toml` + `uv.lock`); `requirements*.txt` are gone
-> - Runtime stack changed to `CUDA -> official vLLM`, `CPU/macOS -> vendored QwenASR Rust`
-> - `MLX` / Apple Silicon GPU path has been removed; `mps` is normalized to `cpu`
-> - macOS / Apple Silicon now defaults to `qwen3-asr-0.6b`; set `QWEN3_ASR_MODEL` to override it
-> - `ENABLED_MODELS` has been removed
-> - Voiceprint APIs and persistent speaker identity matching have been removed
->
-## Features
-
-- **Offline And Realtime** - Qwen3-ASR handles offline files; R2T2 handles streaming audio with automatic language detection. Both run in one container and shared vLLM environment. See [deployment and protocol](docs/realtime.md).
-- **Offline Speaker Diarization** - File transcription supports speaker identification using CAM++
-- **OpenAI API Compatible** - Supports `/v1/audio/transcriptions` endpoint, works with OpenAI SDK
-- **Alibaba Cloud REST Compatible** - Retains the offline REST API; the old Aliyun WebSocket protocol has been removed
-- **WebSocket Streaming** - Native R2T2 incremental text over `/v1/stream`
-- **Intelligent Audio Segmentation** - VAD-based greedy merge algorithm for automatic long audio splitting
-- **GPU Batch Processing** - Batch inference support, 2-3x faster than sequential processing
-- **Resource-Aware Runtime** - Auto-selects the appropriate Qwen3-ASR model for the current machine
-
-## Acknowledgements
-
-- [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR) provides the official model family and multimodal/vLLM usage guidance
-- [QwenASR](https://github.com/huanglizhuo/QwenASR) provides the CPU Rust backend vendored by this project
-
-## Quick Deployment
-
-### 1. Docker Deployment (Recommended)
-
-For the unified offline + realtime service on GPU 1 with bridge port mapping
-`4174:8000` (one container, no host networking):
+安装 NVIDIA 驱动、Docker 和 NVIDIA Container Toolkit 后：
 
 ```bash
-bash deploy/prepare.sh
-ASR_GPU=1 docker compose -f docker-compose.realtime.yml up -d
-```
-
-See [runtime requirements and model cache preparation](docs/realtime.md).
-Microphone page: `http://localhost:4174/realtime`.
-The configurations below are the legacy offline-only deployments.
-
-```bash
-# Copy and edit configuration
 cp .env.example .env
-# Edit .env to set API_KEY (optional)
-
-# Start service (GPU version)
-docker-compose up -d
-
-# Or CPU version
-docker-compose -f docker-compose-cpu.yml up -d
-
-# Multi-GPU auto mode (one instance per visible GPU)
-CUDA_VISIBLE_DEVICES=0,1,2,3 docker-compose up -d
+docker compose up -d --build
+docker compose logs -f asr
 ```
 
-Service URLs:
-- **API Endpoint**: `http://localhost:17003`
-- **API Docs**: `http://localhost:17003/docs`
+默认使用 GPU 0，服务地址为 `http://localhost:4174`，录音页面 `/realtime`，API 文档 `/docs`。首次启动下载模型到 `models/`；后续可以设置 `HF_HUB_OFFLINE=1`。显存预算需要按硬件调整，详见 [部署说明](docs/deployment.md)。
 
-**docker run (alternative):**
+## 文件转写
 
 ```bash
-# GPU version
-docker run -d --name qwen3-asr \
-  --gpus all \
-  -p 17003:8000 \
-  -e CUDA_VISIBLE_DEVICES=0,1,2,3 \
-  -e API_KEY=your_api_key \
-  -v ./models/modelscope:/root/.cache/modelscope \
-  -v ./models/huggingface:/root/.cache/huggingface \
-  -v ./data:/app/data \
-  quantatrisk/qwen3-asr:gpu-latest
-
-# CPU version
-docker run -d --name qwen3-asr \
-  -p 17003:8000 \
-  -v ./models/modelscope:/root/.cache/modelscope \
-  -v ./models/huggingface:/root/.cache/huggingface \
-  -v ./data:/app/data \
-  quantatrisk/qwen3-asr:cpu-latest
+curl http://localhost:4174/v1/audio/transcriptions \
+  -F file=@recording.wav \
+  -F model=confucius4-r2t2 \
+  -F word_timestamps=true \
+  -F response_format=verbose_json \
+  -F enable_speaker_diarization=true
 ```
 
-> **Note**: GPU images default to CUDA 12.8/cu128 for Blackwell-capable GPUs.
-> Developers can rebuild `Dockerfile.gpu` for CUDA 12.6, CUDA 13.0, or another backend by overriding Docker build args.
-> CPU images now support `qwen3-asr-0.6b` via the bundled QwenASR Rust backend. The default CPU image uses a portable Rust target; set `QWENASR_RUST_TARGET_CPU=native` only for self-built, host-specific images.
-> On CUDA vLLM and CPU Rust, `word_timestamps=true` now triggers the forced aligner automatically.
-> On macOS / Apple Silicon, Qwen3-ASR now runs through the Rust CPU backend.
+唯一识别模型 ID 为 `confucius4-r2t2`。支持 `/v1/audio/transcriptions` 和 `/stream/v1/asr` 下的离线接口；完整参数以 `/docs` 为准。
 
-**Custom GPU backend builds:**
+实时接口为 `/v1/stream`，使用 16 kHz 单声道 PCM，通过 WebSocket 返回追加式文本；协议见 [实时转写](docs/realtime.md)。实时不提供说话人标签和词级时间戳。
+
+## 开发与验证
 
 ```bash
-# Default GPU build: CUDA 12.8 / PyTorch cu128
-docker build -t qwen3-asr:gpu-cu128 -f Dockerfile.gpu .
-
-# CUDA 12.6 build for older deployments
-docker build -t qwen3-asr:gpu-cu126 -f Dockerfile.gpu \
-  --build-arg PYTORCH_BASE_IMAGE=pytorch/pytorch:2.10.0-cuda12.6-cudnn9-runtime \
-  --build-arg PYTORCH_CUDA_INDEX=https://download.pytorch.org/whl/cu126 \
-  --build-arg CUDA_NVCC_PACKAGE=cuda-nvcc-12-6 \
-  --build-arg TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9" \
-  .
-
-# CUDA 13.0 build when your driver/toolchain requires it
-docker build -t qwen3-asr:gpu-cu130 -f Dockerfile.gpu \
-  --build-arg PYTORCH_BASE_IMAGE=pytorch/pytorch:2.10.0-cuda13.0-cudnn9-runtime \
-  --build-arg PYTORCH_CUDA_INDEX=https://download.pytorch.org/whl/cu130 \
-  --build-arg CUDA_NVCC_PACKAGE=cuda-nvcc-13-0 \
-  --build-arg TORCH_CUDA_ARCH_LIST="12.0+PTX" \
-  .
+uv sync --frozen
+uv run python start.py
+uv run python -m unittest discover -s tests
 ```
 
-**Offline Deployment**: Use the helper script to prepare the current runtime model package, then copy to the offline machine:
+依赖仅为 Linux CUDA 环境锁定。模型质量、GPU 显存及吞吐量必须用真实录音在 CUDA 服务器验收；本地逻辑测试不能替代模型推理验证。
 
-```bash
-# 1. Prepare models
-./scripts/prepare-models.sh
+## 上游
 
-# 2. Copy the package to offline server
-scp qwen3-asr-models-*.tar.gz user@server:/opt/qwen3-asr/
-
-# 3. On offline server, extract and start
-tar -xzvf qwen3-asr-models-*.tar.gz
-docker-compose up -d
-```
-
-> Detailed deployment instructions: [Deployment Guide](./docs/deployment.md)
-
-### Local Development
-
-**System Requirements:**
-
-- Python 3.10+
-- CUDA 12.8+ for the default GPU image; CUDA 12.6 / 13.0 can be built with Docker args
-- FFmpeg (audio format conversion)
-
-**Installation:**
-
-Runtime dependency locks now default to the GPU stack at the repo root, with CPU kept as a specialized environment:
-
-| Mode | Command | Notes |
-|------|---------|-------|
-| GPU (default) | `uv sync` | Syncs the root [pyproject.toml](/opt/qwen3-asr/pyproject.toml) and [uv.lock](/opt/qwen3-asr/uv.lock) into `.venv`, including CUDA 12.8/cu128 `torch/torchaudio/torchvision` |
-| CPU (specialized) | `./scripts/sync_cpu_env.sh` | Syncs the dedicated CPU lock in [environments/cpu/pyproject.toml](/opt/qwen3-asr/environments/cpu/pyproject.toml) into `.venv` |
-
-```bash
-# Clone project
-cd qwen3-asr
-
-# Install dependencies (Linux/CUDA)
-uv sync
-
-# Start service
-source .venv/bin/activate
-python start.py
-```
-
-macOS / Apple Silicon local development:
-
-```bash
-./scripts/sync_cpu_env.sh
-source .venv/bin/activate
-python start.py
-```
-
-Interactive local terminals use the startup UI automatically. Containers and
-multi-worker deployments use normal logs.
-
-## Runtime Defaults
-
-Current runtime behavior on the mainline codebase:
-
-- `DEVICE=auto` resolves to `cuda:0` when CUDA is available, otherwise `cpu`
-- `DEVICE=mps` is normalized to `cpu`
-- `Linux + CUDA` uses official `vLLM`
-- `Linux + CPU` uses vendored `QwenASR` Rust
-- `macOS / Apple Silicon` also uses vendored `QwenASR` Rust
-- macOS / Apple Silicon defaults to `qwen3-asr-0.6b`
-- `qwen3-asr-1.7b` on macOS is only used when `QWEN3_ASR_MODEL=qwen3-asr-1.7b`
-- `word_timestamps=true` works on the current offline CUDA and CPU Rust paths
-- WebSocket streaming does not currently return word-level timestamps
-- CAM++ speaker diarization remains required and still follows `DEVICE`; on CPU its main hotspot is speaker verification embedding
-
-## API Endpoints
-
-### OpenAI Compatible API
-
-| Endpoint | Method | Function |
-|----------|--------|----------|
-| `/v1/audio/transcriptions` | POST | Audio transcription (OpenAI compatible) |
-| `/v1/models` | GET | Offline model list |
-
-**Request Parameters:**
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `file` | file | Preferred when provided | Audio/video file |
-| `audio_address` | string | Optional | Audio/video URL (HTTP/HTTPS). Ignored when `file` is also provided |
-| `language` | string | Auto-detect | Language code (zh/en/ja) |
-| `enable_speaker_diarization` | bool | `true` | Enable speaker diarization |
-| `word_timestamps` | bool | `false` | Return word-level timestamps when the backend supports them. Qwen CUDA vLLM and CPU Rust automatically use the forced aligner when enabled. |
-| `response_format` | string | `verbose_json` | Output format |
-| `prompt` | string | - | Prompt text (reserved) |
-| `temperature` | float | `0` | Sampling temperature (reserved) |
-
-**Audio / Video Input Methods:**
-- **File Upload**: Use `file` parameter to upload an audio file or a video container with an audio track
-- **URL Download**: Use `audio_address` parameter to provide an audio/video URL, service will download automatically
-- **Precedence**: If both `file` and `audio_address` are provided, the service uses `file` and ignores `audio_address`
-
-**Usage Examples:**
-
-```python
-# Using OpenAI SDK
-from openai import OpenAI
-
-client = OpenAI(base_url="http://localhost:8000/v1", api_key="your_api_key")
-
-with open("audio.wav", "rb") as f:
-    transcript = client.audio.transcriptions.create(
-        file=f,
-        response_format="verbose_json"  # Get segments and speaker info
-    )
-print(transcript.text)
-```
-
-```bash
-# Using curl
-curl -X POST "http://localhost:8000/v1/audio/transcriptions" \
-  -H "Authorization: Bearer your_api_key" \
-  -F "file=@audio.wav" \
-  -F "model=qwen3-asr-0.6b" \
-  -F "response_format=verbose_json" \
-  -F "enable_speaker_diarization=true"
-```
-
-**Supported Response Formats:** `json`, `text`, `srt`, `vtt`, `verbose_json`
-
-### Alibaba Cloud Compatible API
-
-| Endpoint | Method | Function |
-|----------|--------|----------|
-| `/stream/v1/asr` | POST | Speech recognition (long audio support) |
-| `/stream/v1/asr/models` | GET | Declared model/capability entries |
-| `/stream/v1/asr/health` | GET | Health check |
-| `/v1/stream` | WebSocket | R2T2 streaming, 16 kHz int16 LE mono |
-| `/v1/config` | GET | Realtime capabilities and admission limits |
-| `/realtime` | GET | Microphone transcription page |
-
-**Request Parameters:**
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `audio_address` | string | `https://media.cdn.vect.one/podcast_demo.mp4` (docs example) | Audio/video URL (optional; ignored when body content is uploaded) |
-| `sample_rate` | int | `16000` | Sample rate |
-| `enable_speaker_diarization` | bool | `true` | Enable speaker diarization |
-| `word_timestamps` | bool | `false` | Return word-level timestamps when the backend supports them. Qwen CUDA vLLM and CPU Rust automatically use the forced aligner when enabled. |
-| `vocabulary_id` | string | - | Hotword context (for example: `word1 word2`). **Deprecated:** numeric weights are unsupported and ignored. |
-
-**Usage Examples:**
-
-```bash
-# Basic usage
-curl -X POST "http://localhost:8000/stream/v1/asr" \
-  -H "Content-Type: application/octet-stream" \
-  --data-binary @audio.wav
-
-# With parameters
-curl -X POST "http://localhost:8000/stream/v1/asr?enable_speaker_diarization=true" \
-  -H "Content-Type: application/octet-stream" \
-  --data-binary @audio.wav
-```
-
-**Response Example:**
-
-```json
-{
-  "task_id": "xxx",
-  "status": 200,
-  "message": "SUCCESS",
-  "result": "Speaker1 content...\nSpeaker2 content...",
-  "duration": 60.5,
-  "processing_time": 1.234,
-  "segments": [
-    {
-      "text": "Today is a nice day.",
-      "start_time": 0.0,
-      "end_time": 2.5,
-      "speaker_id": "Speaker1",
-      "word_tokens": [
-        {"text": "Today", "start_time": 0.0, "end_time": 0.5},
-        {"text": "is", "start_time": 0.5, "end_time": 0.7},
-        {"text": "a nice day", "start_time": 0.7, "end_time": 1.5}
-      ]
-    }
-  ]
-}
-```
-
-## Speaker Diarization
-
-Multi-speaker automatic identification based on CAM++ model:
-
-- **Enabled by Default** - `enable_speaker_diarization=true`
-- **Automatic Detection** - No preset speaker count needed, model auto-detects
-- **Speaker Labels** - Response includes `speaker_id` field (e.g., "Speaker1", "Speaker2")
-- **Smart Merging** - Two-layer merge strategy to avoid isolated short segments:
-  - Layer 1: Accumulate merge same-speaker segments < 10 seconds
-  - Layer 2: Accumulate merge continuous segments up to 60 seconds
-- **Subtitle Support** - SRT/VTT output includes speaker labels `[Speaker1] text content`
-
-Disable speaker diarization:
-
-```bash
-# OpenAI API
--F "enable_speaker_diarization=false"
-
-# Alibaba Cloud API
-?enable_speaker_diarization=false
-```
-
-## Audio Processing
-
-### Intelligent Segmentation Strategy
-
-Automatic long audio segmentation:
-
-1. **VAD Voice Detection** - Detect voice boundaries, filter silence
-2. **Greedy Merge** - Accumulate voice segments, ensure each segment does not exceed `MAX_SEGMENT_SEC` (default 60s)
-3. **Silence Split** - Force split when silence between voice segments exceeds 3 seconds
-4. **Batch Inference** - Multi-segment parallel processing, 2-3x performance improvement in GPU mode
-
-### WebSocket Streaming Limitations
-
-R2T2 uses 160 ms strides with 160 ms of initial lookahead. The first decode
-starts after 320 ms of audio; actual text latency also depends on speech and
-inference. Session audio is limited to one hour, with four admitted sessions
-by default. Streaming does not produce speaker labels or word timestamps.
-Legacy streaming endpoints have been removed, without protocol aliases.
-See [protocol, limits and migration](docs/realtime.md).
-
-### Qwen3 Runtime Matrix
-
-| Runtime | Backend | Offline | WebSocket Streaming | Word Timestamps Offline | Word Timestamps Streaming | Maturity |
-|---------|---------|---------|---------------------|-------------------------|---------------------------|----------|
-| Linux + NVIDIA GPU | Official vLLM 0.19.0 | ✅ | Remote R2T2 | ✅ | ❌ | Production-oriented |
-| CPU / macOS | QwenASR Rust | ✅ | Remote R2T2 | ✅ (forced aligner) | ❌ | Recommended local fallback |
-
-## Offline-Capable Models
-
-| Model ID | Name | Description | Features |
-|----------|------|-------------|----------|
-| `qwen3-asr-1.7b` | Qwen3-ASR 1.7B | High-performance multilingual ASR, 52 languages + dialects; CUDA uses vLLM | Offline |
-| `qwen3-asr-0.6b` | Qwen3-ASR 0.6B | Lightweight multilingual ASR; CUDA uses vLLM, CPU/macOS uses Rust backend | Offline |
-
-## Realtime-Only Capability
-
-| Capability ID | Runtime | Description |
-|---------------|---------|-------------|
-| `confucius4-r2t2` | Shared vLLM 0.19.0 environment | Automatic Chinese and English streaming, isolated concurrent sessions |
-
-**Runtime selection:**
-- **VRAM >= 32GB**: Select `qwen3-asr-1.7b`
-- **VRAM < 32GB**: Select `qwen3-asr-0.6b`
-- **No CUDA**: Select the vendored Rust-backed `qwen3-asr-0.6b`
-- **macOS / Apple Silicon**: Always default to `qwen3-asr-0.6b`, regardless of memory size
-- **Environment override**: Set `QWEN3_ASR_MODEL=qwen3-asr-1.7b` or `QWEN3_ASR_MODEL=qwen3-asr-0.6b` to bypass automatic selection
-- Realtime is enabled by `R2T2_URL`; its checkpoint is mounted separately and never loaded in the offline process.
-
-At startup the service checks the current runtime model plan and downloads missing models by default. Set `HF_HUB_OFFLINE=1` only for strictly offline deployments with a prepared cache.
-
-## Environment Variables
-
-Settings in `.env.example`:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NGINX_PORT` | `17003` | Host port exposed by Docker Compose |
-| `API_KEY` | - | API authentication key (optional, unauthenticated if not set) |
-| `CUDA_VISIBLE_DEVICES` | `0` | Visible GPU list; one backend instance is started per visible GPU |
-| `QWEN3_ASR_MODEL` | auto | Force `qwen3-asr-1.7b` or `qwen3-asr-0.6b` instead of VRAM-based selection |
-| `HF_HUB_OFFLINE` | unset | Set to `1` only after preparing `./models` for offline deployment |
-| `HF_ENDPOINT` | unset | Online Hugging Face mirror endpoint, for example `https://hf-mirror.com` |
-
-## API Documentation
-
-After starting the service:
-
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-## Links
-
-- **Deployment Guide**: [Detailed Docs](./docs/deployment.md)
-- **Qwen3-ASR**: [Qwen3-ASR GitHub](https://github.com/QwenLM/Qwen3-ASR)
-- **FunASR**: [FunASR GitHub](https://github.com/alibaba-damo-academy/FunASR)
-- **Chinese README**: [中文文档](./docs/README_zh.md)
-
-## License
-
-This project uses the MIT License - see [LICENSE](LICENSE) file for details.
-
-## Star History
-
-[![Star History Chart](https://star-history.dera.page/svg?repos=Quantatirsk/qwen3-asr&type=Date)](https://star-history.dera.page/#Quantatirsk/qwen3-asr&Date)
-
-## Contributing
-
-Issues and Pull Requests are welcome to improve the project!
+- [Confucius4-R2T2](https://github.com/netease-youdao/Confucius4-R2T2)：实时与离线识别；源码归属见 `deploy/R2T2-NOTICE`，权重遵循上游独立 MODEL_LICENSE。
+- [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR)：保留其中的 Qwen3-ForcedAligner-0.6B 强制对齐能力。
+- [FunASR](https://github.com/modelscope/FunASR)：FSMN VAD 与 CAM++ 说话人模型。

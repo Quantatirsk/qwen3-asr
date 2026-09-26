@@ -1,7 +1,7 @@
 [project]
 name = "qwen3-asr"
 version = "1.0.3"
-description = "Qwen3-ASR API service with CUDA vLLM and CPU Rust backends"
+description = "CUDA-only R2T2 offline and streaming speech recognition service"
 requires-python = ">=3.10,<3.13"
 dependencies = [
   "fastapi==0.128.0",
@@ -14,7 +14,6 @@ dependencies = [
   "modelscope[framework]==1.34.0",
   "soundfile==0.13.1",
   "librosa==0.11.0",
-  "textual>=0.79,<1",
   "websockets==16.0",
   "addict==2.4.0",
   "datasets==3.6.0",
@@ -26,11 +25,11 @@ dependencies = [
   "loguru==0.7.2",
   "rich>=13.9,<14",
   "setuptools>=70.0.0,<81",
-  "torch==2.10.0 ; sys_platform == 'linux'",
-  "torchaudio==2.10.0 ; sys_platform == 'linux'",
-  "torchvision==0.25.0 ; sys_platform == 'linux'",
+  "torch==2.10.0",
+  "torchaudio==2.10.0",
+  "torchvision==0.25.0",
   "transformers>=4.57,<4.58",
-  "vllm[audio]==0.19.0 ; sys_platform == 'linux'",
+  "vllm[audio]==0.19.0",
 ]
 
 [build-system]
@@ -42,16 +41,17 @@ packages = []
 
 [tool.uv]
 package = false
+environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
 
 [tool.uv.sources]
 torch = [
-  { index = "pytorch-cu128", marker = "platform_system == 'Linux'" },
+  { index = "pytorch-cu128" },
 ]
 torchaudio = [
-  { index = "pytorch-cu128", marker = "platform_system == 'Linux'" },
+  { index = "pytorch-cu128" },
 ]
 torchvision = [
-  { index = "pytorch-cu128", marker = "platform_system == 'Linux'" },
+  { index = "pytorch-cu128" },
 ]
 
 [[tool.uv.index]]

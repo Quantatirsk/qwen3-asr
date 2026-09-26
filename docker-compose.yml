@@ -1,24 +1,45 @@
-name: qwen3-asr
-
+name: r2t2-asr
 services:
-  qwen3-asr:
-    image: quantatrisk/qwen3-asr:gpu-latest
-    container_name: qwen3-asr
+  asr:
+    image: local/r2t2-asr:dev
+    build:
+      context: .
+      dockerfile: Dockerfile.gpu
     ports:
-      - "${NGINX_PORT:-17003}:8000"
+      - "${ASR_PORT:-4174}:8000"
+    shm_size: 4gb
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 60s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${ASR_GPU:-0}"]
+              capabilities: [gpu]
+    environment:
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      CUDA_VISIBLE_DEVICES: "0"
+      HF_HUB_OFFLINE: "${HF_HUB_OFFLINE:-0}"
+      HF_ENDPOINT: "${HF_ENDPOINT:-}"
+      API_KEY: "${API_KEY:-}"
+      R2T2_INTERNAL_TOKEN: "${R2T2_INTERNAL_TOKEN:-}"
+      R2T2_GPU_MEMORY_UTILIZATION: "${R2T2_GPU_MEMORY_UTILIZATION:-0.30}"
+      R2T2_MAX_SESSIONS: "${R2T2_MAX_SESSIONS:-4}"
+      R2T2_ENFORCE_EAGER: "${R2T2_ENFORCE_EAGER:-0}"
+      R2T2_OFFLINE_GPU_MEMORY_UTILIZATION: "${R2T2_OFFLINE_GPU_MEMORY_UTILIZATION:-0.30}"
+      R2T2_OFFLINE_MAX_NUM_SEQS: "${R2T2_OFFLINE_MAX_NUM_SEQS:-4}"
+      R2T2_OFFLINE_MAX_MODEL_LEN: "${R2T2_OFFLINE_MAX_MODEL_LEN:-16384}"
+      R2T2_OFFLINE_ENFORCE_EAGER: "${R2T2_OFFLINE_ENFORCE_EAGER:-1}"
+      FORCED_ALIGNER_GPU_MEMORY_UTILIZATION: "${FORCED_ALIGNER_GPU_MEMORY_UTILIZATION:-0.15}"
+      OMP_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "4"
+      VLLM_NO_USAGE_STATS: "1"
     volumes:
       - ./temp:/app/temp
       - ./logs:/app/logs
       - ./data:/app/data
       - ./models/modelscope:/root/.cache/modelscope
       - ./models/huggingface:/root/.cache/huggingface
-    runtime: nvidia
-    environment:
-      R2T2_URL: ${R2T2_URL:-}
-      R2T2_INTERNAL_TOKEN: ${R2T2_INTERNAL_TOKEN:-}
-      API_KEY: ${API_KEY:-}
-      HF_HUB_OFFLINE: ${HF_HUB_OFFLINE:-0}
-      HF_ENDPOINT: ${HF_ENDPOINT:-}
-      QWEN3_ASR_MODEL: ${QWEN3_ASR_MODEL:-}
-      CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:-0}
-    restart: unless-stopped
+      - ./.cache/vllm:/root/.cache/vllm

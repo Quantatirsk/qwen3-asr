@@ -4,6 +4,7 @@
 ASR语音识别配置选项
 """
 
+import math
 import os
 from typing import Optional
 from pathlib import Path
@@ -13,9 +14,9 @@ class Settings:
     """统一应用配置类"""
 
     # 应用信息
-    APP_NAME: str = "Qwen3-ASR Server"
+    APP_NAME: str = "R2T2 ASR Server"
     APP_VERSION: str = "1.0.3"
-    APP_DESCRIPTION: str = "Qwen3-ASR speech recognition API service"
+    APP_DESCRIPTION: str = "CUDA R2T2 offline and realtime speech recognition"
 
     # 服务器配置
     HOST: str = "0.0.0.0"
@@ -26,13 +27,16 @@ class Settings:
     API_KEY: Optional[str] = None  # 从环境变量API_KEY读取，如果为None则鉴权可选
 
     # 设备配置
-    DEVICE: str = "auto"  # auto, cpu, cuda:0, npu:0
+    DEVICE: str = "cuda:0"
 
     # 路径配置
     BASE_DIR: Path = Path(__file__).parent.parent.parent
     TEMP_DIR: str = "temp"
     # ModelScope 默认缓存结构: ~/.cache/modelscope/hub/models/{model_id}
-    MODELSCOPE_PATH: str = os.path.expanduser("~/.cache/modelscope/hub/models")
+    MODELSCOPE_PATH: str = str(
+        Path(os.getenv("MODELSCOPE_CACHE", "~/.cache/modelscope/hub")).expanduser()
+        / "models"
+    )
 
     # 日志配置
     LOG_LEVEL: str = "INFO"
@@ -47,7 +51,6 @@ class Settings:
         "disable_log": True,  # 禁用FunASR的tables输出
         "local_files_only": True,  # 强制使用本地模型，禁止联网下载
     }
-    ASR_MODELS_CONFIG: str = str(BASE_DIR / "app/services/asr/models.json")
     VAD_MODEL: str = "damo/speech_fsmn_vad_zh-cn-16k-common-pytorch"
     R2T2_URL: str = ""
     R2T2_INTERNAL_TOKEN: str = ""
@@ -60,15 +63,12 @@ class Settings:
     # 音频分段配置
     MAX_SEGMENT_SEC: float = 60.0  # Max offline ASR segment duration in seconds.
 
-    # Runtime 并发配置（按 backend 独立控制）
-    QWEN_RUST_CPU_WORKERS: int = 4
-
-    def __init__(self):
+    def __init__(self) -> None:
         """从环境变量读取配置"""
         self._load_from_env()
         self._ensure_directories()
 
-    def _load_from_env(self):
+    def _load_from_env(self) -> None:
         """从环境变量加载配置"""
         # 服务器配置
         self.HOST = os.getenv("HOST", self.HOST)
@@ -98,18 +98,18 @@ class Settings:
         if max_audio_size_str:
             self.MAX_AUDIO_SIZE = self._parse_size(max_audio_size_str)
 
-        self.ASR_BATCH_SIZE = int(
-            os.getenv("ASR_BATCH_SIZE", str(self.ASR_BATCH_SIZE))
-        )
+        self.ASR_BATCH_SIZE = int(os.getenv("ASR_BATCH_SIZE", str(self.ASR_BATCH_SIZE)))
 
         self.MAX_SEGMENT_SEC = float(
             os.getenv("MAX_SEGMENT_SEC", str(self.MAX_SEGMENT_SEC))
         )
-
-        self.QWEN_RUST_CPU_WORKERS = int(
-            os.getenv("QWEN_RUST_CPU_WORKERS", str(self.QWEN_RUST_CPU_WORKERS))
-        )
-
+        if self.ASR_BATCH_SIZE < 1:
+            raise ValueError("ASR_BATCH_SIZE must be positive")
+        if (
+            not math.isfinite(self.MAX_SEGMENT_SEC)
+            or not 0 < self.MAX_SEGMENT_SEC <= 60
+        ):
+            raise ValueError("MAX_SEGMENT_SEC must be greater than zero and at most 60")
 
     def _parse_size(self, size_str: str) -> int:
         """解析带单位的大小字符串
@@ -125,24 +125,19 @@ class Settings:
             return int(size_str) * 1024 * 1024
 
         # 带单位的处理
-        if size_str.endswith('GB'):
+        if size_str.endswith("GB"):
             return int(float(size_str[:-2]) * 1024 * 1024 * 1024)
-        elif size_str.endswith('MB'):
+        elif size_str.endswith("MB"):
             return int(float(size_str[:-2]) * 1024 * 1024)
-        elif size_str.endswith('KB'):
+        elif size_str.endswith("KB"):
             return int(float(size_str[:-2]) * 1024)
         else:
             # 默认视为字节
             return int(size_str)
 
-    def _ensure_directories(self):
+    def _ensure_directories(self) -> None:
         """确保必需的目录存在"""
         os.makedirs(self.TEMP_DIR, exist_ok=True)
-
-    @property
-    def models_config_path(self) -> str:
-        """获取模型配置文件的完整路径"""
-        return str(self.BASE_DIR / self.ASR_MODELS_CONFIG)
 
     @property
     def docs_url(self) -> Optional[str]:

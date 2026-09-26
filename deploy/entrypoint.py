@@ -12,6 +12,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
+from pathlib import Path
 
 logger = logging.getLogger("single-container")
 ENGINE_URL = "http://127.0.0.1:8001/health"
@@ -74,8 +75,8 @@ def run(
     services: list[Service],
     stop: threading.Event,
     *,
-    startup_timeout=600,
-    grace_seconds=20,
+    startup_timeout: float = 600,
+    grace_seconds: float = 20,
 ) -> int:
     children = []
     try:
@@ -115,7 +116,7 @@ def services() -> list[Service]:
     engine_env.pop("PYTHONHOME", None)
     engine_env.update(
         {
-            "PYTHONPATH": "/app",
+            "PYTHONPATH": str(Path(__file__).resolve().parents[1]),
             "VLLM_PLUGINS": "",
             "VLLM_WORKER_MULTIPROC_METHOD": "spawn",
         }
@@ -124,7 +125,7 @@ def services() -> list[Service]:
     api_env.pop("PYTHONHOME", None)
     api_env.update(
         {
-            "PYTHONPATH": "/app",
+            "PYTHONPATH": str(Path(__file__).resolve().parents[1]),
             "VLLM_PLUGINS": "",
             "VLLM_WORKER_MULTIPROC_METHOD": "spawn",
             "R2T2_URL": "http://127.0.0.1:8001",
@@ -180,6 +181,13 @@ def services() -> list[Service]:
 
 
 def main() -> int:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    if not (os.environ.get("HF_ENDPOINT") or "").strip():
+        os.environ.pop("HF_ENDPOINT", None)
+    os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+    os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
     parser = argparse.ArgumentParser()
     parser.add_argument("--healthcheck", action="store_true")
     args = parser.parse_args()
@@ -198,9 +206,13 @@ def main() -> int:
         logger.error("This deployment requires CUDA; refusing CPU fallback")
         return 1
     logger.info(
-        "GPU runtime: %s; offline Qwen3-ASR and streaming R2T2",
+        "GPU runtime: %s; offline and streaming R2T2",
         torch.cuda.get_device_name(0),
     )
+    from app.bootstrap import ensure_models_downloaded
+
+    if not ensure_models_downloaded():
+        return 1
     stop = threading.Event()
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     signal.signal(signal.SIGINT, lambda *_: stop.set())

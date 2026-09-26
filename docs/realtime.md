@@ -1,6 +1,6 @@
 # R2T2 实时转写
 
-离线文件 → Qwen3-ASR；实时音频 → Confucius4-R2T2。实时只提供一个 WebSocket 协议，默认自动识别语言，支持中英文及混合输入。没有旧协议别名，也没有 Chat 音频适配层。
+离线文件与实时音频均使用 Confucius4-R2T2，各自独立推理。实时只提供一个 WebSocket 协议，默认自动识别语言，支持中英文及混合输入。没有旧协议别名，也没有 Chat 音频适配层。
 
 ## 架构
 
@@ -11,28 +11,11 @@
 ## 启动
 
 ```bash
-# 已有项目离线模型缓存时：下载固定版本 R2T2，并构建统一镜像。
-bash deploy/prepare.sh
-ASR_GPU=1 docker compose -f docker-compose.realtime.yml up -d
+cp .env.example .env
+docker compose up -d --build
 ```
 
-HTTP 监听 `0.0.0.0:4174`，首页自动进入录音页面 `/realtime`，API 文档 `/docs`。HTTPS 由外部反向代理负责；浏览器麦克风需要 HTTPS 或 localhost。反向代理须允许 WebSocket Upgrade，空闲超时建议至少 60 秒。
-
-新机器需要先准备离线模型：`uv run python -m app.utils.download_models --scope all`。默认 HF 缓存是 `/root/.cache/huggingface`，可通过 `HF_CACHE_DIR` 指向其他完整缓存目录；ModelScope 缓存在 `./models/modelscope`。启动默认禁止联网下载，缺少模型应在部署前准备。
-
-| 配置 | 默认 | 用途 |
-| --- | --- | --- |
-| `ASR_PORT` | `4174` | 公共 HTTP 端口 |
-| `ASR_GPU` | `1` | 宿主机 GPU 编号 |
-| `QWEN3_ASR_MODEL` | `qwen3-asr-0.6b` | 离线模型，可设 `qwen3-asr-1.7b` |
-| `R2T2_MAX_SESSIONS` | `4` | 同时接入上限，满载明确拒绝 |
-| `R2T2_GPU_MEMORY_UTILIZATION` | `0.12` | R2T2 显存预算占 GPU 总显存的比例 |
-| `R2T2_ENFORCE_EAGER` | `0` | 默认启用 CUDA graph；`1` 用于排查或对照测试 |
-| `API_KEY` | 空 | 公共 API 鉴权 |
-| `R2T2_INTERNAL_TOKEN` | 空 | 私有引擎鉴权 |
-| `R2T2_URL` | 启动器自动设置 | 拆分部署时填写私有引擎 HTTP 地址 |
-
-显存比例必须按 GPU 总容量和其他进程占用调整；提高接入数不能保证实时性，需要按实际音频长度进行压测。CPU 离线部署可以连接远程 GPU R2T2 服务。此实现尚未在昇腾 NPU 上验证。
+默认使用 GPU 0，公共端口 4174；模型缓存、显存预算和鉴权配置见 [部署说明](deployment.md)。浏览器麦克风需要 HTTPS 或 localhost。实时和离线引擎共享 GPU 计算资源，需要用真实并发工作负载验收延迟。
 
 ## 协议
 
@@ -41,8 +24,8 @@ HTTP 监听 `0.0.0.0:4174`，首页自动进入录音页面 `/realtime`，API �
 服务返回 `ready:true` 后发送 **16 kHz、单声道、int16 little-endian PCM** 二进制帧。建议每帧 160 ms（5120 字节），单帧最多 1 秒。结束时发送文本 `end`，继续接收至 `done:true`。
 
 ```json
-{"delta":"你好","audio_ms":960,"inference_ms":45.2,"done":false}
-{"delta":"。","audio_ms":1280,"inference_ms":48.1,"done":true,"text":"你好。"}
+{"delta":"Hello","audio_ms":960,"inference_ms":45.2,"done":false}
+{"delta":".","audio_ms":1280,"inference_ms":48.1,"done":true,"text":"Hello."}
 ```
 
 客户端直接追加 `delta`；已发布文字不改写。结束事件包含完整 `text`。空增量表示已处理一块音频，可作为进度心跳。`audio_ms` 是已处理音频位置，**不是文字时间戳**；`inference_ms` 包括该解码请求的调度和推理时间，不等于从说话到出字的完整延迟。
@@ -71,5 +54,3 @@ python -m scripts.benchmark.realtime_smoke zh.wav en.wav \
 ```
 
 验收脚本比较单路与多路文本，并测试双向语言切换、长录音、满载拒绝与断线后名额回收。报告分别记录首个文字时间、帧处理延迟和结束补齐延迟。贪心解码在不同 GPU batch 下也可能产生少量文字差异：脚本记录是否逐字一致，要求归一化字符编辑距离不超过 5%，并且比其他输入的结果更接近本路基线；会话状态隔离另外由回归测试覆盖。这不是语料级准确率评测。
-
-本机实测结果和验证边界见 [2026-09-25 验收记录](research/r2t2-acceptance.md)。

@@ -41,6 +41,7 @@ HEARTBEAT_INTERVAL_SECONDS = 15.0
 
 # ============= 枚举类型 =============
 
+
 class ResponseFormat(str, Enum):
     JSON = "json"
     TEXT = "text"
@@ -51,8 +52,10 @@ class ResponseFormat(str, Enum):
 
 # ============= 响应模型 =============
 
+
 class TranscriptionSegment(BaseModel):
     """转写分段"""
+
     id: int
     seek: int = 0
     start: float
@@ -68,6 +71,7 @@ class TranscriptionSegment(BaseModel):
 
 class TranscriptionWord(BaseModel):
     """转写词级别信息"""
+
     word: str
     start: float
     end: float
@@ -75,11 +79,13 @@ class TranscriptionWord(BaseModel):
 
 class TranscriptionResponse(BaseModel):
     """简单转写响应 (json 格式)"""
+
     text: str
 
 
 class VerboseTranscriptionResponse(BaseModel):
     """详细转写响应 (verbose_json 格式)"""
+
     task: str = "transcribe"
     language: str
     duration: float
@@ -90,19 +96,22 @@ class VerboseTranscriptionResponse(BaseModel):
 
 class ModelObject(BaseModel):
     """模型对象"""
+
     id: str
     object: str = "model"
     created: int = Field(default_factory=lambda: int(time.time()))
-    owned_by: str = "qwen3-asr"
+    owned_by: str = "netease-youdao"
 
 
 class ModelsResponse(BaseModel):
     """模型列表响应"""
+
     object: str = "list"
     data: List[ModelObject]
 
 
 # ============= 辅助函数 =============
+
 
 def format_timestamp_srt(seconds: float) -> str:
     """格式化时间戳为 SRT 格式 (HH:MM:SS,mmm)"""
@@ -322,44 +331,12 @@ def create_heartbeat_streaming_response(
 
 # ============= API 端点 =============
 
-def _get_openai_model_description() -> str:
-    """获取动态的模型描述"""
-    available_models = get_offline_model_ids()
-    default_model = get_default_offline_model_id()
-
-    model_descriptions = {
-        "qwen3-asr-1.7b": "Qwen3-ASR 1.7B，52 种语言，vLLM 高性能",
-        "qwen3-asr-0.6b": "Qwen3-ASR 0.6B，轻量版，适合小显存环境",
-        "qwen3-asr": "自动路由到当前已启动的 Qwen3-ASR 版本",
-    }
-
-    # 构建表格行
-    table_rows = []
-    for m in available_models:
-        desc = model_descriptions.get(m, "")
-        if m == default_model:
-            desc += "（默认）"
-        table_rows.append(f"| `{m}` | {desc} |")
-
-    return f"""返回当前可用的离线 Qwen3-ASR 模型列表（OpenAI `/v1/models` 兼容）。
-
-**可用离线模型：**
-
-| 模型 ID | 说明 |
-|---------|------|
-{chr(10).join(table_rows)}
-
-**兼容性说明：**
-- 支持 OpenAI SDK 和第三方客户端调用
-- 当前默认模型根据显存自动选择；也可通过 `QWEN3_ASR_MODEL` 覆盖
-"""
-
 
 @router.get(
     "/models",
     response_model=ModelsResponse,
     summary="列出可用模型",
-    description=_get_openai_model_description(),
+    description="List Confucius4-R2T2, the CUDA model for offline and realtime transcription.",
 )
 async def list_models(request: Request):
     """列出可用离线模型 (OpenAI 兼容)"""
@@ -372,24 +349,9 @@ async def list_models(request: Request):
         return JSONResponse(content=response_data, status_code=401)
 
     try:
-        # 使用动态模型列表
-        model_ids = get_offline_model_ids()
-
-        model_objects = []
-        for model_id in model_ids:
-            model_objects.append(ModelObject(
-                id=model_id,
-                owned_by="qwen3-asr",
-            ))
-
-        from ...services.realtime.client import get_capabilities
-        from ...services.realtime.protocol import MODEL_ID, StreamError
-        try:
-            if (await get_capabilities()).get("ready"):
-                model_objects.append(ModelObject(id=MODEL_ID, owned_by="netease-youdao"))
-        except StreamError:
-            pass  # Remote realtime availability must not break offline discovery.
-        return ModelsResponse(data=model_objects)
+        return ModelsResponse(
+            data=[ModelObject(id=model_id) for model_id in get_offline_model_ids()]
+        )
     except Exception as e:
         logger.error(f"获取模型列表失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -427,9 +389,8 @@ def _get_transcription_description() -> str:
 | `vtt` | text/vtt | WebVTT 字幕格式 |
 
 **模型选择：**
-- 离线路径固定使用当前服务启用的唯一 Qwen3-ASR 模型
-- 通过 `QWEN3_ASR_MODEL` 控制服务端模型型号
-- `/v1/models` 仍可用于查看当前服务端实际在线模型
+- Use `confucius4-r2t2` or omit `model` to select the default.
+- Other model IDs are rejected. `/v1/models` lists the supported model.
 
 **暂不支持的参数：**
 `prompt`、`temperature`、`timestamp_granularities` 参数已保留但暂不生效
@@ -447,9 +408,7 @@ def _get_transcription_description() -> str:
                 "application/json": {
                     "example": {"text": "今天天气不错，明天可能会下雨。"}
                 },
-                "text/plain": {
-                    "example": "今天天气不错，明天可能会下雨。"
-                },
+                "text/plain": {"example": "今天天气不错，明天可能会下雨。"},
             },
         },
         400: {
@@ -461,7 +420,7 @@ def _get_transcription_description() -> str:
                         "message": f"File too large. Maximum size is {settings.MAX_AUDIO_SIZE // (1024 * 1024)}MB",
                         "task_id": "",
                         "timestamp": "2025-01-31T12:00:00Z",
-                        "details": {}
+                        "details": {},
                     }
                 }
             },
@@ -475,7 +434,7 @@ def _get_transcription_description() -> str:
                         "message": "Invalid API key",
                         "task_id": "",
                         "timestamp": "2025-01-31T12:00:00Z",
-                        "details": {}
+                        "details": {},
                     }
                 }
             },
@@ -484,11 +443,14 @@ def _get_transcription_description() -> str:
 )
 async def create_transcription(
     request: Request,
-    model: Optional[str] = Form(None, description="使用服务端配置的离线 Qwen 模型；实时 R2T2 请使用 /v1/stream"),
+    model: Optional[str] = Form(
+        None,
+        description="Model ID: confucius4-r2t2. Defaults to Confucius4-R2T2 when omitted.",
+    ),
     # 1. 音频输入（二选一）
     file: Optional[UploadFile] = File(
         default=None,
-        description="要转写的音频/视频文件。若同时提供 audio_address，服务会优先使用这里上传的文件"
+        description="要转写的音频/视频文件。若同时提供 audio_address，服务会优先使用这里上传的文件",
     ),
     audio_address: Optional[str] = Form(
         default=None,
@@ -503,11 +465,11 @@ async def create_transcription(
     # 4. 功能开关
     enable_speaker_diarization: bool = Form(
         True,
-        description="是否启用说话人分离（默认开启）。启用后响应 segments 会包含 speaker 字段"
+        description="是否启用说话人分离（默认开启）。启用后响应 segments 会包含 speaker 字段",
     ),
     word_timestamps: bool = Form(
         False,
-        description="是否返回字词级时间戳（默认关闭；Qwen CUDA vLLM / CPU Rust 会在启用时自动调用 forced aligner）"
+        description="Return word timestamps using the forced aligner (disabled by default).",
     ),
     # 5. 输出选项
     response_format: ResponseFormat = Form(
@@ -516,21 +478,27 @@ async def create_transcription(
         examples=["verbose_json", "json", "text", "srt", "vtt"],
     ),
     # 6. 兼容性参数（暂不支持）
-    prompt: Optional[str] = Form(None, description="提示文本（暂不支持，保留兼容）"),  # noqa: ARG001
-    temperature: Optional[float] = Form(0, description="采样温度（暂不支持，保留兼容）"),  # noqa: ARG001
+    prompt: Optional[str] = Form(
+        None, description="提示文本（暂不支持，保留兼容）"
+    ),  # noqa: ARG001
+    temperature: Optional[float] = Form(
+        0, description="采样温度（暂不支持，保留兼容）"
+    ),  # noqa: ARG001
     timestamp_granularities: Optional[List[str]] = Form(  # noqa: ARG001
         None,
         alias="timestamp_granularities[]",
-        description="时间戳粒度（暂不支持，保留兼容）"
+        description="时间戳粒度（暂不支持，保留兼容）",
     ),
 ):
     """音频转写 API (OpenAI Audio API 兼容)"""
     # 标记暂不支持的参数（保留以兼容 OpenAI API）
     _ = (prompt, temperature, timestamp_granularities)
 
-    logger.info(f"[OpenAI API] 收到转写请求: format={response_format}, "
-                f"speaker_diarization={enable_speaker_diarization}, word_level={word_timestamps}, "
-                f"audio_address={'有' if audio_address else '无'}")
+    logger.info(
+        f"[OpenAI API] 收到转写请求: format={response_format}, "
+        f"speaker_diarization={enable_speaker_diarization}, word_level={word_timestamps}, "
+        f"audio_address={'有' if audio_address else '无'}"
+    )
 
     # 验证输入：至少提供一种输入源；若二者同时存在，优先 file
     if not file and not audio_address:
@@ -539,8 +507,6 @@ async def create_transcription(
             message="必须提供 file（上传文件）或 audio_address（音频 URL）其中之一",
         )
         return JSONResponse(content=response_data, status_code=400)
-
-    transcription_service = get_offline_transcription_service()
 
     try:
         result, _ = validate_openai_token(request)
@@ -551,13 +517,20 @@ async def create_transcription(
             )
             return JSONResponse(content=response_data, status_code=401)
 
-        from ...services.realtime.protocol import MODEL_ID, MODEL_REPOSITORY
-        if model and model.strip().lower() in (MODEL_ID, MODEL_REPOSITORY.lower()):
-            return JSONResponse(status_code=400, content={"error": {
-                "message": "R2T2 is realtime-only; use /v1/stream. /audio/transcriptions uses the configured offline Qwen model.",
-                "type": "invalid_request_error", "code": "model_not_supported", "param": "model",
-            }})
+        if model is not None and model != get_default_offline_model_id():
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "message": "Unsupported model. Use confucius4-r2t2.",
+                        "type": "invalid_request_error",
+                        "code": "model_not_supported",
+                        "param": "model",
+                    }
+                },
+            )
 
+        transcription_service = get_offline_transcription_service()
         audio_data = await file.read() if file is not None else None
         inference_task = await transcription_service.start_transcription(
             audio_data=audio_data,
@@ -593,7 +566,11 @@ async def create_transcription(
         logger.error(f"[OpenAI API] HTTP异常: {http_exc.detail}")
 
         response_data = create_error_response(
-            error_code="DEFAULT_CLIENT_ERROR" if http_exc.status_code < 500 else "DEFAULT_SERVER_ERROR",
+            error_code=(
+                "DEFAULT_CLIENT_ERROR"
+                if http_exc.status_code < 500
+                else "DEFAULT_SERVER_ERROR"
+            ),
             message=http_exc.detail,
         )
         return JSONResponse(content=response_data, status_code=http_exc.status_code)

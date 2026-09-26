@@ -30,7 +30,7 @@ class StructuredLogFormatter(logging.Formatter):
         "duration_ms": 1234,
         "audio_duration_sec": 60,
         "rtf": 0.02,
-        "model_id": "qwen3-asr-1.7b"
+        "model_id": "confucius4-r2t2"
     }
     """
 
@@ -150,7 +150,7 @@ def get_structured_logger(name: str) -> logging.Logger:
                 "duration_ms": 1234,
                 "audio_duration_sec": 60,
                 "rtf": 0.02,
-                "model_id": "qwen3-asr-1.7b"
+                "model_id": "confucius4-r2t2"
             }
         )
 
