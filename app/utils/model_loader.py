@@ -188,6 +188,7 @@ def preload_models() -> dict[str, Any]:
     from app.core.device import detect_device
     from app.services.asr.engines import get_global_vad_model
     from app.services.asr.runtime import get_runtime_router
+    from app.services.asr.punctuation import get_punctuation_model
     from app.services.realtime.protocol import MODEL_ID
     from app.services.realtime.client import get_engine_capabilities
     from app.utils.download_models import fix_camplusplus_config
@@ -200,8 +201,10 @@ def preload_models() -> dict[str, Any]:
     get_runtime_router().warmup_model(MODEL_ID)
     get_global_vad_model(device)
     get_global_diarization_pipeline()
+    get_punctuation_model()
     return {
         "asr_models": {MODEL_ID: {"loaded": True}},
         "vad_model": {"loaded": True},
         "speaker_diarization_model": {"loaded": True},
+        "punctuation_model": {"loaded": True},
     }

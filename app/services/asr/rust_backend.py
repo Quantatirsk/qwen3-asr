@@ -17,7 +17,12 @@ from huggingface_hub import snapshot_download
 
 from app.core.config import settings
 from app.infrastructure import resolve_huggingface_snapshot_dir
-from app.services.realtime.protocol import MODEL_REPOSITORY, MODEL_REVISION
+from app.services.realtime.protocol import (
+    MODEL_REPOSITORY,
+    MODEL_REVISION,
+    OFFLINE_MAX_SAMPLES,
+    OFFLINE_TAIL_SAMPLES,
+)
 
 from .qwen3_alignment import repair_timestamps, split_alignment_units
 
@@ -117,7 +122,10 @@ class RustBackend:
         max_tokens: int,
     ) -> NativeGeneration:
         samples = np.ascontiguousarray(audio, dtype=np.float32)
-        if samples.ndim != 1 or not 0 < samples.size <= _INT_MAX:
+        if (
+            samples.ndim != 1
+            or not 0 < samples.size <= OFFLINE_MAX_SAMPLES + OFFLINE_TAIL_SAMPLES
+        ):
             raise ValueError("Audio must be nonempty mono 16 kHz PCM")
         if not np.isfinite(samples).all():
             raise ValueError("Audio samples must be finite")

@@ -32,6 +32,7 @@ class OfflineContractTest(unittest.TestCase):
     def test_speaker_and_vad_assets_retained(self) -> None:
         expected = {
             "damo/speech_fsmn_vad_zh-cn-16k-common-pytorch",
+            "iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch",
             "iic/speech_campplus_speaker-diarization_common",
             "damo/speech_campplus_sv_zh-cn_16k-common",
             "damo/speech_campplus-transformer_scl_zh-cn_16k-common",

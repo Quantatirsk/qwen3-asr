@@ -18,7 +18,7 @@ fn valid_input(
     vocab: usize,
 ) -> bool {
     !samples.is_empty()
-        && samples.len() <= 60 * 16000
+        && samples.len() <= 61 * 16000
         && samples.iter().all(|sample| sample.is_finite())
         && !before.is_empty()
         && !after.is_empty()

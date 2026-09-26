@@ -22,6 +22,7 @@ from .protocol import (
     MODEL_REVISION,
     SAMPLE_RATE,
     StreamConfig,
+    OFFLINE_TAIL_SAMPLES,
 )
 
 WINDOW_SAMPLES = 16 * SAMPLE_RATE
@@ -180,31 +181,42 @@ class Model:
         return Session(self._prompt(config.context), self.chunk_samples)
 
     async def transcribe(self, audio: np.ndarray, context: str) -> str:
-        """Recognize a whole offline segment without any streaming session state."""
-        request_id = f"offline-{uuid.uuid4().hex}"
-        prompt = {
-            "prompt": self._prompt(context),
-            "multi_modal_data": {"audio": [audio]},
-        }
-        result = None
-        completed = False
-        try:
-            async for result in self.engine.generate(
-                prompt, self.offline_sampling, request_id=request_id, priority=10
-            ):
-                pass
-            if result is None or not result.outputs:
-                raise RuntimeError("R2T2 returned no offline output")
-            if result.outputs[0].finish_reason == "length":
-                raise RuntimeError("R2T2 offline decoding exceeded its token budget")
-            raw = result.outputs[0].text.split("|", 1)[0].strip()
-            if TAG not in raw:
-                raise RuntimeError("R2T2 offline output has no language header")
-            completed = True
-            return raw.split(TAG, 1)[1].strip()
-        finally:
-            if not completed:
-                await self.engine.abort(request_id)
+        """Commit a full segment, then resolve its pending tail with end lookahead."""
+        prefix = ""
+        prompt = self._prompt(context)
+        for final in (False, True):
+            # Padding is only for ASR; alignment keeps the original audio timeline.
+            samples = np.pad(audio, (0, OFFLINE_TAIL_SAMPLES)) if final else audio
+            request_id = f"offline-{uuid.uuid4().hex}"
+            result = None
+            completed = False
+            try:
+                async for result in self.engine.generate(
+                    {
+                        "prompt": prompt + prefix,
+                        "multi_modal_data": {"audio": [samples]},
+                    },
+                    self.sampling[128] if final else self.offline_sampling,
+                    request_id=request_id,
+                    priority=10,
+                ):
+                    pass
+                if result is None or not result.outputs:
+                    raise RuntimeError("R2T2 returned no offline output")
+                if result.outputs[0].finish_reason == "length":
+                    raise RuntimeError(
+                        "R2T2 offline decoding exceeded its token budget"
+                    )
+                prefix = (prefix + result.outputs[0].text).split("|", 1)[0].strip()
+                if TAG not in prefix:
+                    raise RuntimeError("R2T2 offline output has no language header")
+                completed = True
+            finally:
+                if not completed:
+                    await self.engine.abort(request_id)
+            if not prefix.split(TAG, 1)[1].strip():
+                return ""
+        return prefix.split(TAG, 1)[1].strip()
 
     async def push(
         self, session: Session, audio: np.ndarray, *, final: bool = False
