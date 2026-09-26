@@ -53,6 +53,7 @@ class Session:
         self.steps = 0
         self.quiet_samples = 0
         self.has_speech = False
+        self.utterance = 0  # Pause-bounded; the gateway labels each one's speaker.
 
     @property
     def next_samples(self) -> int:
@@ -69,6 +70,7 @@ class Session:
         self.quiet_samples = 0
         self.has_speech = False
         self.next_decode = self.samples + 2 * self.chunk_samples
+        self.utterance += 1
 
     def append(self, audio: np.ndarray) -> None:
         if self.size + len(audio) > WINDOW_SAMPLES:

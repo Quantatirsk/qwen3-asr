@@ -84,6 +84,13 @@ class SpeakerDiarizer:
             self._frame_seconds = frame_seconds
             logger.info("Loaded Nemotron diarization: device={}, dtype=float32", device)
 
+    def streaming_parts(self):
+        """Shared weights for per-connection streaming caches. Streaming skips the
+        offline lock: its forwards are short and touch only their own cache."""
+        if self._model is None:
+            self.warmup()
+        return self._model, self._processor
+
     def diarize(self, audio_path: str) -> DiarizationResult:
         try:
             with self._lock:

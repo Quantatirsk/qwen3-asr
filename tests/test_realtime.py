@@ -100,6 +100,7 @@ class ProtocolTest(unittest.TestCase):
                     self.assertEqual(final["text"], "中文!")
                     self.assertTrue(final["done"])
                     self.assertEqual(final["audio_ms"], 320)
+                    self.assertEqual((final["utterance"], final["utterance_end"]), (0, True))
                 # TestClient context exit waits for the disconnected handler.
             self.assertEqual(client.get("/v1/config").json()["active_sessions"], 0)
             self.assertEqual(len(set(model.aborted)), 2)
@@ -194,6 +195,7 @@ class AsyncTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(state.text, "Hello world.")
         self.assertEqual(state.size, 0)
         self.assertEqual(state.offset, state.samples)
+        self.assertEqual(state.utterance, 1)
         self.assertEqual(state.next_samples, 5120)
         deltas.append(await model.push(state, np.full(5120, 0.1, dtype=np.float32)))
         self.assertEqual(prompts[-1], "prompt")

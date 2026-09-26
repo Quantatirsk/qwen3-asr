@@ -24,13 +24,21 @@ docker compose up -d --build
 服务返回 `ready:true` 后发送 **16 kHz、单声道、int16 little-endian PCM** 二进制帧。建议每帧 160 ms（5120 字节），单帧最多 1 秒。结束时发送文本 `end`，继续接收至 `done:true`。
 
 ```json
-{"delta":"Hello","audio_ms":960,"inference_ms":45.2,"done":false}
-{"delta":".","audio_ms":1280,"inference_ms":48.1,"done":true,"text":"Hello."}
+{"delta":"Hello","audio_ms":960,"inference_ms":45.2,"done":false,"utterance":0,"utterance_end":false}
+{"delta":".","audio_ms":1280,"inference_ms":48.1,"done":false,"utterance":0,"utterance_end":true}
+{"utterance":0,"speaker":"说话人1"}
+{"delta":"","audio_ms":1440,"inference_ms":3.0,"done":true,"utterance":1,"utterance_end":true,"text":"Hello."}
 ```
 
 客户端直接追加 `delta`；已发布文字不改写。结束事件包含完整 `text`。空增量表示已处理一块音频，可作为进度心跳。`audio_ms` 是已处理音频位置，**不是文字时间戳**；`inference_ms` 包括该解码请求的调度和推理时间，不等于从说话到出字的完整延迟。
 
-错误为 `{"code":"capacity_exceeded","error":"..."}` 并关闭连接。每会话最长 1 小时，输入队列最多 10 秒；超时、积压、断线会取消该连接的 vLLM 请求并释放名额。没有实时说话人标签或词级时间戳，文件级标注仍使用离线接口。
+错误为 `{"code":"capacity_exceeded","error":"..."}` 并关闭连接。每会话最长 1 小时，输入队列最多 10 秒；超时、积压、断线会取消该连接的 vLLM 请求并释放名额。
+
+## 实时说话人
+
+`utterance` 是停顿分隔的语句序号，`utterance_end:true` 表示该语句在 `audio_ms` 处结束（停顿或会话结束）。公共网关对同一 PCM 运行 Nemotron 流式分离（1.04 秒缓冲模式，每连接独立缓存），覆盖到语句结尾后发送 `{"utterance":k,"speaker":"说话人N"}`；`speaker` 为 `null` 表示无法判断或分离失败，转写不受影响。每个有文字的语句恰好一个标签，全部标签先于 `done` 发送，因此客户端收到 `done` 即可关闭。标签通常比文字晚约 1–2 秒。
+
+一个语句只取活跃时长最多的说话人。没有停顿的抢话会归到同一语句的主讲者；持续背景噪声可能使停顿边界不触发，标签会随之推迟。编号只在本连接内有效，保存录音后请以离线转写的说话人结果为准。没有词级时间戳。
 
 ## 解码与版本
 

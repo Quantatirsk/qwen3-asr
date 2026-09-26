@@ -230,6 +230,7 @@ def create_app(model_factory=Model, *, max_sessions=None):
 
                 async def decode(data, final=False):
                     started = time.perf_counter()
+                    utterance = session.utterance
                     audio = np.frombuffer(data, dtype="<i2").astype(np.float32) / 32768
                     delta = await asyncio.wait_for(
                         model.push(session, audio, final=final), 25
@@ -241,6 +242,10 @@ def create_app(model_factory=Model, *, max_sessions=None):
                             (time.perf_counter() - started) * 1000, 1
                         ),
                         "done": final,
+                        # This delta belongs to `utterance`; a pause or the end
+                        # closes it at `audio_ms`.
+                        "utterance": utterance,
+                        "utterance_end": final or session.utterance != utterance,
                     }
                     if final:
                         event["text"] = session.text
