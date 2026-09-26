@@ -211,7 +211,9 @@ svg{width:100%;background:#f1f5f9}rect[role=button]{cursor:pointer}a{color:#2563
 <p>Click a transcript or raw activity interval to play it. Unknown means speaker attribution is uncertain;
 overlap activity does not guarantee both voices were transcribed. Labels are session-local.</p>
 """
-    page += f'<audio id="audio" controls preload="metadata" src="{html.escape(media.name)}"></audio>'
+    page += f'<audio id="audio" preload="none" data-src="{html.escape(media.name)}"></audio>'
+    page += '<p id="audio-status" role="status" aria-live="polite">Loading audio for seeking...</p>'
+    page += "<p>Zero-duration timestamps play 0.25 seconds of context on either side; displayed timestamps remain unchanged.</p>"
     page += '<p><a href="result.json">Response JSON</a> | <a href="transcript.srt">SRT</a></p>'
     page += (
         "<h2>Raw speaker activity</h2><p>Lane order: "
@@ -250,16 +252,49 @@ overlap activity does not guarantee both voices were transcribed. Labels are ses
     )
     page += "".join(raw_rows) + "</table></details>"
     page += """<script>
-const audio = document.getElementById('audio'); let stopAt = null;
-function playInterval(element) { audio.currentTime = Number(element.dataset.start);
-stopAt = Number(element.dataset.end); audio.play().catch(console.error); }
-document.querySelectorAll('[data-start]').forEach(element => {
+const audio = document.getElementById('audio');
+const status = document.getElementById('audio-status');
+const intervals = [...document.querySelectorAll('[data-start]')];
+let ready = false, stopAt = null, stopFrame = null;
+function setReady(value) {
+ready = value; audio.controls = value;
+intervals.forEach(element => {
+if (element instanceof HTMLButtonElement) element.disabled = !value;
+element.setAttribute('aria-disabled', String(!value));
+if (element.tagName.toLowerCase() === 'rect') element.setAttribute('tabindex', value ? '0' : '-1');
+});
+}
+function playInterval(element) {
+if (!ready) return;
+let start = Number(element.dataset.start), end = Number(element.dataset.end);
+if (end <= start) { start = Math.max(0, start - 0.25); end = Math.min(audio.duration, end + 0.25); }
+audio.currentTime = start; stopAt = end;
+audio.play().catch(error => { status.textContent = 'Playback failed: ' + error.message; });
+}
+setReady(false);
+intervals.forEach(element => {
 element.addEventListener('click', () => playInterval(element));
 if (element.tagName.toLowerCase() === 'rect') element.addEventListener('keydown', event => {
 if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); playInterval(element); }});
 });
-audio.addEventListener('timeupdate', () => { if (stopAt !== null && audio.currentTime >= stopAt) {
-audio.pause(); stopAt = null; }});
+function stopAtBoundary() {
+if (stopAt !== null && audio.currentTime >= stopAt) { audio.pause(); stopAt = null; }
+}
+function checkStop() {
+stopAtBoundary();
+stopFrame = audio.paused ? null : requestAnimationFrame(checkStop);
+}
+audio.addEventListener('timeupdate', stopAtBoundary);
+audio.addEventListener('play', () => { if (stopFrame === null) stopFrame = requestAnimationFrame(checkStop); });
+audio.addEventListener('loadedmetadata', () => { setReady(true); status.textContent = 'Audio ready. Select an interval to listen.'; });
+audio.addEventListener('error', () => { setReady(false); status.textContent = 'Audio could not be decoded. Download the audio to listen locally.'; });
+(async () => {
+try {
+const response = await fetch(audio.dataset.src);
+if (!response.ok) throw new Error('HTTP ' + response.status);
+audio.src = URL.createObjectURL(await response.blob()); audio.load();
+} catch (error) { status.textContent = 'Audio loading failed: ' + error.message; }
+})();
 </script></html>"""
     (output / "index.html").write_text(page, encoding="utf-8")
 
