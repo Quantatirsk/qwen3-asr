@@ -507,7 +507,7 @@ class SpeakerDiarizer:
     ) -> List[SpeakerSegment]:
         max_segment_ms = int(settings.MAX_SEGMENT_SEC * 1000)
         if max_segment_ms <= 0:
-            return segments
+            raise ValueError("Maximum segment duration must be at least one millisecond")
 
         split_segments: List[SpeakerSegment] = []
         for seg in segments:
@@ -517,9 +517,12 @@ class SpeakerDiarizer:
 
             current_start_ms = seg.start_ms
             while seg.end_ms - current_start_ms > max_segment_ms:
-                hard_boundary_ms = current_start_ms + max_segment_ms
+                hard_boundary_ms = min(
+                    current_start_ms + max_segment_ms,
+                    seg.end_ms - min(self.min_segment_ms, max_segment_ms),
+                )
                 lower_boundary_ms = max(
-                    current_start_ms + self.min_segment_ms,
+                    min(hard_boundary_ms, current_start_ms + self.min_segment_ms),
                     hard_boundary_ms - self.LOW_ENERGY_SEARCH_WINDOW_MS,
                 )
                 boundary_ms = self._find_low_energy_boundary_ms(
@@ -541,7 +544,7 @@ class SpeakerDiarizer:
                 current_start_ms = boundary_ms
 
             remaining_ms = seg.end_ms - current_start_ms
-            if remaining_ms >= self.min_segment_ms:
+            if remaining_ms > 0:
                 split_segments.append(
                     SpeakerSegment(
                         start_ms=current_start_ms,
@@ -549,8 +552,6 @@ class SpeakerDiarizer:
                         speaker_id=seg.speaker_id,
                     )
                 )
-            elif split_segments:
-                split_segments[-1].end_ms = seg.end_ms
 
         if len(split_segments) != len(segments):
             logger.info(
@@ -609,8 +610,8 @@ class SpeakerDiarizer:
             os.makedirs(output_dir, exist_ok=True)
 
             for idx, seg in enumerate(final_segments):
-                start_sample = int(seg.start_ms / 1000 * sample_rate)
-                end_sample = int(seg.end_ms / 1000 * sample_rate)
+                start_sample = seg.start_ms * sample_rate // 1000
+                end_sample = seg.end_ms * sample_rate // 1000
 
                 seg.audio_data = audio_data[start_sample:end_sample]
 

@@ -212,7 +212,11 @@ class AudioSplitter:
                 merged[idx + 1] = (start_ms, next_end)
                 del merged[idx]
 
-        return merged
+        return [
+            (start_ms + start, start_ms + end)
+            for start_ms, end_ms in merged
+            for start, end in self._split_by_fixed_duration(end_ms - start_ms)
+        ]
 
     def _split_by_fixed_duration(self, total_duration_ms: int) -> List[Tuple[int, int]]:
         """按固定时长切分（无 VAD 时的 fallback）
@@ -223,12 +227,17 @@ class AudioSplitter:
         Returns:
             切分后的段列表
         """
+        if self.split_trigger_ms < 1:
+            raise ValueError("Maximum segment duration must be at least one millisecond")
         segments = []
         current = 0
+        min_tail_ms = min(self.min_segment_ms, self.split_trigger_ms)
         while current < total_duration_ms:
             end = min(current + self.split_trigger_ms, total_duration_ms)
-            if end - current >= self.min_segment_ms:
-                segments.append((current, end))
+            remaining = total_duration_ms - end
+            if 0 < remaining < min_tail_ms:
+                end = total_duration_ms - min_tail_ms
+            segments.append((current, end))
             current = end
         return segments
 
@@ -249,12 +258,12 @@ class AudioSplitter:
         try:
             # 加载音频
             audio_data, sr = librosa.load(audio_path, sr=self.DEFAULT_SAMPLE_RATE)
-            total_duration_ms = int(len(audio_data) / sr * 1000)
+            total_duration_ms = (len(audio_data) * 1000 + int(sr) - 1) // int(sr)
 
             logger.info(f"音频总时长: {total_duration_ms / 1000:.2f}秒")
 
             # 检查是否需要分割
-            if total_duration_ms <= self.split_trigger_ms:
+            if len(audio_data) * 1000 <= self.split_trigger_ms * int(sr):
                 logger.info("音频时长在限制内，无需分割")
                 return [
                     AudioSegment(
@@ -280,8 +289,8 @@ class AudioSplitter:
             audio_segments = []
             for idx, (start_ms, end_ms) in enumerate(merged_segments):
                 # 计算采样点范围
-                start_sample = int(start_ms / 1000 * sr)
-                end_sample = int(end_ms / 1000 * sr)
+                start_sample = start_ms * int(sr) // 1000
+                end_sample = end_ms * int(sr) // 1000
 
                 # 提取音频片段
                 segment_data = audio_data[start_sample:end_sample]
