@@ -7,6 +7,51 @@ from app.utils.model_loader import ModelIntegritySpec, _check_model_integrity_sp
 
 
 class ModelIntegritySpecTest(unittest.TestCase):
+    def test_local_revision_requires_matching_metadata_for_every_required_file(
+        self,
+    ) -> None:
+        revision = "f667ed73aee57d40cc39428eb768b4fd87a0a29e"
+        names = ("config.json", "preprocessor_config.json", "model.safetensors")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            spec = ModelIntegritySpec(
+                description="Pinned local Nemotron model",
+                path=root,
+                required_patterns=names,
+                expected_revision=revision,
+            )
+            for name in names:
+                (root / name).write_bytes(b"model data")
+            metadata = root / ".cache/huggingface/download"
+            metadata.mkdir(parents=True)
+            for state in ("missing", "wrong", "partial", "correct"):
+                with self.subTest(state=state):
+                    if state != "missing":
+                        for index, name in enumerate(names):
+                            commit = (
+                                revision
+                                if state == "correct"
+                                or (state == "partial" and index == 0)
+                                else "0" * 40
+                            )
+                            (metadata / f"{name}.metadata").write_text(
+                                f"{commit}\netag\n1234567890.0\n"
+                            )
+                    result = _check_model_integrity_spec(spec)
+                    self.assertEqual(result["ok"], state == "correct")
+                    if state != "correct":
+                        self.assertEqual(result["reason"], "required_files_missing")
+                        self.assertTrue(
+                            any(
+                                "expected revision" in item
+                                for item in result["missing_patterns"]
+                            )
+                        )
+            (root / "config.json").unlink()
+            result = _check_model_integrity_spec(spec)
+            self.assertFalse(result["ok"])
+            self.assertIn("config.json", result["missing_patterns"])
+
     def test_accepts_single_safetensors_weight(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

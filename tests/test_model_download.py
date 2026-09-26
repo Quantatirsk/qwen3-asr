@@ -1,52 +1,84 @@
-import json
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from app.utils.download_models import check_model_exists
+from app.services.asr.model_capabilities import ModelAsset
+from app.utils.download_models import download_models
 
 
-class PinnedCheckpointTest(unittest.TestCase):
-    def test_single_file_and_complete_shards_are_accepted(self) -> None:
+class ModelDownloadTest(unittest.TestCase):
+    def test_nemotron_download_pins_revision_and_exports_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            snapshot = root / "snapshots" / "revision"
-            snapshot.mkdir(parents=True)
-            for name in (
-                "config.json",
-                "preprocessor_config.json",
-                "tokenizer.json",
-                "tokenizer_config.json",
+            source = root / "source"
+            metadata = source / ".cache/huggingface/download/config.json.metadata"
+            metadata.parent.mkdir(parents=True)
+            metadata.write_text("pinned-revision\netag\n123\n")
+            (source / "config.json").write_text("{}")
+            asset = ModelAsset(
+                "huggingface",
+                "nvidia/Nemotron-3-Diarization",
+                "Nemotron",
+                revision="pinned-revision",
+                local_dir=str(source),
+            )
+            with (
+                patch(
+                    "app.utils.download_models.check_all_models",
+                    side_effect=[
+                        [
+                            (
+                                asset.model_id,
+                                asset.description,
+                                asset.source,
+                                asset.revision,
+                            )
+                        ],
+                        [],
+                    ],
+                ),
+                patch(
+                    "app.utils.download_models.is_huggingface_offline",
+                    return_value=False,
+                ),
+                patch(
+                    "app.utils.download_models.get_download_modelscope_assets",
+                    return_value=[],
+                ),
+                patch(
+                    "app.utils.download_models.get_huggingface_assets",
+                    return_value=[asset],
+                ),
+                patch("app.utils.download_models.hf_snapshot_download") as download,
             ):
-                (snapshot / name).write_text("{}")
-            with patch("app.utils.download_models._get_cache_path", return_value=root):
+                self.assertTrue(download_models(export_dir=str(root / "export")))
+            download.assert_called_once_with(
+                asset.model_id, revision="pinned-revision", local_dir=str(source)
+            )
+            exported = root / "export/nemotron-3-diarization"
+            self.assertEqual(
+                (exported / metadata.relative_to(source)).read_text(),
+                metadata.read_text(),
+            )
 
-                def exists() -> bool:
-                    return check_model_exists("org/model", "huggingface", "revision")[0]
-
-                self.assertFalse(exists())
-                weight = snapshot / "model.safetensors"
-                weight.write_bytes(b"weights")
-                self.assertTrue(exists())
-                weight.write_bytes(b"")
-                self.assertFalse(exists())
-                weight.unlink()
-                (snapshot / "model.safetensors.index.json").write_text(
-                    json.dumps(
-                        {
-                            "weight_map": {
-                                "first": "part-1.safetensors",
-                                "second": "part-2.safetensors",
-                            }
-                        }
+    def test_offline_missing_assets_fail_without_network(self) -> None:
+        with (
+            patch(
+                "app.utils.download_models.check_all_models",
+                return_value=[
+                    (
+                        "nvidia/Nemotron-3-Diarization",
+                        "Nemotron",
+                        "huggingface",
+                        "revision",
                     )
-                )
-                (snapshot / "part-1.safetensors").write_bytes(b"weights")
-                self.assertFalse(exists())
-                (snapshot / "part-2.safetensors").write_bytes(b"weights")
-                self.assertTrue(exists())
-
-
-if __name__ == "__main__":
-    unittest.main()
+                ],
+            ),
+            patch(
+                "app.utils.download_models.is_huggingface_offline", return_value=True
+            ),
+            patch("app.utils.download_models.hf_snapshot_download") as download,
+        ):
+            self.assertFalse(download_models())
+        download.assert_not_called()

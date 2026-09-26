@@ -6,7 +6,7 @@ import logging
 import tempfile
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, Optional, Sequence
 
@@ -17,7 +17,7 @@ from app.utils.audio import get_audio_duration
 
 if TYPE_CHECKING:
     from app.utils.audio_splitter import AudioSegment
-    from app.utils.speaker_diarizer import SpeakerSegment
+    from app.utils.speaker_diarizer import DiarizationResult
 
 logger = logging.getLogger(__name__)
 
@@ -38,34 +38,67 @@ class OfflineASRRequest:
 
 @dataclass
 class PreparedLongAudio:
-    segments: Sequence[AudioSegment | SpeakerSegment]
+    segments: Sequence[AudioSegment]
     duration: float
+    diarization: DiarizationResult | None = None
 
     def finish(
-        self, results: Sequence[ASRSegmentResult], timestamp_scale: float
+        self,
+        results: Sequence[ASRSegmentResult],
+        timestamp_scale: float,
+        *,
+        word_timestamps: bool = True,
     ) -> ASRFullResult:
+        from .speaker_attribution import assign_speakers
+
         output = []
         for segment, result in zip(self.segments, results, strict=True):
             if not result.text:
                 continue
-            words = result.word_tokens
-            if words and timestamp_scale != 1.0:
-                for word in words:
-                    word.start_time *= timestamp_scale
-                    word.end_time *= timestamp_scale
-            output.append(
-                ASRSegmentResult(
-                    text=result.text,
-                    start_time=segment.start_sec * timestamp_scale,
-                    end_time=segment.end_sec * timestamp_scale,
-                    speaker_id=segment.speaker_id,
-                    word_tokens=words,
-                )
+            absolute = replace(
+                result, start_time=segment.start_sec, end_time=segment.end_sec
             )
+            groups = (
+                assign_speakers(absolute, self.diarization)
+                if self.diarization is not None
+                else [absolute]
+            )
+            for group in groups:
+                words = (
+                    [
+                        replace(
+                            word,
+                            start_time=word.start_time * timestamp_scale,
+                            end_time=word.end_time * timestamp_scale,
+                        )
+                        for word in group.word_tokens
+                    ]
+                    if word_timestamps and group.word_tokens
+                    else None
+                )
+                output.append(
+                    replace(
+                        group,
+                        start_time=group.start_time * timestamp_scale,
+                        end_time=group.end_time * timestamp_scale,
+                        word_tokens=words,
+                    )
+                )
+        speaker_segments = None
+        if self.diarization is not None:
+            speaker_segments = [
+                replace(
+                    span,
+                    start_sec=span.start_sec * timestamp_scale,
+                    end_sec=span.end_sec * timestamp_scale,
+                )
+                for span in self.diarization.segments
+            ]
         return ASRFullResult(
-            text="\n".join(item.text for item in output),
+            text="\n".join(result.text for result in results if result.text),
             segments=output,
             duration=self.duration * timestamp_scale,
+            speaker_segments=speaker_segments,
         )
 
 
@@ -89,18 +122,16 @@ def prepare_long_audio(
         with tempfile.TemporaryDirectory(
             prefix="asr-segments-", dir=settings.TEMP_DIR
         ) as directory:
-            segments: Sequence[AudioSegment | SpeakerSegment] = []
+            diarization = None
             if enable_speaker_diarization:
-                from app.utils.speaker_diarizer import SpeakerDiarizer
+                from app.utils.speaker_diarizer import get_speaker_diarizer
 
-                segments = SpeakerDiarizer().split_audio_by_speakers(
-                    audio_path, output_dir=directory
-                )
-            else:
-                segments = AudioSplitter(device=device).split_audio_file(
-                    audio_path, output_dir=directory
-                )
-            yield PreparedLongAudio(segments, duration)
+                diarization = get_speaker_diarizer().diarize(audio_path)
+            # Recognition never duplicates overlapping speaker intervals.
+            segments = AudioSplitter(device=device).split_audio_file(
+                audio_path, output_dir=directory
+            )
+            yield PreparedLongAudio(segments, duration, diarization)
             status = "success"
     finally:
         log_inference_metrics(

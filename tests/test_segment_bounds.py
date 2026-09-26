@@ -1,4 +1,4 @@
-"""Both offline segmentation paths respect inference limits without dropping tails."""
+"""Independent ASR chunking respects inference limits without dropping tails."""
 
 import tempfile
 import unittest
@@ -10,24 +10,9 @@ import numpy as np
 
 from app.core.config import settings
 from app.utils.audio_splitter import AudioSplitter
-from app.utils.speaker_diarizer import SpeakerDiarizer, SpeakerSegment
 
 
 class SegmentBoundsTest(unittest.TestCase):
-    def test_diarized_short_tail_stays_within_limit_and_keeps_speaker(self) -> None:
-        with patch.object(settings, "MAX_SEGMENT_SEC", 60):
-            diarizer = SpeakerDiarizer()
-            original = SpeakerSegment(start_ms=2000, end_ms=62500, speaker_id="A")
-            segments = diarizer.split_long_segments(
-                [original], np.zeros(63 * 16000), 16000
-            )
-        self.assertEqual(segments[0].start_ms, 2000)
-        self.assertEqual(segments[-1].end_ms, 62500)
-        self.assertTrue(all(0 < item.duration_ms <= 60000 for item in segments))
-        self.assertEqual(sum(item.duration_ms for item in segments), 60500)
-        self.assertTrue(all(item.speaker_id == "A" for item in segments))
-        self.assertEqual(segments[0].end_ms, segments[1].start_ms)
-
     def test_long_vad_and_fixed_duration_preserve_all_intervals(self) -> None:
         with patch.object(settings, "MAX_SEGMENT_SEC", 60):
             splitter = AudioSplitter()

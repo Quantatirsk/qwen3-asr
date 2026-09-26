@@ -112,7 +112,7 @@ class SharedOfflineClientTest(unittest.TestCase):
 
 
 class R2T2OfflineTest(unittest.TestCase):
-    def test_diarized_segments_keep_speakers_text_and_relative_word_times(self) -> None:
+    def test_asr_chunks_keep_text_and_relative_word_times(self) -> None:
         engine = R2T2Engine.__new__(R2T2Engine)
         engine.aligner = SimpleNamespace(
             align_transcript=Mock(
@@ -139,17 +139,17 @@ class R2T2OfflineTest(unittest.TestCase):
                 Path(path).touch()
             segments = [
                 SimpleNamespace(
-                    temp_file=paths[0], start_sec=5.0, end_sec=8.0, speaker_id="A"
+                    temp_file=paths[0], start_sec=5.0, end_sec=8.0, speaker_id=None
                 ),
                 SimpleNamespace(
-                    temp_file=paths[1], start_sec=9.0, end_sec=11.0, speaker_id="B"
+                    temp_file=paths[1], start_sec=9.0, end_sec=11.0, speaker_id=None
                 ),
             ]
             results = engine.transcribe_segments(
                 segments, hotwords="Ada", word_timestamps=True
             )
             self.assertEqual([r.text for r in results], ["fresh!", "second."])
-            self.assertEqual([r.speaker_id for r in results], ["A", "B"])
+            self.assertEqual([r.speaker_id for r in results], [None, None])
             self.assertEqual(results[0].start_time, 5.0)
             self.assertEqual(results[0].word_tokens[0].start_time, 0.2)
             self.assertEqual(results[0].word_tokens[0].text, "fresh")
@@ -179,7 +179,7 @@ class R2T2OfflineTest(unittest.TestCase):
             result = engine.transcribe_segments(
                 [
                     SimpleNamespace(
-                        temp_file=source.name, start_sec=0, end_sec=1, speaker_id="A"
+                        temp_file=source.name, start_sec=0, end_sec=1, speaker_id=None
                     )
                 ],
                 enable_itn=False,
@@ -187,56 +187,6 @@ class R2T2OfflineTest(unittest.TestCase):
         self.assertEqual(result[0].text, "Fresh text.")
         self.assertIsNone(result[0].word_tokens)
         engine.aligner.align_transcript.assert_not_called()
-
-    def test_diarization_precedes_independent_offline_generation(self) -> None:
-        engine = R2T2Engine.__new__(R2T2Engine)
-        engine.device = "cuda:0"
-        engine.model_id = "confucius4-r2t2"
-        stages = []
-        audio = np.zeros(16000, dtype=np.float32)
-
-        def diarize(audio_path: str, output_dir: str) -> list[SimpleNamespace]:
-            stages.append("diarize")
-            self.assertEqual(Path(audio_path).name, "recording.wav")
-            segment = Path(output_dir) / "speaker.wav"
-            segment.write_bytes(b"complete speaker audio")
-            return [
-                SimpleNamespace(
-                    temp_file=str(segment), start_sec=2.0, end_sec=5.0, speaker_id="A"
-                )
-            ]
-
-        def generate(samples: np.ndarray, context: str) -> str:
-            stages.append("offline")
-            self.assertIs(samples, audio)
-            return "Independent offline text."
-
-        with (
-            tempfile.TemporaryDirectory() as directory,
-            patch.object(settings, "TEMP_DIR", directory),
-            patch("app.services.asr.long_audio.get_audio_duration", return_value=6.0),
-            patch("app.utils.speaker_diarizer.SpeakerDiarizer") as diarizer,
-            patch("app.utils.audio_splitter.AudioSplitter") as vad,
-            patch("app.services.asr.r2t2_engine._load_audio", return_value=audio),
-            patch(
-                "app.services.asr.r2t2_engine.transcribe_segment", side_effect=generate
-            ),
-        ):
-            source = Path(directory) / "recording.wav"
-            source.write_bytes(b"original")
-            diarizer.return_value.split_audio_by_speakers.side_effect = diarize
-            result = engine.transcribe_long_audio(str(source), enable_itn=False)
-            self.assertEqual(stages, ["diarize", "offline"])
-            self.assertEqual(result.text, "Independent offline text.")
-            self.assertEqual(result.segments[0].speaker_id, "A")
-            self.assertEqual(list(Path(directory).iterdir()), [source])
-            vad.assert_not_called()
-            diarizer.return_value.split_audio_by_speakers.side_effect = None
-            diarizer.return_value.split_audio_by_speakers.return_value = []
-            silent = engine.transcribe_long_audio(str(source), enable_itn=False)
-            self.assertEqual(silent.text, "")
-            self.assertEqual(silent.segments, [])
-            self.assertEqual(stages, ["diarize", "offline"])
 
 
 if __name__ == "__main__":

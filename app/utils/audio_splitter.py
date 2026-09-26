@@ -27,7 +27,6 @@ class AudioSegment:
     end_ms: int  # 结束时间（毫秒）
     audio_data: Optional[np.ndarray] = None  # 音频数据
     temp_file: Optional[str] = None  # 临时文件路径
-    speaker_id: Optional[str] = None  # 说话人ID（多说话人模式）
 
     @property
     def start_sec(self) -> float:

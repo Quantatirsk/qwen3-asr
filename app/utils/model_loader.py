@@ -19,6 +19,7 @@ class ModelIntegritySpec:
     required_patterns: tuple[str, ...]
     alternative_required_patterns: tuple[tuple[str, ...], ...] = ()
     min_total_size_bytes: int = 0
+    expected_revision: str | None = None
 
 
 def _find_pattern_matches(root: Path, pattern: str) -> list[Path]:
@@ -78,6 +79,16 @@ def _check_model_integrity_spec(spec: ModelIntegritySpec) -> dict[str, Any]:
                     missing_patterns.append(name)
         except (OSError, ValueError, KeyError, TypeError):
             missing_patterns.append("valid model.safetensors.index.json")
+
+    if spec.expected_revision:
+        for name in spec.required_patterns:
+            metadata = spec.path / ".cache/huggingface/download" / (name + ".metadata")
+            if not metadata.is_file() or metadata.read_text().splitlines()[:1] != [
+                spec.expected_revision
+            ]:
+                missing_patterns.append(
+                    f"{name}: expected revision {spec.expected_revision}"
+                )
 
     if missing_patterns:
         return {
@@ -151,9 +162,13 @@ def _build_required_model_integrity_specs() -> list[ModelIntegritySpec]:
     for asset in get_huggingface_assets():
         cache = get_huggingface_model_cache_dir(asset.model_id)
         snapshot = (
-            cache / "snapshots" / asset.revision
-            if asset.revision
-            else find_huggingface_snapshot_dir(asset.model_id)
+            Path(asset.local_dir)
+            if asset.local_dir
+            else (
+                cache / "snapshots" / asset.revision
+                if asset.revision
+                else find_huggingface_snapshot_dir(asset.model_id)
+            )
         )
         specs.append(
             ModelIntegritySpec(
@@ -162,6 +177,7 @@ def _build_required_model_integrity_specs() -> list[ModelIntegritySpec]:
                 required_patterns=asset.required_patterns,
                 alternative_required_patterns=asset.alternative_required_patterns,
                 min_total_size_bytes=asset.min_total_size_bytes,
+                expected_revision=asset.revision if asset.local_dir else None,
             )
         )
     return specs
@@ -191,16 +207,14 @@ def preload_models() -> dict[str, Any]:
     from app.services.asr.punctuation import get_punctuation_model
     from app.services.realtime.protocol import MODEL_ID
     from app.services.realtime.client import get_engine_capabilities
-    from app.utils.download_models import fix_camplusplus_config
-    from app.utils.speaker_diarizer import get_global_diarization_pipeline
+    from app.utils.speaker_diarizer import get_speaker_diarizer
 
     if not get_engine_capabilities().get("ready"):
         raise RuntimeError("Shared R2T2 engine is not ready")
     device = detect_device(settings.DEVICE)
-    fix_camplusplus_config()
     get_runtime_router().warmup_model(MODEL_ID)
     get_global_vad_model(device)
-    get_global_diarization_pipeline()
+    get_speaker_diarizer().warmup()
     get_punctuation_model()
     return {
         "asr_models": {MODEL_ID: {"loaded": True}},

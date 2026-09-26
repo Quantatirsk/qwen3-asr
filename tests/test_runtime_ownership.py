@@ -6,16 +6,20 @@ import threading
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+
+import numpy as np
 
 from app.core.config import settings
 from app.services.asr.engines import ASRFullResult, ASRSegmentResult, WordToken
 from app.services.asr.long_audio import OfflineASRRequest, prepare_long_audio
+from app.services.asr.r2t2_engine import R2T2Engine
 from app.services.asr.runtime.router import (
     RuntimeRouter,
 )
 
 from app.utils.audio_splitter import AudioSegment
+from app.utils.speaker_diarizer import DiarizationResult
 
 
 class RuntimeOwnershipTests(unittest.IsolatedAsyncioTestCase):
@@ -93,6 +97,74 @@ class RuntimeOwnershipTests(unittest.IsolatedAsyncioTestCase):
                 router.warmup_model("model")
         self.assertEqual(router.get_loaded_model_ids(), [])
 
+    async def test_cancelled_diarized_pipeline_keeps_chunks_until_worker_finishes(
+        self,
+    ) -> None:
+        entered = asyncio.Event()
+        release = threading.Event()
+        loop = asyncio.get_running_loop()
+        engine = R2T2Engine.__new__(R2T2Engine)
+        engine.device = "cuda:0"
+        engine.model_id = "confucius4-r2t2"
+        engine.aligner = SimpleNamespace(align_transcript=Mock(return_value=[]))
+
+        def split(audio_path: str, output_dir: str) -> list[AudioSegment]:
+            chunk = Path(output_dir) / "chunk.wav"
+            chunk.touch()
+            return [AudioSegment(0, 1000, temp_file=str(chunk))]
+
+        def recognize(samples: np.ndarray, context: str) -> str:
+            loop.call_soon_threadsafe(entered.set)
+            if not release.wait(3):
+                raise TimeoutError("Worker was not released")
+            return "Finished."
+
+        empty = DiarizationResult([], np.zeros((100, 8)), 0.01, 1, (None,) * 8)
+        router = RuntimeRouter()
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch.object(settings, "TEMP_DIR", directory),
+            patch.object(router, "resolve_model_id", return_value=engine.model_id),
+            patch.object(router, "_get_engine", return_value=engine),
+            patch("app.services.asr.long_audio.get_audio_duration", return_value=1),
+            patch(
+                "app.utils.speaker_diarizer.get_speaker_diarizer",
+                return_value=SimpleNamespace(diarize=lambda _: empty),
+            ),
+            patch(
+                "app.utils.audio_splitter.AudioSplitter.split_audio_file",
+                side_effect=split,
+            ),
+            patch(
+                "app.services.asr.r2t2_engine._load_audio",
+                return_value=np.zeros(16000),
+            ),
+            patch(
+                "app.services.asr.r2t2_engine.transcribe_segment",
+                side_effect=recognize,
+            ),
+        ):
+            source = Path(directory) / "source.wav"
+            source.touch()
+            task = asyncio.create_task(
+                router.run_offline(
+                    OfflineASRRequest(
+                        "model", str(source), enable_itn=False, enable_punctuation=False
+                    )
+                )
+            )
+            try:
+                await asyncio.wait_for(entered.wait(), 1)
+                task.cancel()
+                await asyncio.sleep(0)
+                self.assertFalse(task.done())
+                self.assertEqual(len(list(Path(directory).rglob("chunk.wav"))), 1)
+            finally:
+                release.set()
+                await asyncio.gather(task, return_exceptions=True)
+            self.assertTrue(task.cancelled())
+            self.assertEqual(list(Path(directory).iterdir()), [source])
+
     async def test_borrowed_input_survives_success_and_timestamps_are_scaled(
         self,
     ) -> None:
@@ -101,7 +173,7 @@ class RuntimeOwnershipTests(unittest.IsolatedAsyncioTestCase):
         directory = temporary.name
         source = Path(directory) / "source.wav"
         source.touch()
-        segment = AudioSegment(1000, 2000, temp_file=str(source), speaker_id="speaker")
+        segment = AudioSegment(1000, 2000, temp_file=str(source))
         with (
             patch.object(settings, "TEMP_DIR", directory),
             patch("app.services.asr.long_audio.get_audio_duration", return_value=2.0),
@@ -122,7 +194,7 @@ class RuntimeOwnershipTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.duration, 4.0)
         self.assertEqual(result.segments[0].start_time, 2.0)
         self.assertEqual(result.segments[0].end_time, 4.0)
-        self.assertEqual(result.segments[0].speaker_id, "speaker")
+        self.assertIsNone(result.segments[0].speaker_id)
         self.assertEqual(result.segments[0].word_tokens[0].start_time, 0.2)
         self.assertEqual(result.segments[0].word_tokens[0].end_time, 0.4)
         self.assertEqual(list(Path(directory).iterdir()), [source])

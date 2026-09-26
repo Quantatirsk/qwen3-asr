@@ -21,6 +21,7 @@ class ModelAsset:
     required_patterns: tuple[str, ...] = ()
     alternative_required_patterns: tuple[tuple[str, ...], ...] = ()
     min_total_size_bytes: int = 0
+    local_dir: str | None = None
 
 
 _VAD_ASSETS = (
@@ -49,63 +50,36 @@ _PUNCTUATION_ASSETS = (
     ),
 )
 
-_DIARIZATION_ASSETS = (
-    ModelAsset(
-        source="modelscope",
-        model_id="iic/speech_campplus_speaker-diarization_common",
-        description="CAM++ Diarization",
-        required_patterns=(
-            "configuration.json",
-            "config.yaml",
-            "onnx/asd.onnx",
-            "onnx/face_recog_ir101.onnx",
-            "onnx/fqa.onnx",
-            "onnx/version-RFB-320.onnx",
-        ),
-        min_total_size_bytes=50_000_000,
-    ),
-    ModelAsset(
-        source="modelscope",
-        model_id="damo/speech_campplus_sv_zh-cn_16k-common",
-        description="CAM++ Speaker Verification",
-        required_patterns=(
-            "configuration.json",
-            "config.yaml",
-            "campplus_cn_common.bin",
-        ),
-        min_total_size_bytes=10_000_000,
-    ),
-    ModelAsset(
-        source="modelscope",
-        model_id="damo/speech_campplus-transformer_scl_zh-cn_16k-common",
-        description="CAM++ Transformer",
-        required_patterns=(
-            "configuration.json",
-            "campplus_cn_encoder.pt",
-            "transformer_backend.pt",
-        ),
-        min_total_size_bytes=10_000_000,
-    ),
-)
-
 
 def get_download_modelscope_assets() -> list[ModelAsset]:
     """Return the full static ModelScope export set used by predownload/export."""
     return [
         *_VAD_ASSETS,
         *_PUNCTUATION_ASSETS,
-        *_DIARIZATION_ASSETS,
     ]
 
 
 def get_runtime_required_modelscope_assets() -> list[ModelAsset]:
-    """Return the offline VAD and speaker assets; realtime runs remotely."""
-    return [*_VAD_ASSETS, *_PUNCTUATION_ASSETS, *_DIARIZATION_ASSETS]
+    """Return the VAD and punctuation assets used by offline recognition."""
+    return [*_VAD_ASSETS, *_PUNCTUATION_ASSETS]
 
 
 def get_huggingface_assets() -> list[ModelAsset]:
-    """One shared ASR checkpoint and an independent timestamp aligner."""
+    """Return the diarizer, shared ASR checkpoint, and timestamp aligner."""
     return [
+        ModelAsset(
+            source="huggingface",
+            model_id="nvidia/Nemotron-3-Diarization",
+            revision="f667ed73aee57d40cc39428eb768b4fd87a0a29e",
+            description="Nemotron Speaker Diarization",
+            required_patterns=(
+                "config.json",
+                "processor_config.json",
+                "model.safetensors",
+            ),
+            min_total_size_bytes=100_000_000,
+            local_dir=settings.NEMOTRON_MODEL_PATH,
+        ),
         ModelAsset(
             source="huggingface",
             model_id=MODEL_REPOSITORY,
@@ -131,12 +105,3 @@ def get_huggingface_assets() -> list[ModelAsset]:
             min_total_size_bytes=500_000_000,
         ),
     ]
-
-
-def get_camplusplus_replacement_paths(cache_dir: str) -> dict[str, str]:
-    """Return the CAM++ offline replacement map for local cache paths."""
-    return {
-        "damo/speech_campplus_sv_zh-cn_16k-common": f"{cache_dir}/damo/speech_campplus_sv_zh-cn_16k-common",
-        "damo/speech_campplus-transformer_scl_zh-cn_16k-common": f"{cache_dir}/damo/speech_campplus-transformer_scl_zh-cn_16k-common",
-        "damo/speech_fsmn_vad_zh-cn-16k-common-pytorch": f"{cache_dir}/damo/speech_fsmn_vad_zh-cn-16k-common-pytorch",
-    }

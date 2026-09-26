@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import replace
 import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
@@ -11,6 +12,7 @@ from app.api.v1 import api_router
 from app.core.config import settings
 from app.services.asr.engines import ASRFullResult, ASRSegmentResult, WordToken
 from app.services.realtime.protocol import MODEL_ID, StreamError
+from app.utils.speaker_diarizer import SpeakerSegment
 
 
 class APIContractTest(unittest.TestCase):
@@ -19,7 +21,7 @@ class APIContractTest(unittest.TestCase):
         app.include_router(api_router)
         self.app = app
         self.client = TestClient(app)
-        result = ASRFullResult(
+        self.result = ASRFullResult(
             "hello",
             [ASRSegmentResult("hello", 0, 1, "speaker1", [WordToken("hello", 0, 1)])],
             1,
@@ -27,7 +29,7 @@ class APIContractTest(unittest.TestCase):
 
         async def start_transcription(**kwargs):
             async def transcribe():
-                return result
+                return self.result
 
             return asyncio.create_task(transcribe())
 
@@ -77,6 +79,147 @@ class APIContractTest(unittest.TestCase):
             response.json()["segments"][0]["word_tokens"][0]["text"], "hello"
         )
         self.service.start_transcription.assert_awaited_once()
+
+    def test_overlap_metadata_and_fractional_offsets_survive_both_apis(self) -> None:
+        segments = [
+            ASRSegmentResult(
+                "Mixed. ",
+                3.25,
+                4,
+                word_tokens=[WordToken("Mixed", 0.125, 0.375)],
+                speaker_candidates=["speaker1", "speaker2"],
+            ),
+            ASRSegmentResult(
+                "Again.", 4.5, 5, "speaker1", [WordToken("Again", 0, 0.2)]
+            ),
+        ]
+        spans = [
+            SpeakerSegment(3, 4, "speaker1", 0.9),
+            SpeakerSegment(3.5, 4.5, "speaker2", 0.8),
+        ]
+        with (
+            patch(
+                "app.api.v1.openai_compatible.get_offline_transcription_service",
+                return_value=self.service,
+            ),
+            patch(
+                "app.api.v1.asr.get_offline_transcription_service",
+                return_value=self.service,
+            ),
+        ):
+            for words in (True, False):
+                self.result = ASRFullResult(
+                    "Mixed. Again.",
+                    [
+                        replace(
+                            segment, word_tokens=segment.word_tokens if words else None
+                        )
+                        for segment in segments
+                    ],
+                    5,
+                    speaker_segments=spans,
+                )
+                with self.subTest(words=words, api="openai"):
+                    response = self.client.post(
+                        "/v1/audio/transcriptions",
+                        files={"file": ("test.wav", b"fake", "audio/wav")},
+                        data={
+                            "response_format": "verbose_json",
+                            "word_timestamps": str(words).lower(),
+                        },
+                    )
+                    self.assertEqual(response.status_code, 200, response.text)
+                    payload = response.json()
+                    self.assertEqual(
+                        payload["segments"][0]["speaker_candidates"],
+                        ["speaker1", "speaker2"],
+                    )
+                    self.assertIsNone(payload["segments"][0]["speaker"])
+                    self.assertEqual(payload["segments"][0]["start"], 3.25)
+                    self.assertEqual(
+                        payload["speaker_segments"],
+                        [
+                            {
+                                "start": 3,
+                                "end": 4,
+                                "speaker": "speaker1",
+                                "confidence": 0.9,
+                            },
+                            {
+                                "start": 3.5,
+                                "end": 4.5,
+                                "speaker": "speaker2",
+                                "confidence": 0.8,
+                            },
+                        ],
+                    )
+                    if words:
+                        self.assertEqual(
+                            payload["words"],
+                            [
+                                {"word": "Mixed", "start": 3.375, "end": 3.625},
+                                {"word": "Again", "start": 4.5, "end": 4.7},
+                            ],
+                        )
+                    else:
+                        self.assertIsNone(payload.get("words"))
+                    self.assertEqual(
+                        self.service.start_transcription.call_args.kwargs[
+                            "options"
+                        ].word_timestamps,
+                        words,
+                    )
+                with self.subTest(words=words, api="aliyun"):
+                    response = self.client.post(
+                        f"/stream/v1/asr?word_timestamps={str(words).lower()}",
+                        content=b"fake",
+                    )
+                    self.assertEqual(response.status_code, 200, response.text)
+                    payload = response.json()
+                    self.assertEqual(
+                        payload["segments"][0]["speaker_candidates"],
+                        ["speaker1", "speaker2"],
+                    )
+                    self.assertIsNone(payload["segments"][0].get("speaker_id"))
+                    self.assertEqual(payload["segments"][0]["start_time"], 3.25)
+                    self.assertEqual(
+                        payload["speaker_segments"],
+                        [
+                            {
+                                "start_time": 3,
+                                "end_time": 4,
+                                "speaker_id": "speaker1",
+                                "confidence": 0.9,
+                            },
+                            {
+                                "start_time": 3.5,
+                                "end_time": 4.5,
+                                "speaker_id": "speaker2",
+                                "confidence": 0.8,
+                            },
+                        ],
+                    )
+                    if words:
+                        self.assertEqual(
+                            payload["segments"][0]["word_tokens"],
+                            [{"text": "Mixed", "start_time": 0.125, "end_time": 0.375}],
+                        )
+                        self.assertEqual(
+                            payload["segments"][1]["word_tokens"][0]["start_time"], 0
+                        )
+                    else:
+                        self.assertTrue(
+                            all(
+                                segment.get("word_tokens") is None
+                                for segment in payload["segments"]
+                            )
+                        )
+                    self.assertEqual(
+                        self.service.start_transcription.call_args.kwargs[
+                            "options"
+                        ].word_timestamps,
+                        words,
+                    )
 
     def test_offline_default_model(self) -> None:
         with patch(

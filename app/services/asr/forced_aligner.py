@@ -43,7 +43,7 @@ class ForcedAligner:
             vllm_module = importlib.import_module("vllm")
         except ImportError as exc:
             raise RuntimeError(
-                "CUDA forced alignment requires vllm[audio]==0.19.0"
+                "CUDA forced alignment requires vllm[audio]==0.30.0"
             ) from exc
         model_path = str(resolve_huggingface_snapshot_dir(model_path))
         memory = _gpu_memory_utilization()

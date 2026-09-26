@@ -23,6 +23,7 @@ services:
       CUDA_VISIBLE_DEVICES: "0"
       HF_HUB_OFFLINE: "${HF_HUB_OFFLINE:-0}"
       HF_ENDPOINT: "${HF_ENDPOINT:-}"
+      NEMOTRON_MODEL_PATH: /app/models/nemotron-3-diarization
       API_KEY: "${API_KEY:-}"
       R2T2_INTERNAL_TOKEN: "${R2T2_INTERNAL_TOKEN:-}"
       R2T2_GPU_MEMORY_UTILIZATION: "${R2T2_GPU_MEMORY_UTILIZATION:-0.30}"
@@ -37,6 +38,7 @@ services:
       - ./temp:/app/temp
       - ./logs:/app/logs
       - ./data:/app/data
+      - ./models/nemotron-3-diarization:/app/models/nemotron-3-diarization:ro
       - ./models/modelscope:/root/.cache/modelscope
       - ./models/huggingface:/root/.cache/huggingface
       - ./.cache/vllm:/root/.cache/vllm

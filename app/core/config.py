@@ -53,6 +53,7 @@ class Settings:
         "disable_log": True,  # 禁用FunASR的tables输出
         "local_files_only": True,  # 强制使用本地模型，禁止联网下载
     }
+    NEMOTRON_MODEL_PATH: str = str(BASE_DIR / "models/nemotron-3-diarization")
     VAD_MODEL: str = "damo/speech_fsmn_vad_zh-cn-16k-common-pytorch"
     R2T2_URL: str = ""
     R2T2_INTERNAL_TOKEN: str = ""
@@ -93,6 +94,9 @@ class Settings:
         if self.R2T2_CPU_THREADS < 1:
             raise ValueError("R2T2_CPU_THREADS must be greater than zero")
 
+        self.NEMOTRON_MODEL_PATH = os.path.expanduser(
+            os.getenv("NEMOTRON_MODEL_PATH", self.NEMOTRON_MODEL_PATH)
+        )
         self.R2T2_URL = os.getenv("R2T2_URL", "").strip().rstrip("/")
         self.R2T2_INTERNAL_TOKEN = os.getenv("R2T2_INTERNAL_TOKEN", "").strip()
 

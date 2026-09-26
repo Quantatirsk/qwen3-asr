@@ -80,6 +80,9 @@ async def lifespan(app: FastAPI):
         from .services.asr.runtime import get_runtime_router
 
         get_runtime_router().close()
+        from .utils.speaker_diarizer import close_speaker_diarizer
+
+        close_speaker_diarizer()
 
 
 def create_app() -> FastAPI:

@@ -237,11 +237,13 @@ async def asr_transcribe(
         for seg in asr_result.segments:
             seg_dict = {
                 "text": seg.text,
-                "start_time": round(seg.start_time, 2),
-                "end_time": round(seg.end_time, 2),
+                "start_time": round(seg.start_time, 3),
+                "end_time": round(seg.end_time, 3),
             }
             if seg.speaker_id:
                 seg_dict["speaker_id"] = seg.speaker_id
+            if seg.speaker_candidates is not None:
+                seg_dict["speaker_candidates"] = seg.speaker_candidates
             # 添加字词级时间戳（如果存在）
             if seg.word_tokens:
                 seg_dict["word_tokens"] = [
@@ -264,6 +266,19 @@ async def asr_transcribe(
             "status": 200,
             "message": "SUCCESS",
             "segments": segments_data,
+            "speaker_segments": (
+                [
+                    {
+                        "start_time": round(span.start_sec, 3),
+                        "end_time": round(span.end_sec, 3),
+                        "speaker_id": span.speaker_id,
+                        "confidence": span.confidence,
+                    }
+                    for span in asr_result.speaker_segments
+                ]
+                if asr_result.speaker_segments is not None
+                else None
+            ),
             "duration": round(asr_result.duration, 2),
             "processing_time": round(request_duration, 3),
         }

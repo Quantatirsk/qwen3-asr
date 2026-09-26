@@ -20,7 +20,6 @@ from .punctuation import restore_sentence_ending
 
 if TYPE_CHECKING:
     from app.utils.audio_splitter import AudioSegment
-    from app.utils.speaker_diarizer import SpeakerSegment
 
 
 class R2T2Engine:
@@ -42,7 +41,7 @@ class R2T2Engine:
 
     def transcribe_segments(
         self,
-        segments: Sequence[AudioSegment | SpeakerSegment],
+        segments: Sequence[AudioSegment],
         hotwords: str = "",
         enable_punctuation: bool = True,
         enable_itn: bool = True,
@@ -77,7 +76,6 @@ class R2T2Engine:
                     text=text,
                     start_time=segment.start_sec,
                     end_time=segment.end_sec,
-                    speaker_id=segment.speaker_id,
                     word_tokens=words or None,
                 )
             )
@@ -108,6 +106,8 @@ class R2T2Engine:
                 enable_punctuation=enable_punctuation,
                 enable_itn=enable_itn,
                 sample_rate=sample_rate,
-                word_timestamps=word_timestamps,
+                word_timestamps=word_timestamps or enable_speaker_diarization,
             )
-            return audio.finish(results, timestamp_scale)
+            return audio.finish(
+                results, timestamp_scale, word_timestamps=word_timestamps
+            )

@@ -19,9 +19,14 @@ class OfflineContractTest(unittest.TestCase):
         assets = get_huggingface_assets()
         self.assertEqual(
             [asset.model_id for asset in assets],
-            [MODEL_REPOSITORY, "Qwen/Qwen3-ForcedAligner-0.6B"],
+            [
+                "nvidia/Nemotron-3-Diarization",
+                MODEL_REPOSITORY,
+                "Qwen/Qwen3-ForcedAligner-0.6B",
+            ],
         )
-        self.assertEqual(assets[0].revision, MODEL_REVISION)
+        self.assertEqual(assets[1].revision, MODEL_REVISION)
+        self.assertEqual(assets[0].revision, "f667ed73aee57d40cc39428eb768b4fd87a0a29e")
         models = get_model_manager().list_declared_entries()
         self.assertEqual(len(models), 1)
         self.assertTrue(models[0]["supports_realtime"])
@@ -29,13 +34,10 @@ class OfflineContractTest(unittest.TestCase):
         with self.assertRaises(InvalidParameterException):
             get_model_manager().get_declared_entry_config("unsupported-model")
 
-    def test_speaker_and_vad_assets_retained(self) -> None:
+    def test_modelscope_only_supplies_vad_and_punctuation(self) -> None:
         expected = {
             "damo/speech_fsmn_vad_zh-cn-16k-common-pytorch",
             "iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch",
-            "iic/speech_campplus_speaker-diarization_common",
-            "damo/speech_campplus_sv_zh-cn_16k-common",
-            "damo/speech_campplus-transformer_scl_zh-cn_16k-common",
         }
         self.assertEqual(
             {a.model_id for a in get_download_modelscope_assets()}, expected

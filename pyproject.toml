@@ -4,13 +4,13 @@ version = "1.0.3"
 description = "R2T2 offline and streaming speech recognition for CUDA and macOS CPU"
 requires-python = ">=3.11,<3.13"
 dependencies = [
-  "fastapi==0.128.0",
+  "fastapi==0.136.3",
   "fastapi-offline==1.7.6",
   "uvicorn[standard]==0.40.0",
   "pydantic==2.12.0",
   "python-multipart==0.0.22",
   "funasr==1.3.1",
-  "requests==2.32.5",
+  "requests==2.34.2",
   "modelscope[framework]==1.34.0",
   "soundfile==0.13.1",
   "librosa==0.11.0",
@@ -21,16 +21,20 @@ dependencies = [
   "scipy==1.16.3; sys_platform == 'darwin'",
   "wetext==0.1.2",
   "python-dotenv==1.2.1",
-  "huggingface_hub==0.34.0",
-  "hdbscan==0.8.41",
+  "huggingface_hub==1.33.0",
   "loguru==0.7.2",
   "rich>=13.9,<14",
   "setuptools>=70.0.0,<81",
-  "torch==2.10.0",
-  "torchaudio==2.10.0",
-  "torchvision==0.25.0",
-  "transformers>=4.57,<4.58",
-  "vllm[audio]==0.19.0; sys_platform == 'linux' and platform_machine == 'x86_64'",
+  "torch==2.13.0; sys_platform == 'linux'",
+  "torch==2.10.0; sys_platform == 'darwin'",
+  "torchaudio==2.11.0; sys_platform == 'linux'",
+  "torchaudio==2.10.0; sys_platform == 'darwin'",
+  "torchvision==0.28.0; sys_platform == 'linux'",
+  "torchvision==0.25.0; sys_platform == 'darwin'",
+  "transformers @ https://github.com/huggingface/transformers/archive/27166ea03f12c940f23176a904ab1d2ff1a3dcbb.zip",
+  "flashinfer-cubin==0.6.18.post1; sys_platform == 'linux'",
+  "nvidia-nccl-cu13==2.29.7; sys_platform == 'linux'",
+  "vllm[audio]==0.30.0; sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
 
 [dependency-groups]
@@ -51,17 +55,30 @@ environments = [
 ]
 
 [tool.uv.sources]
+flashinfer-cubin = { index = "flashinfer" }
 torch = [
-  { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+  { index = "pytorch-cu130", marker = "sys_platform == 'linux'" },
 ]
 torchaudio = [
-  { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+  { index = "pytorch-cu130", marker = "sys_platform == 'linux'" },
 ]
 torchvision = [
-  { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+  { index = "pytorch-cu130", marker = "sys_platform == 'linux'" },
 ]
 
 [[tool.uv.index]]
-name = "pytorch-cu128"
-url = "https://download.pytorch.org/whl/cu128"
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
 explicit = true
+
+[[tool.uv.index]]
+name = "flashinfer"
+url = "https://flashinfer.ai/whl"
+explicit = true
+
+# Match the published wheel metadata without downloading 1.5 GiB on macOS.
+[[tool.uv.dependency-metadata]]
+name = "flashinfer-cubin"
+version = "0.6.18.post1"
+requires-python = ">=3.8"
+requires-dist = []

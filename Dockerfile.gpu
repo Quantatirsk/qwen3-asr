@@ -1,5 +1,5 @@
 FROM ghcr.io/astral-sh/uv:0.9.22 AS uv
-FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
+FROM nvidia/cuda:13.0.2-cudnn-devel-ubuntu24.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
@@ -10,6 +10,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     TOKENIZERS_PARALLELISM=false \
     PATH=/opt/venv/bin:$PATH \
     UV_PROJECT_ENVIRONMENT=/opt/venv \
+    UV_OVERRIDE="" \
     VLLM_WORKER_MULTIPROC_METHOD=spawn
 
 # CUDA's development image supplies nvcc for runtime FlashInfer compilation.
@@ -20,8 +21,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=uv /uv /usr/local/bin/uv
 WORKDIR /app
 COPY pyproject.toml uv.lock /app/
-RUN uv sync --frozen --no-dev --no-install-project
-RUN python -c "import torch, torchaudio, transformers, vllm; from transformers import PreTrainedModel"
+RUN --mount=type=cache,target=/root/.cache/uv \
+    env -u UV_OVERRIDE uv sync --frozen --no-dev --no-install-project \
+    && uv pip check --python /opt/venv/bin/python
+RUN python -c "import torch, torchaudio, transformers, vllm; from transformers import PreTrainedModel, AutoModelForAudioFrameClassification, AutoProcessor"
 COPY app /app/app
 COPY deploy /app/deploy
 COPY start.py /app/start.py

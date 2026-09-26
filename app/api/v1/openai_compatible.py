@@ -67,7 +67,12 @@ class TranscriptionSegment(BaseModel):
     avg_logprob: float = 0.0
     compression_ratio: float = 0.0
     no_speech_prob: float = 0.0
-    speaker: Optional[str] = Field(default=None, description="说话人ID")
+    speaker: Optional[str] = Field(
+        default=None, description="Speaker ID; null when unknown"
+    )
+    speaker_candidates: Optional[List[str]] = Field(
+        default=None, description="Candidate speakers for uncertain attribution"
+    )
 
 
 class TranscriptionWord(BaseModel):
@@ -84,6 +89,13 @@ class TranscriptionResponse(BaseModel):
     text: str
 
 
+class SpeakerActivity(BaseModel):
+    start: float
+    end: float
+    speaker: str
+    confidence: float
+
+
 class VerboseTranscriptionResponse(BaseModel):
     """详细转写响应 (verbose_json 格式)"""
 
@@ -93,6 +105,7 @@ class VerboseTranscriptionResponse(BaseModel):
     text: str
     segments: List[TranscriptionSegment] = Field(default_factory=list)
     words: Optional[List[TranscriptionWord]] = None
+    speaker_segments: Optional[List[SpeakerActivity]] = None
 
 
 class ModelObject(BaseModel):
@@ -195,6 +208,7 @@ def build_transcription_payload(
                 end=seg.end_time,
                 text=seg.text,
                 speaker=seg.speaker_id,
+                speaker_candidates=seg.speaker_candidates,
             )
         )
         if seg.word_tokens:
@@ -217,6 +231,19 @@ def build_transcription_payload(
             text=asr_result.text,
             segments=segments,
             words=words if words else None,
+            speaker_segments=(
+                [
+                    SpeakerActivity(
+                        start=span.start_sec,
+                        end=span.end_sec,
+                        speaker=span.speaker_id,
+                        confidence=span.confidence,
+                    )
+                    for span in asr_result.speaker_segments
+                ]
+                if asr_result.speaker_segments is not None
+                else None
+            ),
         ).model_dump()
     elif response_format == ResponseFormat.JSON:
         payload = {"text": asr_result.text}

@@ -97,6 +97,9 @@ class ASRSegment(BaseModel):
         default=None,
         description="说话人ID（如 说话人1），仅启用说话人分离时返回",
     )
+    speaker_candidates: Optional[List[str]] = Field(
+        default=None, description="Candidate speakers for uncertain attribution"
+    )
     word_tokens: Optional[List[WordToken]] = Field(
         default=None,
         description="字词级时间戳（仅启用 word_timestamps 且模型支持时返回）",
@@ -118,6 +121,13 @@ class ASRSegment(BaseModel):
     }
 
 
+class SpeakerActivity(BaseModel):
+    start_time: float
+    end_time: float
+    speaker_id: str
+    confidence: float
+
+
 class ASRSuccessResponse(BaseResponse):
     """ASR成功响应模型"""
 
@@ -131,6 +141,8 @@ class ASRSuccessResponse(BaseResponse):
         default=None,
         description="分段识别结果（含时间戳），仅长音频分段识别时返回",
     )
+
+    speaker_segments: Optional[List[SpeakerActivity]] = None
 
     duration: Optional[float] = Field(
         default=None,

@@ -4,7 +4,7 @@
 
 ## 架构
 
-一个容器、一个 Python 环境、两个进程：公共 API 提供离线接口和 WebSocket 转发；私有 R2T2 进程持有一个 vLLM AsyncLLM 引擎。实时和离线解码请求均由这个引擎调度，R2T2 权重只加载一次；公共 API 另行加载 VAD、CAM++ 和强制对齐模型。多个实时连接的解码请求由 vLLM 连续批处理，各自独立保存音频、提示词和已确认文本。私有进程统一限制接入数量，公共 API 增加 worker 不会绕过限额。
+一个容器、一个 Python 环境、两个进程：公共 API 提供离线接口和 WebSocket 转发；私有 R2T2 进程持有一个 vLLM AsyncLLM 引擎。实时和离线解码请求均由这个引擎调度，R2T2 权重只加载一次；公共 API 另行加载 VAD、Nemotron 和强制对齐模型。多个实时连接的解码请求由 vLLM 连续批处理，各自独立保存音频、提示词和已确认文本。私有进程统一限制接入数量，公共 API 增加 worker 不会绕过限额。
 
 核心代码：`app/services/realtime/engine.py`（解码），`server.py`（接入与生命周期），`protocol.py`（音频协议与队列），`client.py` / `gateway.py`（转发）。`deploy/entrypoint.py` 管理两个进程，任一进程退出即关闭容器，由容器策略重启。
 
@@ -36,7 +36,7 @@ docker compose up -d --build
 
 - 模型 `netease-youdao/Confucius4-R2T2`，revision `185ce639118ad1362d049ca0d8ed04b6ec5cd6c9`。
 - 按 2026-09-25 上游最新 commit `26d55a54ce5670cff9947a167d8ed95d569fd4d9` 的滚动窗口方法适配为原生异步调用。
-- vLLM `0.19.0`、PyTorch `2.10.0`、Transformers `4.57.x`，使用 vLLM 内置 Qwen3-ASR processor。无需额外 Python 依赖或模型插件。
+- vLLM `0.30.0`、PyTorch `2.13.0+cu130`、Transformers `5.18.0.dev0`（固定提交 `27166ea03f12c940f23176a904ab1d2ff1a3dcbb`），使用 vLLM 内置 Qwen3-ASR processor。无需额外 Python 依赖或模型插件。
 - 首次解码收集 320 ms 音频，以后每 160 ms 解码。实际出字还取决于语音上下文和推理时间，320 ms 不是首字延迟保证。
 - 音频窗口最多 16 秒，超过后移除最早 8 秒及相应文本前缀；按采样位置对齐，避免长录音无限重算。保留英文空格；结束时即使恰好对齐完整块，也刷新最后一个未确认 token。
 - 语音之后检测到连续至少 320 ms 的低能量音频（RMS < 0.004）时，补齐当前语句并清空识别窗口，下一句重新自动识别语言。此边界检测不丢弃音频、不关闭连接，不依赖额外 VAD 模型。持续背景噪声可能使边界不触发；无停顿的任意语言切换仍受模型能力限制。
