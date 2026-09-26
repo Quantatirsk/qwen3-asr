@@ -35,7 +35,7 @@ class R2T2OfflineTest(unittest.TestCase):
             SimpleNamespace(
                 outputs=[
                     SimpleNamespace(
-                        text="language English<asr_text>Fresh offline result.",
+                        text="language English<asr_text>Fresh offline result.|",
                         finish_reason="stop",
                     )
                 ]

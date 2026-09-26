@@ -71,7 +71,8 @@ def _build_alignment_prompt(tokens: list[str]) -> str:
 
 
 def _parse_asr_output(raw_text: str, language: Optional[str]) -> tuple[str, str]:
-    text = (raw_text or "").strip()
+    # R2T2 can emit its completion delimiter in one-shot inference too.
+    text = (raw_text or "").split("|", 1)[0].strip()
     if "<asr_text>" in text:
         left, right = text.split("<asr_text>", 1)
         detected = left.strip()
