@@ -20,6 +20,7 @@ from .protocol import (
     MAX_SECONDS,
     MODEL_ID,
     MODEL_REVISION,
+    OFFLINE_CONCURRENCY,
     OFFLINE_MAX_BYTES,
     PROTOCOL_VERSION,
     SAMPLE_RATE,
@@ -85,7 +86,7 @@ def create_app(model_factory=Model, *, max_sessions=None):
     app = FastAPI(title="R2T2 inference", lifespan=lifespan)
     app.state.active = 0
     app.state.ready = False
-    app.state.offline_active = False
+    app.state.offline_active = 0
     app.state.chunk_samples = CHUNK_SAMPLES
 
     def authorized(headers):
@@ -131,12 +132,12 @@ def create_app(model_factory=Model, *, max_sessions=None):
     async def transcribe(request: Request, context: str = Query("", max_length=2048)):
         if not authorized(request.headers):
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
-        if not app.state.ready or app.state.offline_active:
+        if not app.state.ready or app.state.offline_active >= OFFLINE_CONCURRENCY:
             return JSONResponse(
                 {"error": "Offline inference capacity is exhausted"}, status_code=503
             )
         # Reserve before reading the body, bounding both retained audio and GPU jobs.
-        app.state.offline_active = True
+        app.state.offline_active += 1
         try:
             if request.headers.get("content-type") != "application/octet-stream":
                 raise StreamError("invalid_audio", "Expected float32 PCM audio")
@@ -171,7 +172,7 @@ def create_app(model_factory=Model, *, max_sessions=None):
             logger.exception("Offline R2T2 inference failed")
             return JSONResponse({"error": "Offline inference failed"}, status_code=500)
         finally:
-            app.state.offline_active = False
+            app.state.offline_active -= 1
 
     @app.websocket("/v1/stream")
     async def stream(ws: WebSocket):

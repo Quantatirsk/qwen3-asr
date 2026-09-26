@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from app.core.config import settings
 from app.services.realtime.engine import Model
 from app.services.realtime.protocol import (
+    OFFLINE_CONCURRENCY,
     OFFLINE_TAIL_SAMPLES,
     StreamConfig,
     StreamError,
@@ -70,14 +71,14 @@ class SharedServerTest(unittest.TestCase):
                     )
                     self.assertIn(response.status_code, (400, 413))
                     self.assertFalse(app.state.offline_active)
-            app.state.offline_active = True
+            app.state.offline_active = OFFLINE_CONCURRENCY
             self.assertEqual(
                 client.post(
                     "/v1/transcribe", content=b"0000", headers=headers
                 ).status_code,
                 503,
             )
-            app.state.offline_active = False
+            app.state.offline_active = OFFLINE_CONCURRENCY - 1
             self.assertEqual(
                 client.post(
                     "/v1/transcribe", content=b"0000", headers=headers
@@ -106,7 +107,7 @@ class SharedServerTest(unittest.TestCase):
             model = Model(4)
         llm.from_engine_args.assert_called_once()
         options = llm.from_engine_args.call_args.args[0]
-        self.assertEqual(options["max_num_seqs"], 5)
+        self.assertEqual(options["max_num_seqs"], 4 + OFFLINE_CONCURRENCY)
         self.assertEqual(options["scheduling_policy"], "priority")
         self.assertEqual(options["max_model_len"], 16384)
         self.assertEqual(model.offline_sampling["max_tokens"], 4096)

@@ -159,12 +159,17 @@ class R2T2OfflineTest(unittest.TestCase):
             )
         )
         audio = np.zeros(16000, dtype=np.float32)
+        second = np.ones(16000, dtype=np.float32)
         with (
             tempfile.TemporaryDirectory() as directory,
-            patch("app.services.asr.r2t2_engine._load_audio", return_value=audio),
+            patch(
+                "app.services.asr.r2t2_engine._load_audio",
+                side_effect=lambda path: second if "second" in path else audio,
+            ),
             patch(
                 "app.services.asr.r2t2_engine.transcribe_segment",
-                side_effect=["fresh!", "second."],
+                # Concurrent calls may arrive in any order; results keep segment order.
+                side_effect=lambda samples, _: "second." if samples is second else "fresh!",
             ) as recognize,
         ):
             paths = [
@@ -189,8 +194,7 @@ class R2T2OfflineTest(unittest.TestCase):
             self.assertEqual(results[0].word_tokens[0].start_time, 0.2)
             self.assertEqual(results[0].word_tokens[0].text, "fresh")
             self.assertEqual(recognize.call_count, 2)
-            self.assertIs(recognize.call_args.args[0], audio)
-            self.assertEqual(recognize.call_args.args[1], "Ada")
+            recognize.assert_any_call(audio, "Ada")
             engine.aligner.align_transcript.assert_any_call(
                 audio_path=paths[0], text="fresh!", audio=audio
             )

@@ -72,6 +72,8 @@ async def replay(url, pcm, headers):
             while True:
                 event = json.loads(await asyncio.wait_for(ws.recv(), 35))
                 assert not event.get("error"), event
+                if "speaker" in event:
+                    continue  # Speaker labels carry no timing.
                 if event.get("delta"):
                     first = first or (time.perf_counter() - start)
                     deltas.append(event["delta"])

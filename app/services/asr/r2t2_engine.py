@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from app.core.config import settings
 from app.core.device import detect_device
 from app.services.realtime.client import transcribe_segment
-from app.services.realtime.protocol import MODEL_ID
+from app.services.realtime.protocol import MODEL_ID, OFFLINE_CONCURRENCY
 
 from .engines import ASRFullResult, ASRSegmentResult, WordToken
 from .forced_aligner import ForcedAligner, _load_audio
@@ -46,12 +47,18 @@ class R2T2Engine:
         sample_rate: int = 16000,
         word_timestamps: bool = False,
     ) -> list[ASRSegmentResult]:
-        results = []
         for segment in segments:
             if not segment.temp_file or not Path(segment.temp_file).is_file():
                 raise FileNotFoundError(f"Missing audio segment: {segment.temp_file}")
-            audio = _load_audio(segment.temp_file)
-            text = transcribe_segment(audio, hotwords)
+        audios = [_load_audio(segment.temp_file) for segment in segments]
+        # The engine batches concurrent segments; punctuation and alignment stay serial.
+        pool = ThreadPoolExecutor(OFFLINE_CONCURRENCY)
+        try:
+            texts = list(pool.map(lambda audio: transcribe_segment(audio, hotwords), audios))
+        finally:
+            pool.shutdown(cancel_futures=True)
+        results = []
+        for segment, audio, text in zip(segments, audios, texts):
             if enable_punctuation:
                 text = restore_sentence_ending(text)
             words = None

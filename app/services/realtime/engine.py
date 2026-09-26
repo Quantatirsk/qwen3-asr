@@ -20,6 +20,7 @@ from .protocol import (
     CHUNK_SAMPLES,
     MODEL_REPOSITORY,
     MODEL_REVISION,
+    OFFLINE_CONCURRENCY,
     SAMPLE_RATE,
     StreamConfig,
     OFFLINE_TAIL_SAMPLES,
@@ -149,7 +150,7 @@ class Model:
                         os.getenv("R2T2_GPU_MEMORY_UTILIZATION", "0.30")
                     ),
                     max_model_len=max_model_len,
-                    max_num_seqs=max_sessions + 1,
+                    max_num_seqs=max_sessions + OFFLINE_CONCURRENCY,
                     max_num_batched_tokens=2048,
                     enable_chunked_prefill=True,
                     scheduling_policy="priority",
