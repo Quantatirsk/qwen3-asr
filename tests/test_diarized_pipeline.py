@@ -97,7 +97,7 @@ class DiarizedPipelineTest(unittest.TestCase):
 
     def transcribe(self, **kwargs: object) -> ASRFullResult:
         return self.engine.transcribe_long_audio(
-            str(self.source), enable_itn=False, enable_punctuation=False, **kwargs
+            str(self.source), enable_punctuation=False, **kwargs
         )
 
     def assert_cleaned(self) -> None:

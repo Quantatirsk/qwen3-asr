@@ -141,15 +141,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/3e/38/7859ff46355f76f8d19459005ca000b6e7012f2f1ca597746cbcd1fbfe5e/antlr4-python3-runtime-4.9.3.tar.gz", hash = "sha256:f224469b4168294902bb1efa80a8bf7855f24c99aef99cbefc1bcd3cce77881b", size = 117034, upload-time = "2021-11-06T17:52:23.524Z" }
 
 [[package]]
-name = "anyascii"
-version = "0.3.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/db/ba/edebda727008390936da4a9bf677c19cd63b32d51e864656d2cbd1028e25/anyascii-0.3.3.tar.gz", hash = "sha256:c94e9dd9d47b3d9494eca305fef9447d00b4bf1a32aff85aa746fa3ec7fb95c3", size = 264680, upload-time = "2025-06-29T03:33:30.427Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c2/76/783b75a21ce3563b8709050de030ae253853b147bd52e141edc1025aa268/anyascii-0.3.3-py3-none-any.whl", hash = "sha256:f5ab5e53c8781a36b5a40e1296a0eeda2f48c649ef10c3921c1381b1d00dee7a", size = 345090, upload-time = "2025-06-29T03:33:28.356Z" },
-]
-
-[[package]]
 name = "anyio"
 version = "4.13.0"
 source = { registry = "https://pypi.org/simple" }
@@ -324,17 +315,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/2c/9e/d7f18bd9a0354088abc11a0c1f2c7698f7c49e5a709faedf6a46e388f693/compressed_tensors-0.17.0.tar.gz", hash = "sha256:15c20d06bdbcf35b51fc99fd125e7b9be1e1855567c33b7a46dfac26ad6fb126", size = 257091, upload-time = "2026-06-03T16:49:17.208Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/35/63/6edf0415b072fff0bf8b546074dea3f0f9b148e49b601ac98bdc60a76c68/compressed_tensors-0.17.0-py3-none-any.whl", hash = "sha256:4a1b89b508f7efb8ffb4eee8a6e69e0452d9b080cae130146025c64fbe9fa9aa", size = 211714, upload-time = "2026-06-03T16:49:15.672Z" },
-]
-
-[[package]]
-name = "contractions"
-version = "0.1.73"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "textsearch", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/bb/e4/725241b788963b460ce0118bfd5c505dd3d1bdd020ee740f9f39044ed4a7/contractions-0.1.73-py2.py3-none-any.whl", hash = "sha256:398cee3b69c37307a50dce4930d961a0f42b48fdae9562df73bed5683008d3bc", size = 8651, upload-time = "2022-11-15T14:05:54.573Z" },
 ]
 
 [[package]]
@@ -1166,20 +1146,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/19/74/a633ee74eb36c44aa6d1095e7cc5569bebf04342ee146178e2d36600708b/jsonschema_specifications-2025.9.1.tar.gz", hash = "sha256:b540987f239e745613c7a9176f3edb72b832a4ac465cf02712288397832b5e8d", size = 32855, upload-time = "2025-09-08T01:34:59.186Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/41/45/1a4ed80516f02155c51f51e8cedb3c1902296743db0bbc66608a0db2814f/jsonschema_specifications-2025.9.1-py3-none-any.whl", hash = "sha256:98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe", size = 18437, upload-time = "2025-09-08T01:34:57.871Z" },
-]
-
-[[package]]
-name = "kaldifst"
-version = "1.8.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d4/ad/3d2bbf5e91f05d78c385510d04d4749948856a2db3a01034d36904e2a6e9/kaldifst-1.8.0.tar.gz", hash = "sha256:80c8b819cb762ab6251578444e8b80379049a85a122ac74d37b2534faa45b63a", size = 154383, upload-time = "2026-04-09T13:14:36.102Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/72/53/775b58ff033951aadf5ee1cbe56dd8ea2681d437a79611bbc55b4a7881a2/kaldifst-1.8.0-cp311-cp311-macosx_10_15_universal2.whl", hash = "sha256:8deeadd5d391663d6c6fdbbd4f7a1daf8c9392613b67fb6815f8bf14ba209298", size = 2142137, upload-time = "2026-04-09T13:30:33.345Z" },
-    { url = "https://files.pythonhosted.org/packages/00/3c/6e27e1dec2baa389171e3680baab9414f0d8005374ce700192fdafd023e6/kaldifst-1.8.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:d04b56b00233afeab05eb781157840a444b7a56992c30a08fac8096f86be8389", size = 1017817, upload-time = "2026-04-09T13:19:28.516Z" },
-    { url = "https://files.pythonhosted.org/packages/96/d3/e891ff8dbc1beaee04c0a081423595d6e276ee369342eb508f36a7e25767/kaldifst-1.8.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c9d585ee47c37ebca2ad401bacef747675486f38a21d380aec94242e3a3b0a13", size = 1463829, upload-time = "2026-04-09T13:14:34.887Z" },
-    { url = "https://files.pythonhosted.org/packages/ec/1e/c1fddc62632014f10d891feb457929119845213418ab51d5353af8cff7df/kaldifst-1.8.0-cp312-cp312-macosx_10_15_universal2.whl", hash = "sha256:4e7cec0eea5e72f87ad915c7a0762404331cf5f6f04517292fe50f8de4e98f39", size = 2151447, upload-time = "2026-04-09T13:12:29.577Z" },
-    { url = "https://files.pythonhosted.org/packages/5a/30/7f8f3b350dc8b2961da4b5bc5af9fd9478f6084173d5f13a0fe25e06686f/kaldifst-1.8.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:a6ff7845e27c58a71ff4841050fadbbab6c75444645d9e2bc9834f8dbae6c10e", size = 1019098, upload-time = "2026-04-09T13:41:15.94Z" },
-    { url = "https://files.pythonhosted.org/packages/b1/bd/dcf9d079cdf158360bdce69762b22d4fc3eccde89d6b08e180af7f42274c/kaldifst-1.8.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:70e28ca1b1ed68ad61988d684754ff43ba6386d177ec24f8445bab316e10c3d0", size = 1466422, upload-time = "2026-04-09T13:14:56.638Z" },
 ]
 
 [[package]]
@@ -2282,22 +2248,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pyahocorasick"
-version = "2.3.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ad/eb/6bf175a745bdb3b247c0f8bff784745f0b30fdfafb5760d635b45d91c607/pyahocorasick-2.3.0.tar.gz", hash = "sha256:2960f5838bbcca4d7765c40478ec56f938e3f161946ff84f00c06d2b3a0ba9dd", size = 104589, upload-time = "2025-12-17T13:02:28.951Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f6/19/b7a9dbbd0083110b5f077c3911787765d5285ccfad5d3f08e1230beca1ed/pyahocorasick-2.3.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:3f15f8cd42e6d8164f5621e2acd768a58854740f1796a1649f91485505da4776", size = 59718, upload-time = "2025-12-17T13:02:03.694Z" },
-    { url = "https://files.pythonhosted.org/packages/e2/34/ccdfaed1d584e7be0806700166b82a574123437a8d4ef235e730eb24f44c/pyahocorasick-2.3.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:8a1cbd603d471e118a60f780f2b4d83a35975d71a1745419854e722dfa7fadfc", size = 33994, upload-time = "2025-12-17T13:02:05.082Z" },
-    { url = "https://files.pythonhosted.org/packages/31/96/5b3305eadbda045bcf616172c8c1a15cc81935af6926ba6f3b3b99ae0db8/pyahocorasick-2.3.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:41ec7f66d2fd5452d9d5e2f4ca919401981b0f52e7f1b0c2a9b7b30163ea86ea", size = 113939, upload-time = "2025-12-17T13:02:06.234Z" },
-    { url = "https://files.pythonhosted.org/packages/4b/ad/bf7d80ec2abea631b1f0960a4f3e94c90ec39efe66aa1f2f66322d579e60/pyahocorasick-2.3.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:2fb0b6fedec6558e7c8cd9397131325b03db72b2683b7abede3a37ae87150ae6", size = 116393, upload-time = "2025-12-17T13:02:07.771Z" },
-    { url = "https://files.pythonhosted.org/packages/5f/54/c705885bb82f32aa50846d1de8b8fa48233361093ff9e30d01cb69d6d7a0/pyahocorasick-2.3.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:7abfe09f6dca8656cc3d1122b25ea0caf272916c18a6e5a6a45ae74aa325a7fe", size = 60114, upload-time = "2025-12-17T13:02:10.229Z" },
-    { url = "https://files.pythonhosted.org/packages/4f/a7/b0bde3d74d32f88a875d7397bbe81a118b5c70f83c400629c14771ed345b/pyahocorasick-2.3.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:e7917f513aef244465e2e6a0ae1b5690e971dc336a7b15f68de2f03869d68302", size = 34155, upload-time = "2025-12-17T13:02:11.661Z" },
-    { url = "https://files.pythonhosted.org/packages/85/2a/1356e69aac6b0c746d786df1ec5a0a884018e1464fbeb7f358338c8f880e/pyahocorasick-2.3.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:dc9423ffaae542cfaeed516045576968a5ce6203a6f03d0034fcedbcabcb48cd", size = 114873, upload-time = "2025-12-17T13:02:12.829Z" },
-    { url = "https://files.pythonhosted.org/packages/42/35/5cbba34fc6f3438d1016d609ed47d74222dd038cd83bd86540edaff0070d/pyahocorasick-2.3.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:c0c42322518c99c49623a1784d27ae73a2765251955808e2edd64fd151e6fa57", size = 117864, upload-time = "2025-12-17T13:02:13.989Z" },
-]
-
-[[package]]
 name = "pyarrow"
 version = "23.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2628,7 +2578,6 @@ dependencies = [
     { name = "uvicorn", extra = ["standard"], marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
     { name = "vllm", extra = ["audio"], marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "websockets", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
-    { name = "wetext", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
 ]
 
 [package.dev-dependencies]
@@ -2669,7 +2618,6 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"], specifier = "==0.40.0" },
     { name = "vllm", extras = ["audio"], marker = "platform_machine == 'x86_64' and sys_platform == 'linux'", specifier = "==0.30.0" },
     { name = "websockets", specifier = "==16.0" },
-    { name = "wetext", specifier = "==0.1.2" },
 ]
 
 [package.metadata.requires-dev]
@@ -3068,19 +3016,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/48/a9/fc520ea91ab1f3ba51cbf3fe24f2b6364ed3b49046969e0868d46d6da372/tensorboardx-2.6.5.tar.gz", hash = "sha256:ca176db3997ee8c07d2eb77381225956a3fd1c10c91beafab1f17069adc47017", size = 4770195, upload-time = "2026-04-03T15:40:23.803Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/87/0f/69fbab4c30b2f3a76e6de67585ea72a8eccf381751f5c0046b966fde9658/tensorboardx-2.6.5-py3-none-any.whl", hash = "sha256:c10b891d00af306537cb8b58a039b2ba41571f0da06f433a41c4ca8d6abe1373", size = 87510, upload-time = "2026-04-03T15:40:22.111Z" },
-]
-
-[[package]]
-name = "textsearch"
-version = "0.0.24"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyascii", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
-    { name = "pyahocorasick", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5e/7c/18ab4807196aac89a114a98732462436cbd48db16873dc4669087f354bc7/textsearch-0.0.24.tar.gz", hash = "sha256:2d23b5c3116715b65bccc18bc870ecc236ec8480d48cd5f257cc60bf66bb241a", size = 49755, upload-time = "2022-09-02T14:04:42.124Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e2/0f/6f08dd89e9d71380a369b1f5b6c97a32d62fc9cfacc1c5b8329505b9e495/textsearch-0.0.24-py2.py3-none-any.whl", hash = "sha256:1bbc4cc36300fbf0bbaa865500f84e907c85f6a48faf37da6e098407b405ed09", size = 7606, upload-time = "2022-09-02T14:04:40.105Z" },
 ]
 
 [[package]]
@@ -3843,19 +3778,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/7e/52/93e166a81e0305b33fe416338be92ae863563fe7bce446b0f687b9df5aea/websockets-16.0-pp311-pypy311_pp73-macosx_11_0_arm64.whl", hash = "sha256:4a1aba3340a8dca8db6eb5a7986157f52eb9e436b74813764241981ca4888f03", size = 175260, upload-time = "2026-01-10T09:23:37.409Z" },
     { url = "https://files.pythonhosted.org/packages/56/0c/2dbf513bafd24889d33de2ff0368190a0e69f37bcfa19009ef819fe4d507/websockets-16.0-pp311-pypy311_pp73-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:f4a32d1bd841d4bcbffdcb3d2ce50c09c3909fbead375ab28d0181af89fd04da", size = 176071, upload-time = "2026-01-10T09:23:39.158Z" },
     { url = "https://files.pythonhosted.org/packages/6f/28/258ebab549c2bf3e64d2b0217b973467394a9cea8c42f70418ca2c5d0d2e/websockets-16.0-py3-none-any.whl", hash = "sha256:1637db62fad1dc833276dded54215f2c7fa46912301a24bd94d45d46a011ceec", size = 171598, upload-time = "2026-01-10T09:23:45.395Z" },
-]
-
-[[package]]
-name = "wetext"
-version = "0.1.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "contractions", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
-    { name = "kaldifst", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e1/5b/06df7203e09cedb5a7c48024e22d3a13d4595d9516735c74fe429f3c5407/wetext-0.1.2.tar.gz", hash = "sha256:a9f751878f4ac85058b194fe4b31f65e49d765f90f557d5c150b933511746b22", size = 1709448, upload-time = "2025-11-28T07:33:48.902Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a1/58/b778473e32f4afa877f1313b137edac2c9cef40da571078a351507aa362a/wetext-0.1.2-py3-none-any.whl", hash = "sha256:7467ac08a4bb44523780626437b9b0718cd611b1ccb4304bc49b649fe29370ee", size = 1771722, upload-time = "2025-11-28T07:33:47.177Z" },
 ]
 
 [[package]]

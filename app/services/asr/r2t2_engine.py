@@ -10,7 +10,6 @@ from app.core.config import settings
 from app.core.device import detect_device
 from app.services.realtime.client import transcribe_segment
 from app.services.realtime.protocol import MODEL_ID
-from app.utils.text_processing import normalize_asr_text
 
 from .engines import ASRFullResult, ASRSegmentResult, WordToken
 from .forced_aligner import ForcedAligner, _load_audio
@@ -44,7 +43,6 @@ class R2T2Engine:
         segments: Sequence[AudioSegment],
         hotwords: str = "",
         enable_punctuation: bool = True,
-        enable_itn: bool = True,
         sample_rate: int = 16000,
         word_timestamps: bool = False,
     ) -> list[ASRSegmentResult]:
@@ -53,9 +51,7 @@ class R2T2Engine:
             if not segment.temp_file or not Path(segment.temp_file).is_file():
                 raise FileNotFoundError(f"Missing audio segment: {segment.temp_file}")
             audio = _load_audio(segment.temp_file)
-            text = normalize_asr_text(
-                transcribe_segment(audio, hotwords), enable_itn=enable_itn
-            )
+            text = transcribe_segment(audio, hotwords)
             if enable_punctuation:
                 text = restore_sentence_ending(text)
             words = None
@@ -86,7 +82,6 @@ class R2T2Engine:
         audio_path: str,
         hotwords: str = "",
         enable_punctuation: bool = True,
-        enable_itn: bool = True,
         sample_rate: int = 16000,
         enable_speaker_diarization: bool = True,
         word_timestamps: bool = False,
@@ -104,7 +99,6 @@ class R2T2Engine:
                 audio.segments,
                 hotwords=hotwords,
                 enable_punctuation=enable_punctuation,
-                enable_itn=enable_itn,
                 sample_rate=sample_rate,
                 word_timestamps=word_timestamps or enable_speaker_diarization,
             )

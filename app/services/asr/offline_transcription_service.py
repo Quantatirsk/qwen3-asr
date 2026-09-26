@@ -56,7 +56,6 @@ class OfflineTranscriptionService:
                 audio_path=audio.normalized_path,
                 hotwords=options.hotwords,
                 enable_punctuation=True,
-                enable_itn=True,
                 sample_rate=options.sample_rate,
                 enable_speaker_diarization=options.enable_speaker_diarization,
                 word_timestamps=options.word_timestamps,

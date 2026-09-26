@@ -28,7 +28,6 @@ class OfflineASRRequest:
     audio_path: str
     hotwords: str = ""
     enable_punctuation: bool = True
-    enable_itn: bool = True
     sample_rate: int = 16000
     enable_speaker_diarization: bool = True
     word_timestamps: bool = False

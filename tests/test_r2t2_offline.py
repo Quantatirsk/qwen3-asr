@@ -112,6 +112,45 @@ class SharedOfflineClientTest(unittest.TestCase):
 
 
 class R2T2OfflineTest(unittest.TestCase):
+    def test_native_number_style_reaches_alignment_without_rewriting(self) -> None:
+        raw = (
+            "\u4e09\u4e2a\u65b9\u9762\uff0c\u8fd9\u4e00\u5757\u6709\u4e00\u70b9\u9ad8"
+            "\uff0c\u8d44\u672c\u91d15000\u4e07\u5143\uff0c\u5360\u80a150%"
+        )
+        expected = raw + "."
+        tokens = [character for character in raw if character.isalnum()]
+        audio = np.zeros(16000, dtype=np.float32)
+        engine = R2T2Engine.__new__(R2T2Engine)
+        engine.aligner = SimpleNamespace(
+            align_transcript=Mock(
+                return_value=[
+                    {"text": token, "start_ms": index * 10, "end_ms": index * 10 + 10}
+                    for index, token in enumerate(tokens)
+                ]
+            )
+        )
+        with (
+            tempfile.NamedTemporaryFile() as source,
+            patch("app.services.asr.r2t2_engine._load_audio", return_value=audio),
+            patch("app.services.asr.r2t2_engine.transcribe_segment", return_value=raw),
+            patch("app.services.asr.punctuation.get_punctuation_model") as punctuation,
+        ):
+            # Only the final mark may be copied, even if the punctuation model
+            # proposes changes to interior text or numeric formatting.
+            punctuation.return_value.generate.return_value = [{"text": "rewritten."}]
+            result = engine.transcribe_segments(
+                [SimpleNamespace(temp_file=source.name, start_sec=0, end_sec=1)],
+                word_timestamps=True,
+            )[0]
+            self.assertEqual(result.text, expected)
+            punctuation.return_value.generate.assert_called_once_with(input=raw)
+            engine.aligner.align_transcript.assert_called_once_with(
+                audio_path=source.name, text=expected, audio=audio
+            )
+            self.assertEqual(
+                "".join(word.text for word in result.word_tokens), "".join(tokens)
+            )
+
     def test_asr_chunks_keep_text_and_relative_word_times(self) -> None:
         engine = R2T2Engine.__new__(R2T2Engine)
         engine.aligner = SimpleNamespace(
@@ -127,10 +166,6 @@ class R2T2OfflineTest(unittest.TestCase):
                 "app.services.asr.r2t2_engine.transcribe_segment",
                 side_effect=["fresh!", "second."],
             ) as recognize,
-            patch(
-                "app.services.asr.r2t2_engine.normalize_asr_text",
-                side_effect=lambda text, **kwargs: text,
-            ) as normalize,
         ):
             paths = [
                 str(Path(directory) / name) for name in ("first.wav", "second.wav")
@@ -156,7 +191,6 @@ class R2T2OfflineTest(unittest.TestCase):
             self.assertEqual(recognize.call_count, 2)
             self.assertIs(recognize.call_args.args[0], audio)
             self.assertEqual(recognize.call_args.args[1], "Ada")
-            normalize.assert_any_call("fresh!", enable_itn=True)
             engine.aligner.align_transcript.assert_any_call(
                 audio_path=paths[0], text="fresh!", audio=audio
             )
@@ -182,7 +216,6 @@ class R2T2OfflineTest(unittest.TestCase):
                         temp_file=source.name, start_sec=0, end_sec=1, speaker_id=None
                     )
                 ],
-                enable_itn=False,
             )
         self.assertEqual(result[0].text, "Fresh text.")
         self.assertIsNone(result[0].word_tokens)

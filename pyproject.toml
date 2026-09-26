@@ -19,7 +19,6 @@ dependencies = [
   "datasets==3.6.0",
   "scipy==1.15.3; sys_platform == 'linux'",
   "scipy==1.16.3; sys_platform == 'darwin'",
-  "wetext==0.1.2",
   "python-dotenv==1.2.1",
   "huggingface_hub==1.33.0",
   "loguru==0.7.2",

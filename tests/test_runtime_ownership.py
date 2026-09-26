@@ -148,9 +148,7 @@ class RuntimeOwnershipTests(unittest.IsolatedAsyncioTestCase):
             source.touch()
             task = asyncio.create_task(
                 router.run_offline(
-                    OfflineASRRequest(
-                        "model", str(source), enable_itn=False, enable_punctuation=False
-                    )
+                    OfflineASRRequest("model", str(source), enable_punctuation=False)
                 )
             )
             try:
