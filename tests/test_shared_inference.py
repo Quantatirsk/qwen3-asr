@@ -9,7 +9,11 @@ import numpy as np
 from fastapi.testclient import TestClient
 
 from app.services.realtime.engine import Model
-from app.services.realtime.protocol import StreamConfig, StreamError
+from app.services.realtime.protocol import (
+    OFFLINE_TAIL_SAMPLES,
+    StreamConfig,
+    StreamError,
+)
 from app.services.realtime.server import create_app, offline_result
 from test_realtime import FakeModel
 
@@ -119,13 +123,20 @@ class SharedGenerationTest(unittest.IsolatedAsyncioTestCase):
     async def test_offline_uses_same_engine_without_live_prefix(self) -> None:
         model = self.model()
         calls = []
+        outputs = iter(
+            [
+                "language English<asr_text>fresh text.|",
+                "language English<asr_text>fresh|",
+                " text.",
+            ]
+        )
 
         async def generate(prompt, sampling, **kwargs):
             calls.append((prompt, sampling, kwargs))
             yield SimpleNamespace(
                 outputs=[
                     SimpleNamespace(
-                        text="language English<asr_text>fresh text.|",
+                        text=next(outputs),
                         finish_reason="stop",
                     )
                 ]
@@ -136,10 +147,66 @@ class SharedGenerationTest(unittest.IsolatedAsyncioTestCase):
         await model.push(session, np.ones(5120, dtype=np.float32))
         text = await model.transcribe(np.ones(16000, dtype=np.float32), "offline")
         self.assertEqual(text, "fresh text.")
-        self.assertEqual([c[0]["prompt"] for c in calls], ["live", "offline"])
-        self.assertEqual([c[2]["priority"] for c in calls], [0, 10])
-        self.assertEqual([c[1] for c in calls], [16, 4096])
+        self.assertEqual(
+            [c[0]["prompt"] for c in calls],
+            ["live", "offline", "offlinelanguage English<asr_text>fresh"],
+        )
+        self.assertEqual([c[2]["priority"] for c in calls], [0, 10, 10])
+        self.assertEqual([c[1] for c in calls], [16, 4096, 4096])
+        original = calls[1][0]["multi_modal_data"]["audio"][0]
+        padded = calls[2][0]["multi_modal_data"]["audio"][0]
+        self.assertEqual(len(original), 16000)
+        np.testing.assert_array_equal(padded[:16000], original)
+        np.testing.assert_array_equal(padded[16000:], np.zeros(OFFLINE_TAIL_SAMPLES))
         self.assertNotEqual(calls[0][2]["request_id"], calls[1][2]["request_id"])
+
+    async def test_cancelling_finalization_aborts_only_the_pending_request(
+        self,
+    ) -> None:
+        model = self.model()
+        entered = asyncio.Event()
+        ids = []
+
+        async def generate(*args, request_id, **kwargs):
+            ids.append(request_id)
+            if len(ids) == 1:
+                yield SimpleNamespace(
+                    outputs=[
+                        SimpleNamespace(
+                            text="language English<asr_text>Pending|",
+                            finish_reason="stop",
+                        )
+                    ]
+                )
+            else:
+                entered.set()
+                await asyncio.Future()
+
+        model.engine = SimpleNamespace(generate=generate, abort=AsyncMock())
+        task = asyncio.create_task(model.transcribe(np.ones(16000), ""))
+        await entered.wait()
+        task.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+        model.engine.abort.assert_awaited_once_with(ids[-1])
+
+    async def test_silence_does_not_generate_an_unprompted_tail(self) -> None:
+        model = self.model()
+        calls = []
+
+        async def generate(*args, **kwargs):
+            calls.append(kwargs)
+            yield SimpleNamespace(
+                outputs=[
+                    SimpleNamespace(
+                        text="language None<asr_text>", finish_reason="stop"
+                    )
+                ]
+            )
+
+        model.engine = SimpleNamespace(generate=generate, abort=AsyncMock())
+        self.assertEqual(await model.transcribe(np.zeros(16000), ""), "")
+        self.assertEqual(len(calls), 1)
 
     async def test_disconnect_aborts_shared_engine_offline_request(self) -> None:
         model = self.model()

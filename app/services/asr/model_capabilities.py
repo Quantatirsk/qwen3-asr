@@ -34,6 +34,21 @@ _VAD_ASSETS = (
     ),
 )
 
+_PUNCTUATION_ASSETS = (
+    ModelAsset(
+        source="modelscope",
+        model_id="iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch",
+        description="Sentence-ending Punctuation",
+        required_patterns=(
+            "configuration.json",
+            "config.yaml",
+            "model.pt",
+            "tokens.json",
+        ),
+        min_total_size_bytes=100_000_000,
+    ),
+)
+
 _DIARIZATION_ASSETS = (
     ModelAsset(
         source="modelscope",
@@ -78,13 +93,14 @@ def get_download_modelscope_assets() -> list[ModelAsset]:
     """Return the full static ModelScope export set used by predownload/export."""
     return [
         *_VAD_ASSETS,
+        *_PUNCTUATION_ASSETS,
         *_DIARIZATION_ASSETS,
     ]
 
 
 def get_runtime_required_modelscope_assets() -> list[ModelAsset]:
     """Return the offline VAD and speaker assets; realtime runs remotely."""
-    return [*_VAD_ASSETS, *_DIARIZATION_ASSETS]
+    return [*_VAD_ASSETS, *_PUNCTUATION_ASSETS, *_DIARIZATION_ASSETS]
 
 
 def get_huggingface_assets() -> list[ModelAsset]:

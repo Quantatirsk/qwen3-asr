@@ -15,6 +15,7 @@ from app.utils.text_processing import normalize_asr_text
 from .engines import ASRFullResult, ASRSegmentResult, WordToken
 from .forced_aligner import ForcedAligner, _load_audio
 from .long_audio import prepare_long_audio
+from .punctuation import restore_sentence_ending
 
 if TYPE_CHECKING:
     from app.utils.audio_splitter import AudioSegment
@@ -47,6 +48,8 @@ class R2T2Engine:
             text = normalize_asr_text(
                 transcribe_segment(audio, hotwords), enable_itn=enable_itn
             )
+            if enable_punctuation:
+                text = restore_sentence_ending(text)
             words = None
             if word_timestamps:
                 aligned = self.aligner.align_transcript(
