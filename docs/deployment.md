@@ -1,6 +1,6 @@
-# CUDA 部署
+# 部署
 
-标准入口为 `docker-compose.yml` 与 `Dockerfile.gpu`。镜像从 CUDA 12.8 开发镜像构建，使用 `uv.lock` 固定 Python 依赖，不依赖已有应用镜像。运行平台为 Linux x86_64，使用 NVIDIA GPU；不提供其他推理后端。
+Linux CUDA 标准入口为 `docker-compose.yml` 与 `Dockerfile.gpu`。镜像从 CUDA 12.8 开发镜像构建，使用 `uv.lock` 固定 Python 依赖，不依赖已有应用镜像。macOS Apple Silicon 使用原生 Rust CPU 进程，与 CUDA 共享服务协议和离线处理流程。
 
 ## 启动和生命周期
 
@@ -10,9 +10,23 @@ docker compose up -d --build
 docker compose logs -f asr
 ```
 
-`start.py` 先检查 CUDA、准备全部模型，再依次启动私有 R2T2 引擎和公共 API。私有进程持有唯一的 R2T2 AsyncLLM 实例，同时处理实时和离线识别，只监听容器内 `127.0.0.1:8001`。公共 API 持有 VAD、CAM++ 与独立的强制对齐模型，将切段后的离线音频交给私有引擎重新识别，不加载第二份 R2T2。外部只暴露 8000。任一进程异常退出，启动器关闭全部子进程；停止时先关闭公共入口，再释放共享模型。
+`start.py` 先检查所选设备、准备全部模型，再依次启动私有 R2T2 引擎和公共 API。私有进程持有唯一的 R2T2 实例，CUDA 使用 AsyncLLM，CPU 使用 Rust，同时处理实时和离线识别，只监听 `127.0.0.1:8001`。公共 API 持有 VAD、CAM++ 与独立的强制对齐模型，将切段后的离线音频交给私有引擎重新识别，不加载第二份 R2T2。外部只暴露 8000。任一进程异常退出，启动器关闭全部子进程；停止时先关闭公共入口，再释放共享模型。
 
 就绪检查同时检查两个进程的模型状态。模型下载、加载和首次编译需要时间，镜像健康检查给予 600 秒启动期。大型模型下载较慢时，建议提前准备模型缓存。
+
+## macOS CPU
+
+使用 Apple Silicon、Python 3.11–3.12、uv 和 Rust 工具链，在仓库根目录执行：
+
+```bash
+uv sync --frozen
+./scripts/build-rust.sh
+DEVICE=cpu R2T2_CPU_THREADS=8 uv run python start.py
+```
+
+访问 `http://localhost:8000`。依赖锁覆盖 macOS ARM64 与 Linux x86_64；macOS 从 PyPI 安装 PyTorch，不安装 vLLM 或 CUDA 依赖。Rust 动态库由源码构建；设置 `CARGO_TARGET_DIR` 时构建脚本沿用该目录，运行时通过 `R2T2_CPU_LIBRARY_PATH` 指定输出的动态库路径。
+
+`DEVICE` 只接受 `cpu` 或 `cuda:0`，macOS 默认 `cpu`，Linux 默认 `cuda:0`。CUDA 不可用、模型缺失或 Rust 动态库缺失时直接报告错误，不改用其他后端。`R2T2_CPU_THREADS` 必须为正整数，默认 8，应结合目标设备的核心数和实际延迟调整。实时识别能否跟上音频输入、离线速度及量化后的质量须参考对应设备的实验结果，不以 CUDA 测试替代。
 
 ## 显存与并发
 
@@ -69,3 +83,5 @@ curl http://localhost:4174/v1/audio/transcriptions \
 ```
 
 开启鉴权时添加 `Authorization: Bearer ...`。对同一份真实录音检查文本、说话人分配、时间戳以及同时运行实时会话时的延迟；不应把实时文字作为离线识别输入。
+
+CPU 默认单会话、8 个 Rust 线程和 640ms 解码间隔，可分别通过 `R2T2_MAX_SESSIONS`、`R2T2_CPU_THREADS`、`R2T2_CHUNK_SECONDS` 调整。输入帧仍不得超过 1 秒；解码间隔与输入帧长度独立。CPU 同一时刻只执行一次原生推理，离线片段不可中途抢占；混合负载的实时延迟需单独验收。详见 [CPU PoC](../experiments/r2t2_cpu/README.md)。

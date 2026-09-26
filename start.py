@@ -1,4 +1,4 @@
-"""Start the CUDA R2T2 offline API and private streaming engine."""
+"""Start the R2T2 offline API and shared private inference engine."""
 
 from deploy.entrypoint import main
 

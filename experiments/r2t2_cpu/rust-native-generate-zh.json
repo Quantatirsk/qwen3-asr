@@ -1,0 +1,57 @@
+{
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "library": "/Users/quant/.codex/worktrees/r2t2-dev/qwen3-asr/vendor/qwenasr/target/release/libqwen_asr.dylib",
+  "library_sha256": "9e4c0f7fecef150f50442bd20fe8bfa84f7a37d8211f7c4b73cd562c777431f8",
+  "model": "/Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2",
+  "audio": "/Users/quant/.cache/r2t2-poc/audio/zh.wav",
+  "audio_sha256": "b703174ef013bf7332ab74d4b65d568e2981cff2633cb620252bb4ba18ea7f67",
+  "mode": "generate",
+  "chunk_seconds": null,
+  "threads": 8,
+  "status": 0,
+  "wall_seconds": 1.9639819579897448,
+  "events": [
+    {
+      "event": "load",
+      "seconds": 0.8506520839873701,
+      "peak_rss_mib": 8115.15625
+    },
+    {
+      "event": "transcription",
+      "repetition": 0,
+      "raw": "language Chinese<asr_text>之前有顾客自己带酒水，也没加收钱或者不让喝。",
+      "clean": "之前有顾客自己带酒水，也没加收钱或者不让喝。",
+      "seconds": 0.9836361249908805,
+      "audio_seconds": 6.74,
+      "rtf": 0.14594007789182203,
+      "peak_rss_mib": 8418.6875,
+      "stream_events": [
+        {
+          "token_ids": [
+            11528,
+            8453,
+            151704,
+            101056,
+            18830,
+            104476,
+            99283,
+            99278,
+            99525,
+            52510,
+            3837,
+            102362,
+            20929,
+            50009,
+            99428,
+            100631,
+            108697,
+            100399,
+            1773
+          ],
+          "finish_reason": "stop"
+        }
+      ]
+    }
+  ],
+  "stderr": "Loading model from /Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2\nDetected: Qwen3-ASR-1.7B\nLoading encoder weights...\nLoading decoder weights...\nModel weights loaded.\nRuntime buffers initialized.\n"
+}

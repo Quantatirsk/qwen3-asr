@@ -1,0 +1,68 @@
+{
+  "backend": "rust-cpu-service-640ms",
+  "config": {
+    "model": "confucius4-r2t2",
+    "model_revision": "185ce639118ad1362d049ca0d8ed04b6ec5cd6c9",
+    "ready": true,
+    "protocol_version": 2,
+    "sample_rate": 16000,
+    "format": "int16_le",
+    "channels": 1,
+    "chunk_seconds": 0.64,
+    "max_frame_seconds": 1,
+    "max_session_seconds": 3600,
+    "max_sessions": 1,
+    "active_sessions": 0,
+    "language": "auto",
+    "word_timestamps": false,
+    "speaker_diarization": false,
+    "offline_transcription": true,
+    "offline_max_seconds": 60
+  },
+  "results": [
+    {
+      "audio": "zh",
+      "mode": "stream",
+      "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+      "audio_seconds": 6.74,
+      "wall_seconds": 7.730925542011391,
+      "first_text_seconds": 2.2879513750085607,
+      "updates": 7,
+      "frame_lag_p95_ms": 1032.3863339959644,
+      "final_lag_ms": 990.9159589931369
+    },
+    {
+      "audio": "en",
+      "mode": "stream",
+      "text": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and",
+      "audio_seconds": 7.0,
+      "wall_seconds": 7.564802582986886,
+      "first_text_seconds": 2.2980268330138642,
+      "updates": 8,
+      "frame_lag_p95_ms": 564.7940420021769,
+      "final_lag_ms": 564.7940420021769
+    },
+    {
+      "audio": "mixed",
+      "mode": "stream",
+      "text": "之前有顾客自己带酒水也没加收钱或者不让喝。Oh, yeah, yeah, he wasn't even that big when I started listening to him, but in",
+      "audio_seconds": 14.24,
+      "wall_seconds": 15.280951458000345,
+      "first_text_seconds": 2.285633499996038,
+      "updates": 16,
+      "frame_lag_p95_ms": 1028.3910829981323,
+      "final_lag_ms": 1040.9467919869348
+    },
+    {
+      "audio": "long",
+      "mode": "stream",
+      "text": "之前有顾客自己带酒水也没加收钱或者不让喝。Oh, yeah, yeah, he wasn't even that big when I started listening to him, but and his Oh yeah, yeah. He wasn't even that big when I started listening to him, but and his Oh yeah, yeah. He wasn't even that big when I started listening to him, but and his",
+      "audio_seconds": 44.22,
+      "wall_seconds": 46.116089957999066,
+      "first_text_seconds": 2.289624166995054,
+      "updates": 37,
+      "frame_lag_p95_ms": 2132.8614579932764,
+      "final_lag_ms": 1896.0715830046684
+    }
+  ]
+}

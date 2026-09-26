@@ -1,0 +1,26 @@
+{
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "library": "/Users/quant/.cache/r2t2-poc/rust-int8/target/release/libqwen_asr.dylib",
+  "library_sha256": "309b749ff8fd464bbdd1aa546ecf1a82dca87af6ce38206bd4e094353e2163f0",
+  "model": "/Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2",
+  "audio": null,
+  "audio_sha256": null,
+  "mode": "shared",
+  "chunk_seconds": null,
+  "threads": 8,
+  "status": 0,
+  "wall_seconds": 1.017231832985999,
+  "events": [
+    {
+      "event": "load",
+      "seconds": 0.8934982499922626,
+      "peak_rss_mib": 8115.046875
+    },
+    {
+      "event": "second_context",
+      "seconds": 2.5957997422665358e-05,
+      "peak_rss_mib": 8115.15625
+    }
+  ],
+  "stderr": "Loading model from /Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2\nDetected: Qwen3-ASR-1.7B\nLoading encoder weights...\nLoading decoder weights...\nModel weights loaded.\nRuntime buffers initialized.\nReusing shared model weights from /Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2\nRuntime buffers initialized.\n"
+}

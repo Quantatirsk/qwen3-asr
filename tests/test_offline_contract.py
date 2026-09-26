@@ -43,18 +43,16 @@ class OfflineContractTest(unittest.TestCase):
             {a.model_id for a in get_runtime_required_modelscope_assets()}, expected
         )
 
-    def test_cuda_required_without_fallback(self) -> None:
+    def test_explicit_cpu_and_cuda_without_fallback(self) -> None:
         with patch("app.core.device.torch.cuda.is_available", return_value=False):
+            self.assertEqual(detect_device("cpu"), "cpu")
             with self.assertRaises(RuntimeError):
                 detect_device("cuda:0")
         with patch("app.core.device.torch.cuda.is_available", return_value=True):
-            for device in ("cpu", "mps"):
-                with self.subTest(device=device), self.assertRaises(RuntimeError):
+            for device in ("mps", "npu", "cuda", "cuda:1", "cpu:0"):
+                with self.subTest(device=device), self.assertRaises(ValueError):
                     detect_device(device)
-            with patch("app.core.device.torch.cuda.device_count", return_value=1):
-                self.assertEqual(detect_device("cuda:0"), "cuda:0")
-                with self.assertRaises(ValueError):
-                    detect_device("cuda:1")
+            self.assertEqual(detect_device("cuda:0"), "cuda:0")
 
 
 if __name__ == "__main__":

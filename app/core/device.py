@@ -1,15 +1,15 @@
-"""CUDA is the only supported inference device."""
+"""Select an explicit CPU or CUDA device without runtime fallback."""
 
 import torch
 
 
 def detect_device(configured: str = "cuda:0") -> str:
-    device = torch.device(configured)
-    if device.type != "cuda" or not torch.cuda.is_available():
-        raise RuntimeError("R2T2 requires an NVIDIA CUDA GPU")
-    index = device.index if device.index is not None else 0
-    if index != 0:
+    if configured == "cpu":
+        return "cpu"
+    if configured != "cuda:0":
         raise ValueError(
-            "Use cuda:0 and select the physical GPU with CUDA_VISIBLE_DEVICES"
+            "DEVICE must be cpu or cuda:0; select the GPU with CUDA_VISIBLE_DEVICES"
         )
-    return f"cuda:{index}"
+    if not torch.cuda.is_available():
+        raise RuntimeError("DEVICE=cuda:0 requires an available NVIDIA CUDA GPU")
+    return "cuda:0"

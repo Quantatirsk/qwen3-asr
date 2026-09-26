@@ -1,0 +1,2107 @@
+{
+  "source_revision": "26d55a54ce5670cff9947a167d8ed95d569fd4d9",
+  "llama_revision": "ad6c66839af3c5646fba8c6c2e2087a1e4e38948",
+  "gguf_revision": "86ff0251cb9f456b63aeef5f80137f104e22869a",
+  "device": "cpu",
+  "metal_compiled": false,
+  "gpu_layers": 0,
+  "threads": 8,
+  "n_ctx": 4096,
+  "n_batch": 2048,
+  "load_seconds": 1.488744542002678,
+  "stream_step_ms": 160,
+  "stream_lookahead_ms": 160,
+  "stream_rollback_tokens": 1,
+  "samples": [
+    {
+      "name": "zh",
+      "audio_seconds": 6.74,
+      "forced_language": "Chinese",
+      "offline": {
+        "text": "之前有顾客自己带酒水，也没加收钱或者不让喝。",
+        "seconds": 0.6675159159931354,
+        "rtf": 0.0990379697319192,
+        "native_output": {
+          "text": "之前有顾客自己带酒水，也没加收钱或者不让喝。",
+          "token_ids": [
+            101056,
+            18830,
+            104476,
+            99283,
+            99278,
+            99525,
+            52510,
+            3837,
+            102362,
+            20929,
+            50009,
+            99428,
+            100631,
+            108697,
+            100399,
+            1773,
+            151645
+          ],
+          "finish_reason": "stop",
+          "prompt_text_token_ids": [
+            151644,
+            8948,
+            198,
+            151645,
+            198,
+            151644,
+            872,
+            198,
+            151669,
+            151670,
+            151645,
+            198,
+            151644,
+            77091,
+            198,
+            11528,
+            8453,
+            151704
+          ],
+          "prompt_token_count": 109,
+          "prompt_position_count": 109,
+          "media_token_counts": [
+            91
+          ],
+          "media_position_counts": [
+            91
+          ],
+          "chunk_count": 3,
+          "first_logits_topk": []
+        }
+      },
+      "stream": {
+        "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+        "seconds": 11.798102625005413,
+        "rtf": 1.7504603301194974,
+        "first_text_compute_seconds": 0.6751674159895629,
+        "finish_seconds": 0.44777220801915973,
+        "step_seconds_p50": 0.2631283539958531,
+        "step_seconds_p95": 0.4409366044739727,
+        "calls": [
+          {
+            "audio_end_seconds": 0.32,
+            "seconds": 0.10217308398569003,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.48,
+            "seconds": 0.10099679199629463,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.64,
+            "seconds": 0.1060204999812413,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.8,
+            "seconds": 0.1049652090005111,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.96,
+            "seconds": 0.10560350000741892,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.12,
+            "seconds": 0.155373875022633,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.28,
+            "seconds": 0.15859295800328255,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.44,
+            "seconds": 0.16434254200430587,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.6,
+            "seconds": 0.16488175000995398,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.76,
+            "seconds": 0.1783125410147477,
+            "text": "之前有",
+            "fixed": "之前",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.92,
+            "seconds": 0.16816016702796333,
+            "text": "之前有",
+            "fixed": "之前",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.08,
+            "seconds": 0.22384220801177435,
+            "text": "之前有顾客",
+            "fixed": "之前有",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 2.24,
+            "seconds": 0.21954891600762494,
+            "text": "之前有顾客自己",
+            "fixed": "之前有顾客",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.4,
+            "seconds": 0.21702658300637268,
+            "text": "之前有顾客自己带",
+            "fixed": "之前有顾客自己",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.56,
+            "seconds": 0.2212610830029007,
+            "text": "之前有顾客自己带酒",
+            "fixed": "之前有顾客自己带",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.72,
+            "seconds": 0.2229310419934336,
+            "text": "之前有顾客自己带酒",
+            "fixed": "之前有顾客自己带",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.88,
+            "seconds": 0.2240532909927424,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 3.04,
+            "seconds": 0.27966045899665914,
+            "text": "之前有顾客自己带酒水，",
+            "fixed": "之前有顾客自己带酒水",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 3.2,
+            "seconds": 0.26312087499536574,
+            "text": "之前有顾客自己带酒水，",
+            "fixed": "之前有顾客自己带酒水",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 3.36,
+            "seconds": 0.26264837497728877,
+            "text": "之前有顾客自己带酒水，",
+            "fixed": "之前有顾客自己带酒水",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 3.52,
+            "seconds": 0.262210499990033,
+            "text": "之前有顾客自己带酒水。",
+            "fixed": "之前有顾客自己带酒水",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.68,
+            "seconds": 0.26313583299634047,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.84,
+            "seconds": 0.2856520829955116,
+            "text": "之前有顾客自己带酒水，",
+            "fixed": "之前有顾客自己带酒水",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.0,
+            "seconds": 0.3318037919816561,
+            "text": "之前有顾客自己带酒水也没",
+            "fixed": "之前有顾客自己带酒水",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.16,
+            "seconds": 0.3423369580123108,
+            "text": "之前有顾客自己带酒水也没加收",
+            "fixed": "之前有顾客自己带酒水也没加",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.32,
+            "seconds": 0.3350382920179982,
+            "text": "之前有顾客自己带酒水也没加收",
+            "fixed": "之前有顾客自己带酒水也没加",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.48,
+            "seconds": 0.3335383750090841,
+            "text": "之前有顾客自己带酒水也没加收钱",
+            "fixed": "之前有顾客自己带酒水也没加收",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 4.64,
+            "seconds": 0.32616754100308754,
+            "text": "之前有顾客自己带酒水也没加收钱",
+            "fixed": "之前有顾客自己带酒水也没加收",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.8,
+            "seconds": 0.3296710420108866,
+            "text": "之前有顾客自己带酒水也没加收钱",
+            "fixed": "之前有顾客自己带酒水也没加收",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 4.96,
+            "seconds": 0.3391300829825923,
+            "text": "之前有顾客自己带酒水也没加收钱",
+            "fixed": "之前有顾客自己带酒水也没加收",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 5.12,
+            "seconds": 0.3882732919882983,
+            "text": "之前有顾客自己带酒水也没加收钱或者",
+            "fixed": "之前有顾客自己带酒水也没加收钱",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 5.28,
+            "seconds": 0.3860032499942463,
+            "text": "之前有顾客自己带酒水也没加收钱或者",
+            "fixed": "之前有顾客自己带酒水也没加收钱",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 5.44,
+            "seconds": 0.39013329200679436,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 5.6,
+            "seconds": 0.390095749986358,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 5.76,
+            "seconds": 0.3987848329998087,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 5.92,
+            "seconds": 0.3863350830215495,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 6.08,
+            "seconds": 0.4405670830165036,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 6.24,
+            "seconds": 0.4409512920246925,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 6.4,
+            "seconds": 0.44065754101029597,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 6.56,
+            "seconds": 0.4441038749937434,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 6.72,
+            "seconds": 0.4519692499889061,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 6.74,
+            "seconds": 1.2208009138703346e-05,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "",
+            "max_tokens": 4
+          }
+        ]
+      },
+      "process_peak_rss_bytes": 5746409472
+    },
+    {
+      "name": "en",
+      "audio_seconds": 7.0,
+      "forced_language": "English",
+      "offline": {
+        "text": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and his",
+        "seconds": 0.7272707500087563,
+        "rtf": 0.10389582142982233,
+        "native_output": {
+          "text": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and his",
+          "token_ids": [
+            11908,
+            21639,
+            11,
+            21639,
+            13,
+            1260,
+            5710,
+            944,
+            1496,
+            429,
+            2409,
+            979,
+            358,
+            3855,
+            14289,
+            311,
+            1435,
+            11,
+            714,
+            323,
+            806,
+            151645
+          ],
+          "finish_reason": "stop",
+          "prompt_text_token_ids": [
+            151644,
+            8948,
+            198,
+            151645,
+            198,
+            151644,
+            872,
+            198,
+            151669,
+            151670,
+            151645,
+            198,
+            151644,
+            77091,
+            198,
+            11528,
+            6364,
+            151704
+          ],
+          "prompt_token_count": 122,
+          "prompt_position_count": 122,
+          "media_token_counts": [
+            104
+          ],
+          "media_position_counts": [
+            104
+          ],
+          "chunk_count": 3,
+          "first_logits_topk": []
+        }
+      },
+      "stream": {
+        "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him, but and his",
+        "seconds": 13.333187542011729,
+        "rtf": 1.904741077430247,
+        "first_text_compute_seconds": 0.6874357500055339,
+        "finish_seconds": 0.5505364589917008,
+        "step_seconds_p50": 0.28873050000402145,
+        "step_seconds_p95": 0.4871390121959848,
+        "calls": [
+          {
+            "audio_end_seconds": 0.32,
+            "seconds": 0.09948016700218432,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.48,
+            "seconds": 0.09865958298905753,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.64,
+            "seconds": 0.11098287501954474,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.8,
+            "seconds": 0.1017158750037197,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.96,
+            "seconds": 0.11195220801164396,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.12,
+            "seconds": 0.16460895899217576,
+            "text": "Uh",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.28,
+            "seconds": 0.16345841600559652,
+            "text": "Oh",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.44,
+            "seconds": 0.17241120801190846,
+            "text": "Oh",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.6,
+            "seconds": 0.17585366699495353,
+            "text": "Oh yeah",
+            "fixed": "Oh",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.76,
+            "seconds": 0.17754291600431316,
+            "text": "Oh yeah,",
+            "fixed": "Oh yeah",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 1.92,
+            "seconds": 0.17857204101164825,
+            "text": "Oh yeah, yeah",
+            "fixed": "Oh yeah,",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.08,
+            "seconds": 0.23010637497645803,
+            "text": "Oh yeah, yeah.",
+            "fixed": "Oh yeah, yeah",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.24,
+            "seconds": 0.21868125000037253,
+            "text": "Oh yeah, yeah.",
+            "fixed": "Oh yeah, yeah",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.4,
+            "seconds": 0.2251873329805676,
+            "text": "Oh yeah, yeah",
+            "fixed": "Oh yeah,",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 2.56,
+            "seconds": 0.25380950001999736,
+            "text": "Oh yeah, yeah, he",
+            "fixed": "Oh yeah, yeah,",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 2.72,
+            "seconds": 0.23452629099483602,
+            "text": "Oh yeah, yeah, he",
+            "fixed": "Oh yeah, yeah,",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.88,
+            "seconds": 0.24723924999125302,
+            "text": "Oh yeah, yeah, he wasn't",
+            "fixed": "Oh yeah, yeah, he wasn",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 3.04,
+            "seconds": 0.2870931249926798,
+            "text": "Oh yeah, yeah, he wasn't even",
+            "fixed": "Oh yeah, yeah, he wasn't",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 3.2,
+            "seconds": 0.28860804199939594,
+            "text": "Oh yeah, yeah, he wasn't even",
+            "fixed": "Oh yeah, yeah, he wasn't",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 3.36,
+            "seconds": 0.2931603330071084,
+            "text": "Oh yeah, yeah, he wasn't even that",
+            "fixed": "Oh yeah, yeah, he wasn't even",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 3.52,
+            "seconds": 0.29077041600248776,
+            "text": "Oh yeah, yeah, he wasn't even that",
+            "fixed": "Oh yeah, yeah, he wasn't even",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 3.68,
+            "seconds": 0.28873050000402145,
+            "text": "Oh yeah, yeah, he wasn't even that big",
+            "fixed": "Oh yeah, yeah, he wasn't even that",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 3.84,
+            "seconds": 0.2851672079996206,
+            "text": "Oh yeah, yeah, he wasn't even that big",
+            "fixed": "Oh yeah, yeah, he wasn't even that",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.0,
+            "seconds": 0.3584585830103606,
+            "text": "Oh yeah, yeah, he wasn't even that big when",
+            "fixed": "Oh yeah, yeah, he wasn't even that big",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 4.16,
+            "seconds": 0.35627012501936406,
+            "text": "Oh yeah, yeah, he wasn't even that big when",
+            "fixed": "Oh yeah, yeah, he wasn't even that big",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.32,
+            "seconds": 0.35633379098726436,
+            "text": "Oh yeah, yeah, he wasn't even that big when I",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 4.48,
+            "seconds": 0.3561488749983255,
+            "text": "Oh yeah, yeah, he wasn't even that big when I",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.64,
+            "seconds": 0.36092483301763423,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 4.8,
+            "seconds": 0.36762816697591916,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.96,
+            "seconds": 0.3651789579889737,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 5.12,
+            "seconds": 0.415522666007746,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 5.28,
+            "seconds": 0.4203353749762755,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started listening",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 5.44,
+            "seconds": 0.41822449999745004,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started listening to",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 5.6,
+            "seconds": 0.42117633399902843,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him.",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started listening to him",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 5.76,
+            "seconds": 0.41300141700776294,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him.",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started listening to him",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 5.92,
+            "seconds": 0.41342491601244546,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him.",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started listening to him",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 6.08,
+            "seconds": 0.4714104160084389,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him.",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started listening to him",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 6.24,
+            "seconds": 0.48177904199110344,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him,",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started listening to him",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 6.4,
+            "seconds": 0.4871528329967987,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him, but",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started listening to him,",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 6.56,
+            "seconds": 0.4870146249886602,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him, but",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started listening to him,",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 6.72,
+            "seconds": 0.6326526670018211,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him, but",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started listening to him,",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 6.88,
+            "seconds": 0.5014403749955818,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him, but",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started listening to him,",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 7.0,
+            "seconds": 1.333298860117793e-05,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him, but",
+            "fixed": "",
+            "max_tokens": 4
+          }
+        ]
+      },
+      "process_peak_rss_bytes": 5772771328
+    },
+    {
+      "name": "mixed",
+      "audio_seconds": 14.24,
+      "forced_language": null,
+      "offline": {
+        "text": "language English<asr_text>Before, he wasn't even that big when I started listening to him, but and his",
+        "seconds": 1.1251052080187947,
+        "rtf": 0.07901019719233109,
+        "native_output": {
+          "text": "language English<asr_text>Before, he wasn't even that big when I started listening to him, but and his",
+          "token_ids": [
+            11528,
+            6364,
+            151704,
+            10227,
+            11,
+            566,
+            5710,
+            944,
+            1496,
+            429,
+            2409,
+            979,
+            358,
+            3855,
+            14289,
+            311,
+            1435,
+            11,
+            714,
+            323,
+            806,
+            151645
+          ],
+          "finish_reason": "stop",
+          "prompt_text_token_ids": [
+            151644,
+            8948,
+            198,
+            151645,
+            198,
+            151644,
+            872,
+            198,
+            151669,
+            151670,
+            151645,
+            198,
+            151644,
+            77091,
+            198
+          ],
+          "prompt_token_count": 210,
+          "prompt_position_count": 210,
+          "media_token_counts": [
+            104,
+            91
+          ],
+          "media_position_counts": [
+            104,
+            91
+          ],
+          "chunk_count": 4,
+          "first_logits_topk": []
+        }
+      },
+      "stream": {
+        "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him, but and his",
+        "seconds": 49.31898087498848,
+        "rtf": 3.4634115782997528,
+        "first_text_compute_seconds": 0.8117116669891402,
+        "finish_seconds": 1.6249832697212696e-06,
+        "step_seconds_p50": 0.5394659584999317,
+        "step_seconds_p95": 0.9914132310615967,
+        "calls": [
+          {
+            "audio_end_seconds": 0.32,
+            "seconds": 0.13635479199001566,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.48,
+            "seconds": 0.11291904098470695,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.64,
+            "seconds": 0.1267365000094287,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.8,
+            "seconds": 0.12427841700264253,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.96,
+            "seconds": 0.12782929200329818,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.12,
+            "seconds": 0.18356266702176072,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.28,
+            "seconds": 0.17416595900431275,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.44,
+            "seconds": 0.1835522080073133,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.6,
+            "seconds": 0.1844055830151774,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.76,
+            "seconds": 0.19750741601455957,
+            "text": "之前有",
+            "fixed": "之前",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.92,
+            "seconds": 0.19620091700926423,
+            "text": "之前有",
+            "fixed": "之前",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.08,
+            "seconds": 0.26098570800968446,
+            "text": "之前有顾客",
+            "fixed": "之前有",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 2.24,
+            "seconds": 0.2510921250213869,
+            "text": "之前有顾客自己",
+            "fixed": "之前有顾客",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.4,
+            "seconds": 0.24540450001950376,
+            "text": "之前有顾客自己带",
+            "fixed": "之前有顾客自己",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.56,
+            "seconds": 0.24928499999805354,
+            "text": "之前有顾客自己带",
+            "fixed": "之前有顾客自己",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.72,
+            "seconds": 0.26029133299016394,
+            "text": "之前有顾客自己带酒",
+            "fixed": "之前有顾客自己带",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 2.88,
+            "seconds": 0.253901499992935,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 3.04,
+            "seconds": 0.29344533299445175,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 3.2,
+            "seconds": 0.2968766670092009,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 3.36,
+            "seconds": 0.2950938750000205,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.52,
+            "seconds": 0.3245732909999788,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.68,
+            "seconds": 0.3165539580222685,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.84,
+            "seconds": 0.32025145800434984,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.0,
+            "seconds": 0.39985250000609085,
+            "text": "之前有顾客自己带酒水也没",
+            "fixed": "之前有顾客自己带酒水",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.16,
+            "seconds": 0.38074987501022406,
+            "text": "之前有顾客自己带酒水也没加",
+            "fixed": "之前有顾客自己带酒水也没",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.32,
+            "seconds": 0.38106566699570976,
+            "text": "之前有顾客自己带酒水也没加收",
+            "fixed": "之前有顾客自己带酒水也没加",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.48,
+            "seconds": 0.3787909579987172,
+            "text": "之前有顾客自己带酒水也没加收",
+            "fixed": "之前有顾客自己带酒水也没加",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.64,
+            "seconds": 0.3788320840103552,
+            "text": "之前有顾客自己带酒水也没加收钱",
+            "fixed": "之前有顾客自己带酒水也没加收",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 4.8,
+            "seconds": 0.369919790973654,
+            "text": "之前有顾客自己带酒水也没加收钱",
+            "fixed": "之前有顾客自己带酒水也没加收",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.96,
+            "seconds": 0.3801445419958327,
+            "text": "之前有顾客自己带酒水也没加收钱",
+            "fixed": "之前有顾客自己带酒水也没加收",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 5.12,
+            "seconds": 0.4325695830048062,
+            "text": "之前有顾客自己带酒水也没加收钱或者",
+            "fixed": "之前有顾客自己带酒水也没加收钱",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 5.28,
+            "seconds": 0.43135570801678114,
+            "text": "之前有顾客自己带酒水也没加收钱或者",
+            "fixed": "之前有顾客自己带酒水也没加收钱",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 5.44,
+            "seconds": 0.4375196250039153,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 5.6,
+            "seconds": 0.48360962499282323,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 5.76,
+            "seconds": 0.45953816699329764,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 5.92,
+            "seconds": 0.44662770797731355,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 6.08,
+            "seconds": 0.49754941699211486,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 6.24,
+            "seconds": 0.5170281669998076,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 6.4,
+            "seconds": 0.5058589999971446,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 6.56,
+            "seconds": 0.5043212079908699,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 6.72,
+            "seconds": 0.5010309590143152,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 6.88,
+            "seconds": 0.49476070899982005,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 7.04,
+            "seconds": 0.5517114999820478,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 7.2,
+            "seconds": 0.5331274160125758,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 7.36,
+            "seconds": 0.5566069580090698,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 7.52,
+            "seconds": 0.542949624999892,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 7.68,
+            "seconds": 0.5359822919999715,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 7.84,
+            "seconds": 0.5511227089737076,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 8.0,
+            "seconds": 0.6044666249945294,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 8.16,
+            "seconds": 0.6122860829927959,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 8.32,
+            "seconds": 0.6066152499988675,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 8.48,
+            "seconds": 0.6098887090047356,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 8.64,
+            "seconds": 0.6079606249986682,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 8.8,
+            "seconds": 0.6083944579877425,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 8.96,
+            "seconds": 0.6855517909862101,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 9.12,
+            "seconds": 0.6816611670074053,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 9.28,
+            "seconds": 0.688788375002332,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 9.44,
+            "seconds": 0.6773291659774259,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 9.6,
+            "seconds": 0.6786544169881381,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 9.76,
+            "seconds": 0.6904754169809166,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 9.92,
+            "seconds": 0.7021354999742471,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 10.08,
+            "seconds": 0.7488208339782432,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 10.24,
+            "seconds": 0.7519628749869298,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 10.4,
+            "seconds": 0.7558851659996435,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 10.56,
+            "seconds": 0.7663480839983094,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 10.72,
+            "seconds": 0.7654123750107829,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 10.88,
+            "seconds": 0.7620352079975419,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 11.04,
+            "seconds": 0.8212445419922005,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 11.2,
+            "seconds": 0.8093807080003899,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 11.36,
+            "seconds": 0.821292042004643,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 11.52,
+            "seconds": 0.8200955830106977,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 11.68,
+            "seconds": 0.8487513749860227,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when i",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 11.84,
+            "seconds": 0.8382344999990892,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 12.0,
+            "seconds": 0.9120880420086905,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 12.16,
+            "seconds": 0.9072290000040084,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 12.32,
+            "seconds": 0.9065669170231558,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 12.48,
+            "seconds": 0.9080322090012487,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 12.64,
+            "seconds": 0.9195715830137488,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 12.8,
+            "seconds": 0.9050165829830803,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 12.96,
+            "seconds": 0.908767250017263,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 13.12,
+            "seconds": 0.962853292003274,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 13.28,
+            "seconds": 0.9639244170102756,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 13.44,
+            "seconds": 0.9831813340133522,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 13.6,
+            "seconds": 1.0424583750136662,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him but",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 13.76,
+            "seconds": 1.0069497080112342,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him, but",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him,",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 13.92,
+            "seconds": 0.9958457910106517,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him, but",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him,",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 14.08,
+            "seconds": 1.0926651660120115,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him, but",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him,",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 14.24,
+            "seconds": 1.1717456670012325,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him, but and his",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯oh yeah yeah he wasn't even that big when I started listening to him, but and",
+            "max_tokens": 4
+          }
+        ]
+      },
+      "process_peak_rss_bytes": 5776424960
+    },
+    {
+      "name": "silence",
+      "audio_seconds": 5.0,
+      "forced_language": null,
+      "offline": {
+        "text": "language None<asr_text>",
+        "seconds": 0.47169687499990687,
+        "rtf": 0.09433937499998138,
+        "native_output": {
+          "text": "language None<asr_text>",
+          "token_ids": [
+            11528,
+            2240,
+            151704,
+            151645
+          ],
+          "finish_reason": "stop",
+          "prompt_text_token_ids": [
+            151644,
+            8948,
+            198,
+            151645,
+            198,
+            151644,
+            872,
+            198,
+            151669,
+            151670,
+            151645,
+            198,
+            151644,
+            77091,
+            198
+          ],
+          "prompt_token_count": 93,
+          "prompt_position_count": 93,
+          "media_token_counts": [
+            78
+          ],
+          "media_position_counts": [
+            78
+          ],
+          "chunk_count": 3,
+          "first_logits_topk": []
+        }
+      },
+      "stream": {
+        "text": "",
+        "seconds": 8.56710462499177,
+        "rtf": 1.713420924998354,
+        "first_text_compute_seconds": null,
+        "finish_seconds": 0.45784770799218677,
+        "step_seconds_p50": 0.26031408400740474,
+        "step_seconds_p95": 0.4046209579973947,
+        "calls": [
+          {
+            "audio_end_seconds": 0.32,
+            "seconds": 0.1493444579828065,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.48,
+            "seconds": 0.1288135000213515,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.64,
+            "seconds": 0.1287773750082124,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.8,
+            "seconds": 0.128750416013645,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.96,
+            "seconds": 0.12942708400078118,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.12,
+            "seconds": 0.19054300000425428,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.28,
+            "seconds": 0.18923804099904373,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.44,
+            "seconds": 0.19023925001965836,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.6,
+            "seconds": 0.18932158302050084,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.76,
+            "seconds": 0.19385645899455994,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.92,
+            "seconds": 0.18934174999594688,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 2.08,
+            "seconds": 0.25539083397598006,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 2.24,
+            "seconds": 0.2612842079834081,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 2.4,
+            "seconds": 0.26535987498937175,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 2.56,
+            "seconds": 0.25604987499536946,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 2.72,
+            "seconds": 0.2576517919951584,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 2.88,
+            "seconds": 0.26031408400740474,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.04,
+            "seconds": 0.3223752919875551,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.2,
+            "seconds": 0.3288354579999577,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.36,
+            "seconds": 0.32372645899886265,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.52,
+            "seconds": 0.3226593330036849,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.68,
+            "seconds": 0.3190317499975208,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.84,
+            "seconds": 0.3203771249973215,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.0,
+            "seconds": 0.39569212502101436,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.16,
+            "seconds": 0.4036617079982534,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.32,
+            "seconds": 0.40558020799653605,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.48,
+            "seconds": 0.4021213749947492,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.64,
+            "seconds": 0.40583083301316947,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.8,
+            "seconds": 0.39892858400708064,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.96,
+            "seconds": 0.3965207089786418,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 5.0,
+            "seconds": 1.6167003195732832e-05,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          }
+        ]
+      },
+      "process_peak_rss_bytes": 5776605184
+    },
+    {
+      "name": "quiet",
+      "audio_seconds": 6.74,
+      "forced_language": null,
+      "offline": {
+        "text": "language Chinese<asr_text>之前有顾客自己带酒水，也没加收钱或者不让喝。",
+        "seconds": 0.7249015000124928,
+        "rtf": 0.1075521513371651,
+        "native_output": {
+          "text": "language Chinese<asr_text>之前有顾客自己带酒水，也没加收钱或者不让喝。",
+          "token_ids": [
+            11528,
+            8453,
+            151704,
+            101056,
+            18830,
+            104476,
+            99283,
+            99278,
+            99525,
+            52510,
+            3837,
+            102362,
+            20929,
+            50009,
+            99428,
+            100631,
+            108697,
+            100399,
+            1773,
+            151645
+          ],
+          "finish_reason": "stop",
+          "prompt_text_token_ids": [
+            151644,
+            8948,
+            198,
+            151645,
+            198,
+            151644,
+            872,
+            198,
+            151669,
+            151670,
+            151645,
+            198,
+            151644,
+            77091,
+            198
+          ],
+          "prompt_token_count": 106,
+          "prompt_position_count": 106,
+          "media_token_counts": [
+            91
+          ],
+          "media_position_counts": [
+            91
+          ],
+          "chunk_count": 3,
+          "first_logits_topk": []
+        }
+      },
+      "stream": {
+        "text": "之前有顾客自己带酒水也没加收钱或者不让喝",
+        "seconds": 16.265165749995504,
+        "rtf": 2.413229339761944,
+        "first_text_compute_seconds": 0.9120211249974091,
+        "finish_seconds": 0.6196363329945598,
+        "step_seconds_p50": 0.3633221249911003,
+        "step_seconds_p95": 0.6174837059166748,
+        "calls": [
+          {
+            "audio_end_seconds": 0.32,
+            "seconds": 0.15027449998888187,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.48,
+            "seconds": 0.1302690410229843,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.64,
+            "seconds": 0.1299970420077443,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.8,
+            "seconds": 0.14333591700415127,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 0.96,
+            "seconds": 0.14721100000315346,
+            "text": "",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.12,
+            "seconds": 0.2108966249797959,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.28,
+            "seconds": 0.20417904100031592,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.44,
+            "seconds": 0.20253345801029354,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.6,
+            "seconds": 0.21669187498628162,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.76,
+            "seconds": 0.23415583302266896,
+            "text": "之前有",
+            "fixed": "之前",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 1.92,
+            "seconds": 0.2248220829933416,
+            "text": "之前有",
+            "fixed": "之前",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.08,
+            "seconds": 0.30506987500120886,
+            "text": "之前有顾客",
+            "fixed": "之前有",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 2.24,
+            "seconds": 0.30105937499320135,
+            "text": "之前有顾客自己",
+            "fixed": "之前有顾客",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.4,
+            "seconds": 0.2979040410136804,
+            "text": "之前有顾客自己带",
+            "fixed": "之前有顾客自己",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.56,
+            "seconds": 0.30275387500296347,
+            "text": "之前有顾客自己带",
+            "fixed": "之前有顾客自己",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 2.72,
+            "seconds": 0.31651941701420583,
+            "text": "之前有顾客自己带酒",
+            "fixed": "之前有顾客自己带",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 2.88,
+            "seconds": 0.30789829199784435,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 3.04,
+            "seconds": 0.361512750008842,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 3.2,
+            "seconds": 0.3609781250124797,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 3.36,
+            "seconds": 0.3634826249908656,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.52,
+            "seconds": 0.363161624991335,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.68,
+            "seconds": 0.37898358301026747,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 3.84,
+            "seconds": 0.3743932090001181,
+            "text": "之前有顾客自己带酒水",
+            "fixed": "之前有顾客自己带酒",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.0,
+            "seconds": 0.46835862498846836,
+            "text": "之前有顾客自己带酒水也没",
+            "fixed": "之前有顾客自己带酒水",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 4.16,
+            "seconds": 0.45206200002576225,
+            "text": "之前有顾客自己带酒水也没加",
+            "fixed": "之前有顾客自己带酒水也没",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.32,
+            "seconds": 0.4547641660028603,
+            "text": "之前有顾客自己带酒水也没加收",
+            "fixed": "之前有顾客自己带酒水也没加",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.48,
+            "seconds": 0.46337170799961314,
+            "text": "之前有顾客自己带酒水也没加收",
+            "fixed": "之前有顾客自己带酒水也没加",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.64,
+            "seconds": 0.4636801659944467,
+            "text": "之前有顾客自己带酒水也没加收钱",
+            "fixed": "之前有顾客自己带酒水也没加收",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 4.8,
+            "seconds": 0.4854719169961754,
+            "text": "之前有顾客自己带酒水也没加收钱",
+            "fixed": "之前有顾客自己带酒水也没加收",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 4.96,
+            "seconds": 0.471747083007358,
+            "text": "之前有顾客自己带酒水也没加收钱",
+            "fixed": "之前有顾客自己带酒水也没加收",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 5.12,
+            "seconds": 0.5389003340096679,
+            "text": "之前有顾客自己带酒水也没加收钱或者",
+            "fixed": "之前有顾客自己带酒水也没加收钱",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 5.28,
+            "seconds": 0.5352869589987677,
+            "text": "之前有顾客自己带酒水也没加收钱或者",
+            "fixed": "之前有顾客自己带酒水也没加收钱",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 5.44,
+            "seconds": 0.542246166995028,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 5.6,
+            "seconds": 0.5565982080006506,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 5.76,
+            "seconds": 0.5540861659974325,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 5.92,
+            "seconds": 0.5377312089840416,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 6.08,
+            "seconds": 0.6245300830050837,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 6.24,
+            "seconds": 0.6174952080182265,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 2
+          },
+          {
+            "audio_end_seconds": 6.4,
+            "seconds": 0.6245598329987843,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 3
+          },
+          {
+            "audio_end_seconds": 6.56,
+            "seconds": 0.6089927080029156,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 6.72,
+            "seconds": 0.6172651659871917,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让",
+            "max_tokens": 4
+          },
+          {
+            "audio_end_seconds": 6.74,
+            "seconds": 1.6292004147544503e-05,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "fixed": "",
+            "max_tokens": 4
+          }
+        ]
+      },
+      "process_peak_rss_bytes": 5776703488
+    }
+  ]
+}

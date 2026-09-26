@@ -1,0 +1,1179 @@
+[
+  {
+    "audio": "zh",
+    "status": 200,
+    "seconds": 10.670216625003377,
+    "payload": {
+      "task": "transcribe",
+      "language": "zh",
+      "duration": 6.74,
+      "text": "之前有顾客自己带酒水，也没加收钱或者不让喝。",
+      "segments": [
+        {
+          "id": 0,
+          "seek": 20,
+          "start": 0.2,
+          "end": 6.0,
+          "text": "之前有顾客自己带酒水，也没加收钱或者不让喝。",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人1"
+        }
+      ],
+      "words": [
+        {
+          "word": "之",
+          "start": 0.68,
+          "end": 0.68
+        },
+        {
+          "word": "前",
+          "start": 0.68,
+          "end": 1.0
+        },
+        {
+          "word": "有",
+          "start": 1.32,
+          "end": 1.48
+        },
+        {
+          "word": "顾",
+          "start": 1.48,
+          "end": 1.72
+        },
+        {
+          "word": "客",
+          "start": 1.72,
+          "end": 1.88
+        },
+        {
+          "word": "自",
+          "start": 1.88,
+          "end": 2.04
+        },
+        {
+          "word": "己",
+          "start": 2.04,
+          "end": 2.12
+        },
+        {
+          "word": "带",
+          "start": 2.12,
+          "end": 2.36
+        },
+        {
+          "word": "酒",
+          "start": 2.36,
+          "end": 2.52
+        },
+        {
+          "word": "水",
+          "start": 2.52,
+          "end": 2.84
+        },
+        {
+          "word": "也",
+          "start": 3.56,
+          "end": 3.64
+        },
+        {
+          "word": "没",
+          "start": 3.64,
+          "end": 3.8
+        },
+        {
+          "word": "加",
+          "start": 3.8,
+          "end": 4.04
+        },
+        {
+          "word": "收",
+          "start": 4.04,
+          "end": 4.2
+        },
+        {
+          "word": "钱",
+          "start": 4.2,
+          "end": 4.6
+        },
+        {
+          "word": "或",
+          "start": 4.76,
+          "end": 4.92
+        },
+        {
+          "word": "者",
+          "start": 4.92,
+          "end": 5.16
+        },
+        {
+          "word": "不",
+          "start": 5.16,
+          "end": 5.32
+        },
+        {
+          "word": "让",
+          "start": 5.32,
+          "end": 5.48
+        },
+        {
+          "word": "喝",
+          "start": 5.48,
+          "end": 5.8
+        }
+      ]
+    }
+  },
+  {
+    "audio": "en",
+    "status": 200,
+    "seconds": 1.364629874995444,
+    "payload": {
+      "task": "transcribe",
+      "language": "en",
+      "duration": 7.0,
+      "text": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and",
+      "segments": [
+        {
+          "id": 0,
+          "seek": 14,
+          "start": 0.14,
+          "end": 6.98,
+          "text": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人1"
+        }
+      ],
+      "words": [
+        {
+          "word": "Oh",
+          "start": 1.1,
+          "end": 1.26
+        },
+        {
+          "word": "yeah",
+          "start": 1.26,
+          "end": 1.58
+        },
+        {
+          "word": "yeah",
+          "start": 1.58,
+          "end": 1.98
+        },
+        {
+          "word": "He",
+          "start": 2.38,
+          "end": 2.46
+        },
+        {
+          "word": "wasn't",
+          "start": 2.46,
+          "end": 2.86
+        },
+        {
+          "word": "even",
+          "start": 2.86,
+          "end": 3.18
+        },
+        {
+          "word": "that",
+          "start": 3.18,
+          "end": 3.34
+        },
+        {
+          "word": "big",
+          "start": 3.34,
+          "end": 3.9
+        },
+        {
+          "word": "when",
+          "start": 3.9,
+          "end": 4.06
+        },
+        {
+          "word": "I",
+          "start": 4.06,
+          "end": 4.22
+        },
+        {
+          "word": "started",
+          "start": 4.22,
+          "end": 4.7
+        },
+        {
+          "word": "listening",
+          "start": 4.7,
+          "end": 5.1
+        },
+        {
+          "word": "to",
+          "start": 5.18,
+          "end": 5.58
+        },
+        {
+          "word": "him",
+          "start": 5.58,
+          "end": 5.58
+        },
+        {
+          "word": "but",
+          "start": 5.98,
+          "end": 6.62
+        },
+        {
+          "word": "and",
+          "start": 6.7,
+          "end": 6.86
+        }
+      ]
+    }
+  },
+  {
+    "audio": "mixed",
+    "status": 200,
+    "seconds": 1.6963120830187108,
+    "payload": {
+      "task": "transcribe",
+      "language": "en",
+      "duration": 14.24,
+      "text": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and",
+      "segments": [
+        {
+          "id": 0,
+          "seek": 20,
+          "start": 0.2,
+          "end": 14.22,
+          "text": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人1"
+        }
+      ],
+      "words": [
+        {
+          "word": "Oh",
+          "start": 1.32,
+          "end": 1.56
+        },
+        {
+          "word": "yeah",
+          "start": 1.56,
+          "end": 1.56
+        },
+        {
+          "word": "yeah",
+          "start": 1.96,
+          "end": 1.96
+        },
+        {
+          "word": "He",
+          "start": 1.96,
+          "end": 2.12
+        },
+        {
+          "word": "wasn't",
+          "start": 2.12,
+          "end": 2.28
+        },
+        {
+          "word": "even",
+          "start": 2.28,
+          "end": 2.44
+        },
+        {
+          "word": "that",
+          "start": 2.44,
+          "end": 2.44
+        },
+        {
+          "word": "big",
+          "start": 2.44,
+          "end": 2.92
+        },
+        {
+          "word": "when",
+          "start": 3.56,
+          "end": 3.56
+        },
+        {
+          "word": "I",
+          "start": 3.64,
+          "end": 4.28
+        },
+        {
+          "word": "started",
+          "start": 4.28,
+          "end": 5.16
+        },
+        {
+          "word": "listening",
+          "start": 5.16,
+          "end": 5.56
+        },
+        {
+          "word": "to",
+          "start": 5.64,
+          "end": 5.64
+        },
+        {
+          "word": "him",
+          "start": 5.64,
+          "end": 7.08
+        },
+        {
+          "word": "but",
+          "start": 9.08,
+          "end": 10.04
+        },
+        {
+          "word": "and",
+          "start": 10.04,
+          "end": 10.04
+        }
+      ]
+    }
+  },
+  {
+    "audio": "long",
+    "status": 200,
+    "seconds": 17.200599541974952,
+    "payload": {
+      "task": "transcribe",
+      "language": "zh",
+      "duration": 44.22,
+      "text": "之前\n有顾客自己带酒水\n也没加收钱或者不让喝。\nOh yeah,\nHe wasn't even that\nBig when I started listening to him.\nBut in his\n之前\n有顾客自己带酒水\n也没加收钱或者不让喝。\nOh yeah,\nHe wasn't even that\nBig when I started listening to him.\nBut in his\n之前\n有顾客自己带酒水\n也没加收钱或者不让喝。\nOh yeah,\nHe wasn't even that\nBig when I started listening to him.\nBut and his",
+      "segments": [
+        {
+          "id": 0,
+          "seek": 20,
+          "start": 0.2,
+          "end": 1.31,
+          "text": "之前",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人1"
+        },
+        {
+          "id": 1,
+          "seek": 131,
+          "start": 1.31,
+          "end": 3.08,
+          "text": "有顾客自己带酒水",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人2"
+        },
+        {
+          "id": 2,
+          "seek": 336,
+          "start": 3.36,
+          "end": 6.0,
+          "text": "也没加收钱或者不让喝。",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人1"
+        },
+        {
+          "id": 3,
+          "seek": 738,
+          "start": 7.38,
+          "end": 9.16,
+          "text": "Oh yeah,",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人3"
+        },
+        {
+          "id": 4,
+          "seek": 916,
+          "start": 9.16,
+          "end": 10.68,
+          "text": "He wasn't even that",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人4"
+        },
+        {
+          "id": 5,
+          "seek": 1068,
+          "start": 10.68,
+          "end": 13.22,
+          "text": "Big when I started listening to him.",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人5"
+        },
+        {
+          "id": 6,
+          "seek": 1322,
+          "start": 13.22,
+          "end": 14.49,
+          "text": "But in his",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人6"
+        },
+        {
+          "id": 7,
+          "seek": 1495,
+          "start": 14.95,
+          "end": 16.059,
+          "text": "之前",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人1"
+        },
+        {
+          "id": 8,
+          "seek": 1605,
+          "start": 16.059,
+          "end": 17.82,
+          "text": "有顾客自己带酒水",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人2"
+        },
+        {
+          "id": 9,
+          "seek": 1810,
+          "start": 18.1,
+          "end": 20.74,
+          "text": "也没加收钱或者不让喝。",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人1"
+        },
+        {
+          "id": 10,
+          "seek": 2212,
+          "start": 22.12,
+          "end": 23.9,
+          "text": "Oh yeah,",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人3"
+        },
+        {
+          "id": 11,
+          "seek": 2390,
+          "start": 23.9,
+          "end": 25.42,
+          "text": "He wasn't even that",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人4"
+        },
+        {
+          "id": 12,
+          "seek": 2542,
+          "start": 25.42,
+          "end": 27.96,
+          "text": "Big when I started listening to him.",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人5"
+        },
+        {
+          "id": 13,
+          "seek": 2796,
+          "start": 27.96,
+          "end": 29.23,
+          "text": "But in his",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人6"
+        },
+        {
+          "id": 14,
+          "seek": 2969,
+          "start": 29.69,
+          "end": 30.8,
+          "text": "之前",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人1"
+        },
+        {
+          "id": 15,
+          "seek": 3080,
+          "start": 30.8,
+          "end": 32.56,
+          "text": "有顾客自己带酒水",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人2"
+        },
+        {
+          "id": 16,
+          "seek": 3284,
+          "start": 32.84,
+          "end": 35.48,
+          "text": "也没加收钱或者不让喝。",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人1"
+        },
+        {
+          "id": 17,
+          "seek": 3686,
+          "start": 36.86,
+          "end": 38.64,
+          "text": "Oh yeah,",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人3"
+        },
+        {
+          "id": 18,
+          "seek": 3864,
+          "start": 38.64,
+          "end": 40.16,
+          "text": "He wasn't even that",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人4"
+        },
+        {
+          "id": 19,
+          "seek": 4015,
+          "start": 40.16,
+          "end": 42.7,
+          "text": "Big when I started listening to him.",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人5"
+        },
+        {
+          "id": 20,
+          "seek": 4270,
+          "start": 42.7,
+          "end": 44.2,
+          "text": "But and his",
+          "tokens": [],
+          "temperature": 0.0,
+          "avg_logprob": 0.0,
+          "compression_ratio": 0.0,
+          "no_speech_prob": 0.0,
+          "speaker": "说话人6"
+        }
+      ],
+      "words": [
+        {
+          "word": "之",
+          "start": 0.52,
+          "end": 0.68
+        },
+        {
+          "word": "前",
+          "start": 0.68,
+          "end": 1.0
+        },
+        {
+          "word": "有",
+          "start": 1.47,
+          "end": 1.47
+        },
+        {
+          "word": "顾",
+          "start": 1.47,
+          "end": 1.71
+        },
+        {
+          "word": "客",
+          "start": 1.71,
+          "end": 1.87
+        },
+        {
+          "word": "自",
+          "start": 1.87,
+          "end": 2.03
+        },
+        {
+          "word": "己",
+          "start": 2.03,
+          "end": 2.19
+        },
+        {
+          "word": "带",
+          "start": 2.19,
+          "end": 2.43
+        },
+        {
+          "word": "酒",
+          "start": 2.43,
+          "end": 2.51
+        },
+        {
+          "word": "水",
+          "start": 2.51,
+          "end": 2.83
+        },
+        {
+          "word": "也",
+          "start": 3.52,
+          "end": 3.68
+        },
+        {
+          "word": "没",
+          "start": 3.68,
+          "end": 3.84
+        },
+        {
+          "word": "加",
+          "start": 3.84,
+          "end": 4.08
+        },
+        {
+          "word": "收",
+          "start": 4.08,
+          "end": 4.24
+        },
+        {
+          "word": "钱",
+          "start": 4.24,
+          "end": 4.56
+        },
+        {
+          "word": "或",
+          "start": 4.72,
+          "end": 4.96
+        },
+        {
+          "word": "者",
+          "start": 4.96,
+          "end": 5.12
+        },
+        {
+          "word": "不",
+          "start": 5.12,
+          "end": 5.2
+        },
+        {
+          "word": "让",
+          "start": 5.2,
+          "end": 5.44
+        },
+        {
+          "word": "喝",
+          "start": 5.44,
+          "end": 5.76
+        },
+        {
+          "word": "Oh",
+          "start": 8.34,
+          "end": 8.5
+        },
+        {
+          "word": "yeah",
+          "start": 8.5,
+          "end": 8.82
+        },
+        {
+          "word": "He",
+          "start": 9.64,
+          "end": 9.72
+        },
+        {
+          "word": "wasn't",
+          "start": 9.72,
+          "end": 10.68
+        },
+        {
+          "word": "even",
+          "start": 10.68,
+          "end": 10.68
+        },
+        {
+          "word": "that",
+          "start": 10.68,
+          "end": 10.68
+        },
+        {
+          "word": "Big",
+          "start": 11.16,
+          "end": 11.16
+        },
+        {
+          "word": "when",
+          "start": 11.16,
+          "end": 11.32
+        },
+        {
+          "word": "I",
+          "start": 11.32,
+          "end": 11.56
+        },
+        {
+          "word": "started",
+          "start": 11.56,
+          "end": 11.56
+        },
+        {
+          "word": "listening",
+          "start": 11.88,
+          "end": 12.36
+        },
+        {
+          "word": "to",
+          "start": 12.44,
+          "end": 12.68
+        },
+        {
+          "word": "him",
+          "start": 12.68,
+          "end": 12.84
+        },
+        {
+          "word": "But",
+          "start": 13.86,
+          "end": 13.86
+        },
+        {
+          "word": "in",
+          "start": 14.49,
+          "end": 14.49
+        },
+        {
+          "word": "his",
+          "start": 14.49,
+          "end": 14.49
+        },
+        {
+          "word": "之",
+          "start": 15.27,
+          "end": 15.43
+        },
+        {
+          "word": "前",
+          "start": 15.43,
+          "end": 15.75
+        },
+        {
+          "word": "有",
+          "start": 16.219,
+          "end": 16.219
+        },
+        {
+          "word": "顾",
+          "start": 16.219,
+          "end": 16.459
+        },
+        {
+          "word": "客",
+          "start": 16.459,
+          "end": 16.619
+        },
+        {
+          "word": "自",
+          "start": 16.619,
+          "end": 16.779
+        },
+        {
+          "word": "己",
+          "start": 16.859,
+          "end": 16.939
+        },
+        {
+          "word": "带",
+          "start": 16.939,
+          "end": 17.179
+        },
+        {
+          "word": "酒",
+          "start": 17.179,
+          "end": 17.259
+        },
+        {
+          "word": "水",
+          "start": 17.259,
+          "end": 17.659
+        },
+        {
+          "word": "也",
+          "start": 18.26,
+          "end": 18.42
+        },
+        {
+          "word": "没",
+          "start": 18.42,
+          "end": 18.58
+        },
+        {
+          "word": "加",
+          "start": 18.58,
+          "end": 18.82
+        },
+        {
+          "word": "收",
+          "start": 18.82,
+          "end": 18.98
+        },
+        {
+          "word": "钱",
+          "start": 18.98,
+          "end": 19.3
+        },
+        {
+          "word": "或",
+          "start": 19.46,
+          "end": 19.7
+        },
+        {
+          "word": "者",
+          "start": 19.7,
+          "end": 19.86
+        },
+        {
+          "word": "不",
+          "start": 19.86,
+          "end": 19.94
+        },
+        {
+          "word": "让",
+          "start": 19.94,
+          "end": 20.18
+        },
+        {
+          "word": "喝",
+          "start": 20.18,
+          "end": 20.5
+        },
+        {
+          "word": "Oh",
+          "start": 23.08,
+          "end": 23.24
+        },
+        {
+          "word": "yeah",
+          "start": 23.24,
+          "end": 23.56
+        },
+        {
+          "word": "He",
+          "start": 24.38,
+          "end": 24.46
+        },
+        {
+          "word": "wasn't",
+          "start": 24.46,
+          "end": 25.42
+        },
+        {
+          "word": "even",
+          "start": 25.42,
+          "end": 25.42
+        },
+        {
+          "word": "that",
+          "start": 25.42,
+          "end": 25.42
+        },
+        {
+          "word": "Big",
+          "start": 25.9,
+          "end": 25.9
+        },
+        {
+          "word": "when",
+          "start": 25.9,
+          "end": 26.06
+        },
+        {
+          "word": "I",
+          "start": 26.06,
+          "end": 26.3
+        },
+        {
+          "word": "started",
+          "start": 26.3,
+          "end": 26.3
+        },
+        {
+          "word": "listening",
+          "start": 26.62,
+          "end": 27.1
+        },
+        {
+          "word": "to",
+          "start": 27.18,
+          "end": 27.42
+        },
+        {
+          "word": "him",
+          "start": 27.42,
+          "end": 27.58
+        },
+        {
+          "word": "But",
+          "start": 28.6,
+          "end": 28.6
+        },
+        {
+          "word": "in",
+          "start": 29.23,
+          "end": 29.23
+        },
+        {
+          "word": "his",
+          "start": 29.23,
+          "end": 29.23
+        },
+        {
+          "word": "之",
+          "start": 30.01,
+          "end": 30.17
+        },
+        {
+          "word": "前",
+          "start": 30.17,
+          "end": 30.49
+        },
+        {
+          "word": "有",
+          "start": 30.96,
+          "end": 30.96
+        },
+        {
+          "word": "顾",
+          "start": 30.96,
+          "end": 31.2
+        },
+        {
+          "word": "客",
+          "start": 31.2,
+          "end": 31.36
+        },
+        {
+          "word": "自",
+          "start": 31.36,
+          "end": 31.52
+        },
+        {
+          "word": "己",
+          "start": 31.52,
+          "end": 31.68
+        },
+        {
+          "word": "带",
+          "start": 31.68,
+          "end": 31.84
+        },
+        {
+          "word": "酒",
+          "start": 31.84,
+          "end": 32.0
+        },
+        {
+          "word": "水",
+          "start": 32.0,
+          "end": 32.32
+        },
+        {
+          "word": "也",
+          "start": 33.0,
+          "end": 33.16
+        },
+        {
+          "word": "没",
+          "start": 33.16,
+          "end": 33.32
+        },
+        {
+          "word": "加",
+          "start": 33.32,
+          "end": 33.56
+        },
+        {
+          "word": "收",
+          "start": 33.56,
+          "end": 33.72
+        },
+        {
+          "word": "钱",
+          "start": 33.72,
+          "end": 34.04
+        },
+        {
+          "word": "或",
+          "start": 34.2,
+          "end": 34.44
+        },
+        {
+          "word": "者",
+          "start": 34.44,
+          "end": 34.6
+        },
+        {
+          "word": "不",
+          "start": 34.6,
+          "end": 34.68
+        },
+        {
+          "word": "让",
+          "start": 34.68,
+          "end": 34.92
+        },
+        {
+          "word": "喝",
+          "start": 34.92,
+          "end": 35.24
+        },
+        {
+          "word": "Oh",
+          "start": 37.82,
+          "end": 37.98
+        },
+        {
+          "word": "yeah",
+          "start": 37.98,
+          "end": 38.3
+        },
+        {
+          "word": "He",
+          "start": 39.12,
+          "end": 39.2
+        },
+        {
+          "word": "wasn't",
+          "start": 39.2,
+          "end": 40.16
+        },
+        {
+          "word": "even",
+          "start": 40.16,
+          "end": 40.16
+        },
+        {
+          "word": "that",
+          "start": 40.16,
+          "end": 40.16
+        },
+        {
+          "word": "Big",
+          "start": 40.64,
+          "end": 40.64
+        },
+        {
+          "word": "when",
+          "start": 40.64,
+          "end": 40.8
+        },
+        {
+          "word": "I",
+          "start": 40.8,
+          "end": 41.04
+        },
+        {
+          "word": "started",
+          "start": 41.04,
+          "end": 41.04
+        },
+        {
+          "word": "listening",
+          "start": 41.36,
+          "end": 41.84
+        },
+        {
+          "word": "to",
+          "start": 41.92,
+          "end": 42.16
+        },
+        {
+          "word": "him",
+          "start": 42.16,
+          "end": 42.32
+        },
+        {
+          "word": "But",
+          "start": 43.34,
+          "end": 43.34
+        },
+        {
+          "word": "and",
+          "start": 43.42,
+          "end": 43.66
+        },
+        {
+          "word": "his",
+          "start": 43.66,
+          "end": 43.82
+        }
+      ]
+    }
+  },
+  {
+    "audio": "silence",
+    "seconds": 0.02552050002850592,
+    "error": "Response ended prematurely"
+  }
+]

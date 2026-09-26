@@ -4,7 +4,7 @@ import subprocess
 import sys
 import threading
 import unittest
-from types import SimpleNamespace
+from pathlib import Path
 from unittest.mock import patch
 
 from deploy import entrypoint as launcher
@@ -29,6 +29,9 @@ class SingleContainerTest(unittest.TestCase):
             api.env.get("CUDA_VISIBLE_DEVICES"), os.environ.get("CUDA_VISIBLE_DEVICES")
         )
         self.assertEqual(engine.env["VLLM_PLUGINS"], "")
+        root = str(Path(launcher.__file__).resolve().parents[1])
+        self.assertEqual(engine.env["PYTHONPATH"], root)
+        self.assertEqual(api.env["PYTHONPATH"], root)
         self.assertIn("127.0.0.1", engine.command)
 
     def test_health_validates_payload(self):
@@ -78,9 +81,9 @@ class SingleContainerTest(unittest.TestCase):
                     )
 
     def test_missing_cuda_prevents_model_download_and_processes(self):
-        torch = SimpleNamespace(cuda=SimpleNamespace(is_available=lambda: False))
         with (
-            patch.dict(sys.modules, {"torch": torch}),
+            patch("app.core.config.settings.DEVICE", "cuda:0"),
+            patch("app.core.device.torch.cuda.is_available", return_value=False),
             patch.object(sys, "argv", ["start.py"]),
             patch("app.bootstrap.ensure_models_downloaded") as prepare,
             patch.object(launcher, "run") as run,
@@ -91,19 +94,32 @@ class SingleContainerTest(unittest.TestCase):
         run.assert_not_called()
 
     def test_missing_models_prevent_starting_either_process(self):
-        torch = SimpleNamespace(
-            cuda=SimpleNamespace(
-                is_available=lambda: True, get_device_name=lambda index: "Test GPU"
-            )
-        )
         with (
-            patch.dict(sys.modules, {"torch": torch}),
+            patch.dict(os.environ),
+            patch("app.core.config.settings.DEVICE", "cuda:0"),
+            patch("app.core.device.torch.cuda.is_available", return_value=True),
             patch.object(sys, "argv", ["start.py"]),
             patch("app.bootstrap.ensure_models_downloaded", return_value=False),
             patch.object(launcher, "run") as run,
         ):
             self.assertEqual(launcher.main(), 1)
         run.assert_not_called()
+
+    def test_cpu_starts_both_services_without_cuda(self):
+        with (
+            patch.dict(os.environ),
+            patch("app.core.config.settings.DEVICE", "cpu"),
+            patch("app.core.device.torch.cuda.is_available", return_value=False),
+            patch.object(sys, "argv", ["start.py"]),
+            patch("app.bootstrap.ensure_models_downloaded", return_value=True),
+            patch.object(launcher.signal, "signal"),
+            patch.object(launcher, "run", return_value=0) as run,
+        ):
+            self.assertEqual(launcher.main(), 0)
+            services, _ = run.call_args.args
+            self.assertEqual(
+                [service.env["DEVICE"] for service in services], ["cpu"] * 2
+            )
 
     def test_shutdown_before_start_creates_no_children(self):
         stop = threading.Event()

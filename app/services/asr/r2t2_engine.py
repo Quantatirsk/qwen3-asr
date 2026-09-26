@@ -15,6 +15,7 @@ from app.utils.text_processing import normalize_asr_text
 from .engines import ASRFullResult, ASRSegmentResult, WordToken
 from .forced_aligner import ForcedAligner, _load_audio
 from .long_audio import prepare_long_audio
+from .rust_backend import RustForcedAligner
 
 if TYPE_CHECKING:
     from app.utils.audio_splitter import AudioSegment
@@ -28,7 +29,15 @@ class R2T2Engine:
     ) -> None:
         self.device = detect_device(settings.DEVICE)
         self.model_id = MODEL_ID
-        self.aligner = ForcedAligner(forced_aligner_path)
+        self.aligner = (
+            RustForcedAligner(forced_aligner_path)
+            if self.device == "cpu"
+            else ForcedAligner(forced_aligner_path)
+        )
+
+    def close(self) -> None:
+        if self.device == "cpu":
+            self.aligner.close()
 
     def transcribe_segments(
         self,

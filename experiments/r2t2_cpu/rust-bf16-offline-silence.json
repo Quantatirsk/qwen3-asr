@@ -1,0 +1,54 @@
+{
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "library": "/Users/quant/.cache/r2t2-poc/rust-bf16/target/release/libqwen_asr.dylib",
+  "library_sha256": "12b392614c92c6ed468e3a2f828f6e6ac6ca12f1f60cb4258f958a36adebc35c",
+  "model": "/Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2",
+  "audio": "/Users/quant/.cache/r2t2-poc/audio/silence.wav",
+  "audio_sha256": "262d1f34f300560a4c82ba8127ddea9e1d72946f187fdbd3e8f70ee096077aec",
+  "mode": "offline",
+  "chunk_seconds": null,
+  "threads": 8,
+  "status": 0,
+  "wall_seconds": 2.603948083007708,
+  "events": [
+    {
+      "event": "load",
+      "seconds": 0.774342415999854,
+      "peak_rss_mib": 9237.78125
+    },
+    {
+      "event": "transcription",
+      "repetition": 0,
+      "raw": "",
+      "clean": "",
+      "seconds": 0.6507764169946313,
+      "audio_seconds": 5.0,
+      "rtf": 0.13015528339892626,
+      "peak_rss_mib": 10633.984375,
+      "stream_events": []
+    },
+    {
+      "event": "transcription",
+      "repetition": 1,
+      "raw": "",
+      "clean": "",
+      "seconds": 0.496310665999772,
+      "audio_seconds": 5.0,
+      "rtf": 0.0992621331999544,
+      "peak_rss_mib": 10647.84375,
+      "stream_events": []
+    },
+    {
+      "event": "transcription",
+      "repetition": 2,
+      "raw": "",
+      "clean": "",
+      "seconds": 0.5015013749944046,
+      "audio_seconds": 5.0,
+      "rtf": 0.10030027499888092,
+      "peak_rss_mib": 10655.90625,
+      "stream_events": []
+    }
+  ],
+  "stderr": "Loading model from /Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2\nDetected: Qwen3-ASR-1.7B\nLoading encoder weights...\nLoading decoder weights...\nModel weights loaded.\nRuntime buffers initialized.\n"
+}

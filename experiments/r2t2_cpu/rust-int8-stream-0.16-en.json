@@ -1,0 +1,303 @@
+{
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "library": "/Users/quant/.cache/r2t2-poc/rust-int8/target/release/libqwen_asr.dylib",
+  "library_sha256": "309b749ff8fd464bbdd1aa546ecf1a82dca87af6ce38206bd4e094353e2163f0",
+  "model": "/Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2",
+  "audio": "/Users/quant/.cache/r2t2-poc/audio/en.wav",
+  "audio_sha256": "59323e1ab9b50cd2e39895a321a6aeca6c63071c87a2058894584ce32ed42167",
+  "mode": "stream",
+  "chunk_seconds": 0.16,
+  "threads": 8,
+  "status": 0,
+  "wall_seconds": 17.64473408300546,
+  "events": [
+    {
+      "event": "load",
+      "seconds": 0.8815991249866784,
+      "peak_rss_mib": 8114.921875
+    },
+    {
+      "event": "transcription",
+      "repetition": 0,
+      "raw": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and|",
+      "clean": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and",
+      "seconds": 16.63912354200147,
+      "audio_seconds": 7.0,
+      "rtf": 2.377017648857353,
+      "peak_rss_mib": 8384.328125,
+      "stream_events": [
+        {
+          "audio_seconds": 0.16,
+          "call_seconds": 0.4168409999983851,
+          "elapsed_seconds": 0.4168660420109518,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 0.32,
+          "call_seconds": 0.05431004200363532,
+          "elapsed_seconds": 0.4711933750077151,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 0.48,
+          "call_seconds": 0.30918595899129286,
+          "elapsed_seconds": 0.7803947080101352,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 0.64,
+          "call_seconds": 0.0496332079928834,
+          "elapsed_seconds": 0.8300454580166843,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 0.8,
+          "call_seconds": 0.30826933300704695,
+          "elapsed_seconds": 1.1383314169943333,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 0.96,
+          "call_seconds": 0.3063866670127027,
+          "elapsed_seconds": 1.4447351669950876,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 1.12,
+          "call_seconds": 0.31441966601414606,
+          "elapsed_seconds": 1.7591724999947473,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 1.28,
+          "call_seconds": 0.04996158301946707,
+          "elapsed_seconds": 1.8091544579947367,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 1.44,
+          "call_seconds": 0.3391077499836683,
+          "elapsed_seconds": 2.1482760829967447,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 1.6,
+          "call_seconds": 0.07157254198682494,
+          "elapsed_seconds": 2.2198632920044474,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 1.76,
+          "call_seconds": 0.3684335410071071,
+          "elapsed_seconds": 2.5883122500090394,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 1.92,
+          "call_seconds": 0.10015129199018702,
+          "elapsed_seconds": 2.6884797500097193,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 2.08,
+          "call_seconds": 0.39295483301975764,
+          "elapsed_seconds": 3.081451875012135,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 2.24,
+          "call_seconds": 0.1142708339903038,
+          "elapsed_seconds": 3.19573833301547,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 2.4,
+          "call_seconds": 0.42573233298026025,
+          "elapsed_seconds": 3.6215169170172885,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 2.56,
+          "call_seconds": 0.10095483300392516,
+          "elapsed_seconds": 3.7224865420139395,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 2.72,
+          "call_seconds": 0.4715434169920627,
+          "elapsed_seconds": 4.194046832999447,
+          "delta": "Oh yeah"
+        },
+        {
+          "audio_seconds": 2.88,
+          "call_seconds": 0.1413182090036571,
+          "elapsed_seconds": 4.3353752919938415,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 3.04,
+          "call_seconds": 0.5014928340096958,
+          "elapsed_seconds": 4.836884917021962,
+          "delta": ", yeah"
+        },
+        {
+          "audio_seconds": 3.2,
+          "call_seconds": 0.16721591600799002,
+          "elapsed_seconds": 5.004109667002922,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 3.36,
+          "call_seconds": 0.5192395410267636,
+          "elapsed_seconds": 5.523363458021777,
+          "delta": "."
+        },
+        {
+          "audio_seconds": 3.52,
+          "call_seconds": 0.18086879199836403,
+          "elapsed_seconds": 5.7042410419962835,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 3.68,
+          "call_seconds": 0.5336498749966267,
+          "elapsed_seconds": 6.237905333022354,
+          "delta": " He"
+        },
+        {
+          "audio_seconds": 3.84,
+          "call_seconds": 0.20355120801832527,
+          "elapsed_seconds": 6.4414653750136495,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 4.0,
+          "call_seconds": 0.5766357500106096,
+          "elapsed_seconds": 7.018116249993909,
+          "delta": " wasn"
+        },
+        {
+          "audio_seconds": 4.16,
+          "call_seconds": 0.20318020801641978,
+          "elapsed_seconds": 7.22130579201621,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 4.32,
+          "call_seconds": 0.5663984160055406,
+          "elapsed_seconds": 7.787719167012256,
+          "delta": "'t"
+        },
+        {
+          "audio_seconds": 4.48,
+          "call_seconds": 0.21787316599511541,
+          "elapsed_seconds": 8.0055998750031,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 4.64,
+          "call_seconds": 0.6608715420006774,
+          "elapsed_seconds": 8.666486500005703,
+          "delta": " even"
+        },
+        {
+          "audio_seconds": 4.8,
+          "call_seconds": 0.2519350420043338,
+          "elapsed_seconds": 8.918430082994746,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 4.96,
+          "call_seconds": 0.6724920830165502,
+          "elapsed_seconds": 9.590934792009648,
+          "delta": " that"
+        },
+        {
+          "audio_seconds": 5.12,
+          "call_seconds": 0.24403579198406078,
+          "elapsed_seconds": 9.834978958009742,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 5.28,
+          "call_seconds": 0.6728350000048522,
+          "elapsed_seconds": 10.507828208006686,
+          "delta": " big"
+        },
+        {
+          "audio_seconds": 5.44,
+          "call_seconds": 0.26769350000540726,
+          "elapsed_seconds": 10.775545292010065,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 5.6,
+          "call_seconds": 0.7152597919921391,
+          "elapsed_seconds": 11.49082016700413,
+          "delta": " when I"
+        },
+        {
+          "audio_seconds": 5.76,
+          "call_seconds": 0.2848362500080839,
+          "elapsed_seconds": 11.775666333007393,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 5.92,
+          "call_seconds": 0.7116272090061102,
+          "elapsed_seconds": 12.487308250012575,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 6.08,
+          "call_seconds": 0.29010716700577177,
+          "elapsed_seconds": 12.77742979201139,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 6.24,
+          "call_seconds": 0.7132249999849591,
+          "elapsed_seconds": 13.490669999999227,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 6.4,
+          "call_seconds": 0.6174513750011101,
+          "elapsed_seconds": 14.108135000016773,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 6.56,
+          "call_seconds": 0.7252877919818275,
+          "elapsed_seconds": 14.833438917004969,
+          "delta": " started"
+        },
+        {
+          "audio_seconds": 6.72,
+          "call_seconds": 0.28640608297428116,
+          "elapsed_seconds": 15.119854792021215,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 6.88,
+          "call_seconds": 0.7449412500136532,
+          "elapsed_seconds": 15.86481175001245,
+          "delta": " listening"
+        },
+        {
+          "audio_seconds": 7.0,
+          "call_seconds": 4.499976057559252e-06,
+          "elapsed_seconds": 15.864825166994706,
+          "delta": ""
+        },
+        {
+          "final": true,
+          "call_seconds": 0.7658291250118054,
+          "elapsed_seconds": 16.63065624999581,
+          "delta": " to him, but and|"
+        }
+      ]
+    }
+  ],
+  "stderr": "Loading model from /Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2\nDetected: Qwen3-ASR-1.7B\nLoading encoder weights...\nLoading decoder weights...\nModel weights loaded.\nRuntime buffers initialized.\n"
+}

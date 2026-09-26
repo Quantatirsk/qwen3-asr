@@ -1,0 +1,42 @@
+{
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "library": "/Users/quant/.codex/worktrees/r2t2-dev/qwen3-asr/vendor/qwenasr/target/release/libqwen_asr.dylib",
+  "library_sha256": "9e4c0f7fecef150f50442bd20fe8bfa84f7a37d8211f7c4b73cd562c777431f8",
+  "model": "/Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2",
+  "audio": "/Users/quant/.cache/r2t2-poc/audio/en.wav",
+  "audio_sha256": "59323e1ab9b50cd2e39895a321a6aeca6c63071c87a2058894584ce32ed42167",
+  "mode": "generate",
+  "context": "",
+  "assistant_prefix": "",
+  "max_tokens": 1,
+  "chunk_seconds": null,
+  "threads": 8,
+  "status": 0,
+  "wall_seconds": 1.756888165982673,
+  "events": [
+    {
+      "event": "load",
+      "seconds": 0.8954448329750448,
+      "peak_rss_mib": 8115.1875
+    },
+    {
+      "event": "transcription",
+      "repetition": 0,
+      "raw": "language",
+      "clean": "language",
+      "seconds": 0.7210870829876512,
+      "audio_seconds": 7.0,
+      "rtf": 0.10301244042680732,
+      "peak_rss_mib": 8417.96875,
+      "stream_events": [
+        {
+          "token_ids": [
+            11528
+          ],
+          "finish_reason": "length"
+        }
+      ]
+    }
+  ],
+  "stderr": "Loading model from /Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2\nDetected: Qwen3-ASR-1.7B\nLoading encoder weights...\nLoading decoder weights...\nModel weights loaded.\nRuntime buffers initialized.\n"
+}

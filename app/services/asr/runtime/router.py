@@ -56,6 +56,11 @@ class RuntimeRouter:
     def warmup_model(self, model_id: str | None = None) -> None:
         self._get_engine(self.resolve_model_id(model_id))
 
+    def close(self) -> None:
+        if self._engine is not None:
+            self._engine.close()
+            self._engine = None
+
     def get_loaded_model_ids(self) -> list[str]:
         return [self._engine.model_id] if self._engine is not None else []
 

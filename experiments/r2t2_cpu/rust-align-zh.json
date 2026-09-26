@@ -1,0 +1,129 @@
+{
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "library": "/Users/quant/.cache/r2t2-poc/rust-int8/target/release/libqwen_asr.dylib",
+  "library_sha256": "309b749ff8fd464bbdd1aa546ecf1a82dca87af6ce38206bd4e094353e2163f0",
+  "model": "/Users/quant/.cache/huggingface/hub/models--Qwen--Qwen3-ForcedAligner-0.6B/snapshots/c7cbfc2048c462b0d63a45797104fc9db3ad62b7",
+  "audio": "/Users/quant/.cache/r2t2-poc/audio/zh.wav",
+  "audio_sha256": "b703174ef013bf7332ab74d4b65d568e2981cff2633cb620252bb4ba18ea7f67",
+  "mode": "align",
+  "chunk_seconds": null,
+  "threads": 8,
+  "status": 0,
+  "wall_seconds": 5.5072582499997225,
+  "events": [
+    {
+      "event": "load",
+      "seconds": 3.3524639589886647,
+      "peak_rss_mib": 3451.34375
+    },
+    {
+      "event": "alignment",
+      "seconds": 0.4650792909960728,
+      "words": [
+        {
+          "text": "之",
+          "start_ms": 480.0,
+          "end_ms": 1440.0
+        },
+        {
+          "text": "前",
+          "start_ms": 1440.0,
+          "end_ms": 1440.0
+        },
+        {
+          "text": "有",
+          "start_ms": 1440.0,
+          "end_ms": 1520.0
+        },
+        {
+          "text": "顾",
+          "start_ms": 1520.0,
+          "end_ms": 1680.0
+        },
+        {
+          "text": "客",
+          "start_ms": 1680.0,
+          "end_ms": 1840.0
+        },
+        {
+          "text": "自",
+          "start_ms": 1840.0,
+          "end_ms": 2000.0
+        },
+        {
+          "text": "己",
+          "start_ms": 2000.0,
+          "end_ms": 2240.0
+        },
+        {
+          "text": "带",
+          "start_ms": 2240.0,
+          "end_ms": 2320.0
+        },
+        {
+          "text": "酒",
+          "start_ms": 2320.0,
+          "end_ms": 2560.0
+        },
+        {
+          "text": "水",
+          "start_ms": 2560.0,
+          "end_ms": 2880.0
+        },
+        {
+          "text": "也",
+          "start_ms": 3520.0,
+          "end_ms": 3680.0
+        },
+        {
+          "text": "没",
+          "start_ms": 3680.0,
+          "end_ms": 3840.0
+        },
+        {
+          "text": "加",
+          "start_ms": 3840.0,
+          "end_ms": 4080.0
+        },
+        {
+          "text": "收",
+          "start_ms": 4080.0,
+          "end_ms": 4240.0
+        },
+        {
+          "text": "钱",
+          "start_ms": 4240.0,
+          "end_ms": 4640.0
+        },
+        {
+          "text": "或",
+          "start_ms": 4720.0,
+          "end_ms": 4960.0
+        },
+        {
+          "text": "者",
+          "start_ms": 4960.0,
+          "end_ms": 5120.0
+        },
+        {
+          "text": "不",
+          "start_ms": 5120.0,
+          "end_ms": 5280.0
+        },
+        {
+          "text": "让",
+          "start_ms": 5280.0,
+          "end_ms": 5440.0
+        },
+        {
+          "text": "喝",
+          "start_ms": 5440.0,
+          "end_ms": 5760.0
+        }
+      ],
+      "monotonic_in_bounds": true,
+      "peak_rss_mib": 3620.015625
+    }
+  ],
+  "stderr": "Loading model from /Users/quant/.cache/huggingface/hub/models--Qwen--Qwen3-ForcedAligner-0.6B/snapshots/c7cbfc2048c462b0d63a45797104fc9db3ad62b7\nDetected: Qwen3-ForcedAligner-0.6B\n  classify_num=5000, timestamp_segment_time=80ms\n  encoder: 1024d 24L, decoder: 1024d 28L\nLoading encoder weights...\nLoading decoder weights...\nModel weights loaded.\nRuntime buffers initialized.\n"
+}

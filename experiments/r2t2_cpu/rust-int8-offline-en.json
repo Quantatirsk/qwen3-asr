@@ -1,0 +1,54 @@
+{
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "library": "/Users/quant/.cache/r2t2-poc/rust-int8/target/release/libqwen_asr.dylib",
+  "library_sha256": "309b749ff8fd464bbdd1aa546ecf1a82dca87af6ce38206bd4e094353e2163f0",
+  "model": "/Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2",
+  "audio": "/Users/quant/.cache/r2t2-poc/audio/en.wav",
+  "audio_sha256": "59323e1ab9b50cd2e39895a321a6aeca6c63071c87a2058894584ce32ed42167",
+  "mode": "offline",
+  "chunk_seconds": null,
+  "threads": 8,
+  "status": 0,
+  "wall_seconds": 7.548732540977653,
+  "events": [
+    {
+      "event": "load",
+      "seconds": 4.664722582994727,
+      "peak_rss_mib": 8115.078125
+    },
+    {
+      "event": "transcription",
+      "repetition": 0,
+      "raw": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and|",
+      "clean": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and",
+      "seconds": 0.9268786660104524,
+      "audio_seconds": 7.0,
+      "rtf": 0.1324112380014932,
+      "peak_rss_mib": 8342.03125,
+      "stream_events": []
+    },
+    {
+      "event": "transcription",
+      "repetition": 1,
+      "raw": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and|",
+      "clean": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and",
+      "seconds": 0.8590194999997038,
+      "audio_seconds": 7.0,
+      "rtf": 0.12271707142852913,
+      "peak_rss_mib": 8355.625,
+      "stream_events": []
+    },
+    {
+      "event": "transcription",
+      "repetition": 2,
+      "raw": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and|",
+      "clean": "Oh yeah, yeah. He wasn't even that big when I started listening to him, but and",
+      "seconds": 0.9359215830045287,
+      "audio_seconds": 7.0,
+      "rtf": 0.13370308328636124,
+      "peak_rss_mib": 8363.65625,
+      "stream_events": []
+    }
+  ],
+  "stderr": "Loading model from /Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2\nDetected: Qwen3-ASR-1.7B\nLoading encoder weights...\nLoading decoder weights...\nModel weights loaded.\nRuntime buffers initialized.\n"
+}

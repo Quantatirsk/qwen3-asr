@@ -77,6 +77,9 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         shutdown_executor()
+        from .services.asr.runtime import get_runtime_router
+
+        get_runtime_router().close()
 
 
 def create_app() -> FastAPI:

@@ -1,0 +1,68 @@
+{
+  "backend": "rust-cpu-640ms-pause-aware",
+  "config": {
+    "model": "confucius4-r2t2",
+    "model_revision": "185ce639118ad1362d049ca0d8ed04b6ec5cd6c9",
+    "ready": true,
+    "protocol_version": 2,
+    "sample_rate": 16000,
+    "format": "int16_le",
+    "channels": 1,
+    "chunk_seconds": 0.64,
+    "max_frame_seconds": 1,
+    "max_session_seconds": 3600,
+    "max_sessions": 1,
+    "active_sessions": 0,
+    "language": "auto",
+    "word_timestamps": false,
+    "speaker_diarization": false,
+    "offline_transcription": true,
+    "offline_max_seconds": 60
+  },
+  "results": [
+    {
+      "audio": "zh",
+      "mode": "stream",
+      "text": "之前有顾客自己带酒水，也没加收钱或者不让喝。",
+      "audio_seconds": 6.74,
+      "wall_seconds": 7.047007624991238,
+      "first_text_seconds": 2.2911902089836076,
+      "updates": 7,
+      "frame_lag_p95_ms": 495.18083398696035,
+      "final_lag_ms": 306.99858400272205
+    },
+    {
+      "audio": "en",
+      "mode": "stream",
+      "text": "Oh yeah, yeah. He wasn't even that big when I started listening to him. But and",
+      "audio_seconds": 7.0,
+      "wall_seconds": 7.352382332988782,
+      "first_text_seconds": 2.335159707989078,
+      "updates": 8,
+      "frame_lag_p95_ms": 430.4633329913486,
+      "final_lag_ms": 352.36762498971075
+    },
+    {
+      "audio": "mixed",
+      "mode": "stream",
+      "text": "之前有顾客自己带酒水，也没加收钱或者不让喝。Oh yeah, yeah He wasn't even that big when I started listening to him. But and",
+      "audio_seconds": 14.24,
+      "wall_seconds": 14.596098000009079,
+      "first_text_seconds": 2.2937720420013648,
+      "updates": 15,
+      "frame_lag_p95_ms": 463.9802090090234,
+      "final_lag_ms": 356.0858750040643
+    },
+    {
+      "audio": "long",
+      "mode": "stream",
+      "text": "之前有顾客自己带酒水，也没加收钱或者不让喝。Oh yeah, yeah He wasn't even that big when I started listening to him. But and his之前有顾客自己带酒水。也没加收钱或者不让喝。Oh yeah, yeah He wasn't even that big when I started listening to him. But and his之前有顾客自己带酒水。也没加收钱或者不让喝。Oh yeah, yeah He wasn't even that big when I started listening to him. But and his",
+      "audio_seconds": 44.22,
+      "wall_seconds": 44.89596233400516,
+      "first_text_seconds": 2.2940735839947592,
+      "updates": 49,
+      "frame_lag_p95_ms": 520.7746249984484,
+      "final_lag_ms": 675.9567090205383
+    }
+  ]
+}

@@ -200,14 +200,18 @@ def main() -> int:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s %(message)s"
     )
-    import torch
+    from app.core.config import settings
+    from app.core.device import detect_device
 
-    if not torch.cuda.is_available():
-        logger.error("This deployment requires CUDA; refusing CPU fallback")
+    try:
+        device = detect_device(settings.DEVICE)
+    except (RuntimeError, ValueError) as exc:
+        logger.error("Invalid inference device: %s", exc)
         return 1
+    os.environ["DEVICE"] = device
     logger.info(
-        "GPU runtime: %s; shared offline/streaming R2T2 and independent aligner",
-        torch.cuda.get_device_name(0),
+        "Inference device: %s; shared offline/streaming R2T2 and independent aligner",
+        device,
     )
     from app.bootstrap import ensure_models_downloaded
 

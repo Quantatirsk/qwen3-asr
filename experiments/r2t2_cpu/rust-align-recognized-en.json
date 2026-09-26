@@ -1,0 +1,112 @@
+{
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "library": "/Users/quant/.cache/r2t2-poc/rust-int8/target/release/libqwen_asr.dylib",
+  "library_sha256": "309b749ff8fd464bbdd1aa546ecf1a82dca87af6ce38206bd4e094353e2163f0",
+  "model": "/Users/quant/.cache/huggingface/hub/models--Qwen--Qwen3-ForcedAligner-0.6B/snapshots/c7cbfc2048c462b0d63a45797104fc9db3ad62b7",
+  "audio": "/Users/quant/.cache/r2t2-poc/audio/en.wav",
+  "audio_sha256": "59323e1ab9b50cd2e39895a321a6aeca6c63071c87a2058894584ce32ed42167",
+  "mode": "align",
+  "context": null,
+  "assistant_prefix": null,
+  "max_tokens": null,
+  "chunk_seconds": null,
+  "threads": 8,
+  "status": 0,
+  "wall_seconds": 0.7820241249864921,
+  "events": [
+    {
+      "event": "load",
+      "seconds": 0.3315792089852039,
+      "peak_rss_mib": 3451.375
+    },
+    {
+      "event": "alignment",
+      "seconds": 0.3599165419873316,
+      "words": [
+        {
+          "text": "Oh",
+          "start_ms": 1120.0,
+          "end_ms": 1280.0
+        },
+        {
+          "text": "yeah,",
+          "start_ms": 1600.0,
+          "end_ms": 1920.0
+        },
+        {
+          "text": "yeah.",
+          "start_ms": 1920.0,
+          "end_ms": 1920.0
+        },
+        {
+          "text": "He",
+          "start_ms": 2320.0,
+          "end_ms": 2480.0
+        },
+        {
+          "text": "wasn't",
+          "start_ms": 2480.0,
+          "end_ms": 2880.0
+        },
+        {
+          "text": "even",
+          "start_ms": 2880.0,
+          "end_ms": 3200.0
+        },
+        {
+          "text": "that",
+          "start_ms": 3200.0,
+          "end_ms": 3440.0
+        },
+        {
+          "text": "big",
+          "start_ms": 3440.0,
+          "end_ms": 3840.0
+        },
+        {
+          "text": "when",
+          "start_ms": 3840.0,
+          "end_ms": 4080.0
+        },
+        {
+          "text": "I",
+          "start_ms": 4080.0,
+          "end_ms": 4240.0
+        },
+        {
+          "text": "started",
+          "start_ms": 4240.0,
+          "end_ms": 4640.0
+        },
+        {
+          "text": "listening",
+          "start_ms": 4640.0,
+          "end_ms": 5680.0
+        },
+        {
+          "text": "to",
+          "start_ms": 5680.0,
+          "end_ms": 5680.0
+        },
+        {
+          "text": "him,",
+          "start_ms": 6080.0,
+          "end_ms": 6080.0
+        },
+        {
+          "text": "but",
+          "start_ms": 6080.0,
+          "end_ms": 6560.0
+        },
+        {
+          "text": "and",
+          "start_ms": 6720.0,
+          "end_ms": 6880.0
+        }
+      ],
+      "monotonic_in_bounds": true,
+      "peak_rss_mib": 3612.890625
+    }
+  ],
+  "stderr": "Loading model from /Users/quant/.cache/huggingface/hub/models--Qwen--Qwen3-ForcedAligner-0.6B/snapshots/c7cbfc2048c462b0d63a45797104fc9db3ad62b7\nDetected: Qwen3-ForcedAligner-0.6B\n  classify_num=5000, timestamp_segment_time=80ms\n  encoder: 1024d 24L, decoder: 1024d 28L\nLoading encoder weights...\nLoading decoder weights...\nModel weights loaded.\nRuntime buffers initialized.\n"
+}

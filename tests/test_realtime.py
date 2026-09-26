@@ -22,6 +22,7 @@ from app.services.realtime.server import create_app
 
 class FakeModel:
     def __init__(self, capacity=4):
+        self.chunk_samples = CHUNK_SAMPLES
         self.aborted = []
         self.calls = []
 
@@ -139,6 +140,29 @@ class ProtocolTest(unittest.TestCase):
 
 
 class AsyncTest(unittest.IsolatedAsyncioTestCase):
+    async def test_slow_decode_cadence_still_flushes_short_pauses(self):
+        model = Model.__new__(Model)
+        model.sampling = {128: object()}
+
+        async def generate(*args, **kwargs):
+            yield SimpleNamespace(
+                outputs=[
+                    SimpleNamespace(
+                        text="language English<asr_text>Hello.", finish_reason="stop"
+                    )
+                ]
+            )
+
+        model.engine = SimpleNamespace(generate=generate, abort=AsyncMock())
+        state = Session("prompt", chunk_samples=10240)
+        self.assertEqual(await model.push(state, np.ones(5120)), "")
+        self.assertEqual(await model.push(state, np.ones(2560)), "")
+        self.assertEqual(await model.push(state, np.zeros(2560)), "")
+        self.assertEqual(await model.push(state, np.zeros(2560)), "Hello.")
+        self.assertEqual(state.size, 0)
+        self.assertEqual(state.header, "")
+        self.assertEqual(state.next_decode, state.samples + 20480)
+
     async def test_pause_flushes_and_releases_previous_language_prefix(self):
         model = Model.__new__(Model)
         model.tokenizer = SimpleNamespace(

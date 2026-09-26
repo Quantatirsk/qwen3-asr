@@ -35,7 +35,11 @@ with (
 
 
 async def request(
-    app: ASGIApp, path: str, body: bytes, content_type: str
+    app: ASGIApp,
+    path: str,
+    body: bytes,
+    content_type: str,
+    first_body: asyncio.Event | None = None,
 ) -> tuple[int, bytes]:
     messages: list[Message] = []
     scope: Scope = {
@@ -61,8 +65,12 @@ async def request(
 
     async def send(message: Message) -> None:
         messages.append(message)
+        if message["type"] == "http.response.body" and first_body is not None:
+            first_body.set()
 
     await asyncio.wait_for(app(scope, receive, send), 3)
+    assert messages[-1]["type"] == "http.response.body"
+    assert messages[-1].get("more_body", False) is False
     status = next(
         message["status"]
         for message in messages
@@ -460,6 +468,59 @@ class OfflineLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(outcomes[0], ClientDisconnect)
         self.assertTrue(task.cancelled())
         self.assert_cleaned_once()
+
+    async def test_json_errors_complete_before_and_after_heartbeat(self) -> None:
+        from fastapi import FastAPI
+
+        app = FastAPI()
+        app.include_router(openai_compatible.router)
+        body = (
+            '--audio-test\r\nContent-Disposition: form-data; name="response_format"\r\n\r\njson'
+            '\r\n--audio-test\r\nContent-Disposition: form-data; name="file"; filename="sample.wav"'
+            "\r\nContent-Type: audio/wav\r\n\r\naudio\r\n--audio-test--\r\n"
+        ).encode()
+        self.inference_error = True
+        with patch.object(
+            openai_compatible,
+            "get_offline_transcription_service",
+            return_value=self.service,
+        ):
+            for after_heartbeat, expected_status in ((False, 500), (True, 200)):
+                with (
+                    self.subTest(after_heartbeat=after_heartbeat),
+                    patch.object(
+                        openai_compatible,
+                        "HEARTBEAT_INTERVAL_SECONDS",
+                        0.001 if after_heartbeat else 15,
+                    ),
+                ):
+                    first_body = asyncio.Event()
+                    if after_heartbeat:
+                        self.inference_release.clear()
+                    response_task = asyncio.create_task(
+                        request(
+                            app,
+                            "/v1/audio/transcriptions",
+                            body,
+                            "multipart/form-data; boundary=audio-test",
+                            first_body,
+                        )
+                    )
+                    try:
+                        if after_heartbeat:
+                            await asyncio.wait_for(first_body.wait(), 1)
+                            self.inference_release.set()
+                        status, payload = await response_task
+                    finally:
+                        self.inference_release.set()
+                        await asyncio.gather(response_task, return_exceptions=True)
+                    self.assertEqual(status, expected_status)
+                    result = json.loads(payload)
+                    self.assertEqual(result["error_code"], "DEFAULT_SERVER_ERROR")
+                    self.assertEqual(result["message"], "Inference failed")
+                    if after_heartbeat:
+                        self.assertTrue(payload.startswith(b" \n"))
+                    self.assert_cleaned_once()
 
 
 class AudioNormalizationOwnershipTests(unittest.TestCase):

@@ -1,0 +1,54 @@
+{
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "library": "/Users/quant/.cache/r2t2-poc/rust-bf16/target/release/libqwen_asr.dylib",
+  "library_sha256": "12b392614c92c6ed468e3a2f828f6e6ac6ca12f1f60cb4258f958a36adebc35c",
+  "model": "/Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2",
+  "audio": "/Users/quant/.cache/r2t2-poc/audio/long.wav",
+  "audio_sha256": "2feb48fd07af1ea256e501dc66d134c93bf3c150d35f5f629248750898f578d3",
+  "mode": "offline",
+  "chunk_seconds": null,
+  "threads": 8,
+  "status": 0,
+  "wall_seconds": 13.293838416022481,
+  "events": [
+    {
+      "event": "load",
+      "seconds": 0.7583065840008203,
+      "peak_rss_mib": 9237.53125
+    },
+    {
+      "event": "transcription",
+      "repetition": 0,
+      "raw": "之前有顾客自己带酒水也没加收钱或者不让喝. Oh yeah, yeah. He wasn't even that big when I started listening to him. But and his.之前有顾客自己带酒水也没加收钱或者不让喝. Oh yeah, yeah. He wasn't even that big when I started listening to him. But and his.",
+      "clean": "之前有顾客自己带酒水也没加收钱或者不让喝. Oh yeah, yeah. He wasn't even that big when I started listening to him. But and his.之前有顾客自己带酒水也没加收钱或者不让喝. Oh yeah, yeah. He wasn't even that big when I started listening to him. But and his.",
+      "seconds": 3.8781688750023022,
+      "audio_seconds": 44.22,
+      "rtf": 0.08770169323840575,
+      "peak_rss_mib": 10967.859375,
+      "stream_events": []
+    },
+    {
+      "event": "transcription",
+      "repetition": 1,
+      "raw": "之前有顾客自己带酒水也没加收钱或者不让喝. Oh yeah, yeah. He wasn't even that big when I started listening to him. But and his.之前有顾客自己带酒水也没加收钱或者不让喝. Oh yeah, yeah. He wasn't even that big when I started listening to him. But and his.",
+      "clean": "之前有顾客自己带酒水也没加收钱或者不让喝. Oh yeah, yeah. He wasn't even that big when I started listening to him. But and his.之前有顾客自己带酒水也没加收钱或者不让喝. Oh yeah, yeah. He wasn't even that big when I started listening to him. But and his.",
+      "seconds": 4.3210108340135776,
+      "audio_seconds": 44.22,
+      "rtf": 0.09771621062898185,
+      "peak_rss_mib": 10984.484375,
+      "stream_events": []
+    },
+    {
+      "event": "transcription",
+      "repetition": 2,
+      "raw": "之前有顾客自己带酒水也没加收钱或者不让喝. Oh yeah, yeah. He wasn't even that big when I started listening to him. But and his.之前有顾客自己带酒水也没加收钱或者不让喝. Oh yeah, yeah. He wasn't even that big when I started listening to him. But and his.",
+      "clean": "之前有顾客自己带酒水也没加收钱或者不让喝. Oh yeah, yeah. He wasn't even that big when I started listening to him. But and his.之前有顾客自己带酒水也没加收钱或者不让喝. Oh yeah, yeah. He wasn't even that big when I started listening to him. But and his.",
+      "seconds": 4.069446333014639,
+      "audio_seconds": 44.22,
+      "rtf": 0.09202728025813295,
+      "peak_rss_mib": 10997.546875,
+      "stream_events": []
+    }
+  ],
+  "stderr": "Loading model from /Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2\nDetected: Qwen3-ASR-1.7B\nLoading encoder weights...\nLoading decoder weights...\nModel weights loaded.\nRuntime buffers initialized.\n"
+}

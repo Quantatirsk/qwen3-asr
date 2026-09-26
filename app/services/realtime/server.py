@@ -12,6 +12,8 @@ from fastapi import FastAPI, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
+from app.core.config import settings
+
 from .engine import Model
 from .protocol import (
     CHUNK_SAMPLES,
@@ -59,7 +61,9 @@ def create_app(model_factory=Model, *, max_sessions=None):
     capacity = (
         max_sessions
         if max_sessions is not None
-        else int(os.getenv("R2T2_MAX_SESSIONS", "4"))
+        else int(
+            os.getenv("R2T2_MAX_SESSIONS", "1" if settings.DEVICE == "cpu" else "4")
+        )
     )
     if not 1 <= capacity <= 64:
         raise ValueError("R2T2_MAX_SESSIONS must be between 1 and 64")
@@ -69,6 +73,7 @@ def create_app(model_factory=Model, *, max_sessions=None):
     async def lifespan(app):
         model = model_factory(capacity)
         app.state.model = model
+        app.state.chunk_samples = model.chunk_samples
         try:
             await model.warmup()
             app.state.ready = True
@@ -81,6 +86,7 @@ def create_app(model_factory=Model, *, max_sessions=None):
     app.state.active = 0
     app.state.ready = False
     app.state.offline_active = False
+    app.state.chunk_samples = CHUNK_SAMPLES
 
     def authorized(headers):
         return not token or hmac.compare_digest(
@@ -96,7 +102,8 @@ def create_app(model_factory=Model, *, max_sessions=None):
             "sample_rate": SAMPLE_RATE,
             "format": "int16_le",
             "channels": 1,
-            "chunk_seconds": CHUNK_SAMPLES / SAMPLE_RATE,
+            "chunk_seconds": app.state.chunk_samples / SAMPLE_RATE,
+            "max_frame_seconds": 1,
             "max_session_seconds": MAX_SECONDS,
             "max_sessions": capacity,
             "active_sessions": app.state.active,

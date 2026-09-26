@@ -1,0 +1,102 @@
+{
+  "source_revision": "26d55a54ce5670cff9947a167d8ed95d569fd4d9",
+  "llama_revision": "ad6c66839af3c5646fba8c6c2e2087a1e4e38948",
+  "gguf_revision": "86ff0251cb9f456b63aeef5f80137f104e22869a",
+  "device": "cpu",
+  "metal_compiled": false,
+  "gpu_layers": 0,
+  "threads": 8,
+  "n_ctx": 4096,
+  "n_batch": 2048,
+  "load_seconds": 1.27538041601656,
+  "stream_step_ms": 160,
+  "stream_lookahead_ms": 160,
+  "stream_rollback_tokens": 1,
+  "samples": [
+    {
+      "name": "mixed",
+      "audio_seconds": 14.24,
+      "forced_language": "Chinese",
+      "offline": {
+        "text": "之前有顾客自己带酒水也没加收钱或者不让喝。Oh yeah yeah, he wasn't even that big when I started listening to him, but and his",
+        "seconds": 1.3399298749864101,
+        "rtf": 0.09409619908612431,
+        "native_output": {
+          "text": "之前有顾客自己带酒水也没加收钱或者不让喝。Oh yeah yeah, he wasn't even that big when I started listening to him, but and his",
+          "token_ids": [
+            101056,
+            18830,
+            104476,
+            99283,
+            99278,
+            99525,
+            52510,
+            102362,
+            20929,
+            50009,
+            99428,
+            100631,
+            108697,
+            100399,
+            1773,
+            11908,
+            21639,
+            21639,
+            11,
+            566,
+            5710,
+            944,
+            1496,
+            429,
+            2409,
+            979,
+            358,
+            3855,
+            14289,
+            311,
+            1435,
+            11,
+            714,
+            323,
+            806,
+            151645
+          ],
+          "finish_reason": "stop",
+          "prompt_text_token_ids": [
+            151644,
+            8948,
+            198,
+            151645,
+            198,
+            151644,
+            872,
+            198,
+            151669,
+            151670,
+            151645,
+            198,
+            151644,
+            77091,
+            198,
+            11528,
+            8453,
+            151704
+          ],
+          "prompt_token_count": 213,
+          "prompt_position_count": 213,
+          "media_token_counts": [
+            104,
+            91
+          ],
+          "media_position_counts": [
+            104,
+            91
+          ],
+          "chunk_count": 4,
+          "first_logits_topk": []
+        }
+      },
+      "process_peak_rss_bytes": 5766004736
+    }
+  ]
+}

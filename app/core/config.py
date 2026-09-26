@@ -6,6 +6,7 @@ ASR语音识别配置选项
 
 import math
 import os
+import sys
 from typing import Optional
 from pathlib import Path
 
@@ -16,7 +17,7 @@ class Settings:
     # 应用信息
     APP_NAME: str = "R2T2 ASR Server"
     APP_VERSION: str = "1.0.3"
-    APP_DESCRIPTION: str = "CUDA R2T2 offline and realtime speech recognition"
+    APP_DESCRIPTION: str = "R2T2 offline and realtime speech recognition"
 
     # 服务器配置
     HOST: str = "0.0.0.0"
@@ -27,7 +28,8 @@ class Settings:
     API_KEY: Optional[str] = None  # 从环境变量API_KEY读取，如果为None则鉴权可选
 
     # 设备配置
-    DEVICE: str = "cuda:0"
+    DEVICE: str = "cpu" if sys.platform == "darwin" else "cuda:0"
+    R2T2_CPU_THREADS: int = 8
 
     # 路径配置
     BASE_DIR: Path = Path(__file__).parent.parent.parent
@@ -85,6 +87,11 @@ class Settings:
 
         # 设备配置
         self.DEVICE = os.getenv("DEVICE", self.DEVICE)
+        self.R2T2_CPU_THREADS = int(
+            os.getenv("R2T2_CPU_THREADS", str(self.R2T2_CPU_THREADS))
+        )
+        if self.R2T2_CPU_THREADS < 1:
+            raise ValueError("R2T2_CPU_THREADS must be greater than zero")
 
         self.R2T2_URL = os.getenv("R2T2_URL", "").strip().rstrip("/")
         self.R2T2_INTERNAL_TOKEN = os.getenv("R2T2_INTERNAL_TOKEN", "").strip()

@@ -1,0 +1,297 @@
+{
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "library": "/Users/quant/.cache/r2t2-poc/rust-int8/target/release/libqwen_asr.dylib",
+  "library_sha256": "309b749ff8fd464bbdd1aa546ecf1a82dca87af6ce38206bd4e094353e2163f0",
+  "model": "/Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2",
+  "audio": "/Users/quant/.cache/r2t2-poc/audio/zh.wav",
+  "audio_sha256": "b703174ef013bf7332ab74d4b65d568e2981cff2633cb620252bb4ba18ea7f67",
+  "mode": "stream",
+  "chunk_seconds": 0.16,
+  "threads": 8,
+  "status": 0,
+  "wall_seconds": 15.798372249992099,
+  "events": [
+    {
+      "event": "load",
+      "seconds": 0.8851610000128858,
+      "peak_rss_mib": 8115.078125
+    },
+    {
+      "event": "transcription",
+      "repetition": 0,
+      "raw": "之前有顾客自己带酒水也没也没加收钱或者不让喝。",
+      "clean": "之前有顾客自己带酒水也没也没加收钱或者不让喝。",
+      "seconds": 14.790177415998187,
+      "audio_seconds": 6.74,
+      "rtf": 2.1943883406525497,
+      "peak_rss_mib": 8373.65625,
+      "stream_events": [
+        {
+          "audio_seconds": 0.16,
+          "call_seconds": 0.4005457089806441,
+          "elapsed_seconds": 0.4005686249874998,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 0.32,
+          "call_seconds": 0.048581624985672534,
+          "elapsed_seconds": 0.44916720798937604,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 0.48,
+          "call_seconds": 0.305501540977275,
+          "elapsed_seconds": 0.7546904999762774,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 0.64,
+          "call_seconds": 0.050170208007330075,
+          "elapsed_seconds": 0.8048777079966385,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 0.8,
+          "call_seconds": 0.3229094590060413,
+          "elapsed_seconds": 1.1278042499907315,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 0.96,
+          "call_seconds": 0.06205574999330565,
+          "elapsed_seconds": 1.1898769580002408,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 1.12,
+          "call_seconds": 0.32784199999878183,
+          "elapsed_seconds": 1.517734458000632,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 1.28,
+          "call_seconds": 0.062065958976745605,
+          "elapsed_seconds": 1.5798232499801088,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 1.44,
+          "call_seconds": 0.3421289169928059,
+          "elapsed_seconds": 1.9219710829784162,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 1.6,
+          "call_seconds": 0.07079666698700748,
+          "elapsed_seconds": 1.9927821659948677,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 1.76,
+          "call_seconds": 0.3597743749851361,
+          "elapsed_seconds": 2.352571832976537,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 1.92,
+          "call_seconds": 0.10101604199735448,
+          "elapsed_seconds": 2.4536014999903273,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 2.08,
+          "call_seconds": 0.3830210840096697,
+          "elapsed_seconds": 2.836637000000337,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 2.24,
+          "call_seconds": 0.09848929199506529,
+          "elapsed_seconds": 2.9351432499825023,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 2.4,
+          "call_seconds": 0.44055766600649804,
+          "elapsed_seconds": 3.375717415998224,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 2.56,
+          "call_seconds": 0.11323029198683798,
+          "elapsed_seconds": 3.488963457988575,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 2.72,
+          "call_seconds": 0.46805066597880796,
+          "elapsed_seconds": 3.957027458003722,
+          "delta": "之前有"
+        },
+        {
+          "audio_seconds": 2.88,
+          "call_seconds": 0.13630737501080148,
+          "elapsed_seconds": 4.093343957996694,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 3.04,
+          "call_seconds": 0.4753203339932952,
+          "elapsed_seconds": 4.568679791002069,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 3.2,
+          "call_seconds": 0.14080670799012296,
+          "elapsed_seconds": 4.709501082979841,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 3.36,
+          "call_seconds": 0.49173000000882894,
+          "elapsed_seconds": 5.201246332988376,
+          "delta": "顾客"
+        },
+        {
+          "audio_seconds": 3.52,
+          "call_seconds": 0.15260924998437986,
+          "elapsed_seconds": 5.35386424997705,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 3.68,
+          "call_seconds": 0.5004287499759812,
+          "elapsed_seconds": 5.854306958004599,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 3.84,
+          "call_seconds": 0.1499302500160411,
+          "elapsed_seconds": 6.004253332997905,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 4.0,
+          "call_seconds": 0.5206631250039209,
+          "elapsed_seconds": 6.5249315410037525,
+          "delta": "自己"
+        },
+        {
+          "audio_seconds": 4.16,
+          "call_seconds": 0.16463050001766533,
+          "elapsed_seconds": 6.689571041002637,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 4.32,
+          "call_seconds": 0.5275762089877389,
+          "elapsed_seconds": 7.217161207983736,
+          "delta": "带"
+        },
+        {
+          "audio_seconds": 4.48,
+          "call_seconds": 0.17970583299756981,
+          "elapsed_seconds": 7.396875499980524,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 4.64,
+          "call_seconds": 0.6029465419996995,
+          "elapsed_seconds": 7.999836457980564,
+          "delta": "酒水"
+        },
+        {
+          "audio_seconds": 4.8,
+          "call_seconds": 0.20392216701293364,
+          "elapsed_seconds": 8.203767375001917,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 4.96,
+          "call_seconds": 0.6067103339883033,
+          "elapsed_seconds": 8.81049137498485,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 5.12,
+          "call_seconds": 0.20820245900540613,
+          "elapsed_seconds": 9.018709875002969,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 5.28,
+          "call_seconds": 0.6357868339982815,
+          "elapsed_seconds": 9.65451091597788,
+          "delta": "也没"
+        },
+        {
+          "audio_seconds": 5.44,
+          "call_seconds": 0.21904370799893513,
+          "elapsed_seconds": 9.873563957982697,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 5.6,
+          "call_seconds": 0.690519249998033,
+          "elapsed_seconds": 10.564096207992407,
+          "delta": "也没加"
+        },
+        {
+          "audio_seconds": 5.76,
+          "call_seconds": 0.26258370900177397,
+          "elapsed_seconds": 10.826690165995387,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 5.92,
+          "call_seconds": 0.6935204589972273,
+          "elapsed_seconds": 11.52022604100057,
+          "delta": "收"
+        },
+        {
+          "audio_seconds": 6.08,
+          "call_seconds": 0.25793983301264234,
+          "elapsed_seconds": 11.77817549998872,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 6.24,
+          "call_seconds": 0.6836981669766828,
+          "elapsed_seconds": 12.461889999976847,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 6.4,
+          "call_seconds": 0.2750060420075897,
+          "elapsed_seconds": 12.73691179099842,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 6.56,
+          "call_seconds": 0.7257463329879101,
+          "elapsed_seconds": 13.462673374975566,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 6.72,
+          "call_seconds": 0.6289364589902107,
+          "elapsed_seconds": 14.091624041000614,
+          "delta": ""
+        },
+        {
+          "audio_seconds": 6.74,
+          "call_seconds": 4.750007065013051e-06,
+          "elapsed_seconds": 14.091643166000722,
+          "delta": ""
+        },
+        {
+          "final": true,
+          "call_seconds": 0.6896882500150241,
+          "elapsed_seconds": 14.781332749989815,
+          "delta": "钱或者不让喝。"
+        }
+      ]
+    }
+  ],
+  "stderr": "Loading model from /Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2\nDetected: Qwen3-ASR-1.7B\nLoading encoder weights...\nLoading decoder weights...\nModel weights loaded.\nRuntime buffers initialized.\n"
+}

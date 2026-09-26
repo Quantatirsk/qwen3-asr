@@ -1,0 +1,46 @@
+{
+  "sample_rate": 16000,
+  "sources": {
+    "zh": "https://raw.githubusercontent.com/netease-youdao/Confucius4-R2T2/26d55a54ce5670cff9947a167d8ed95d569fd4d9/resources/test.wav",
+    "en": "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen3-ASR-Repo/asr_en.wav"
+  },
+  "reference_kind": "CUDA outputs are cross-backend references, not human ground truth",
+  "audio": [
+    {
+      "name": "zh",
+      "seconds": 6.74,
+      "sha256": "b703174ef013bf7332ab74d4b65d568e2981cff2633cb620252bb4ba18ea7f67",
+      "pcm_sha256": "501032ae1af39904da5ab187db8ed218c4bc00e018516081f7c6b8c8478602df"
+    },
+    {
+      "name": "en",
+      "seconds": 7.0,
+      "sha256": "59323e1ab9b50cd2e39895a321a6aeca6c63071c87a2058894584ce32ed42167",
+      "pcm_sha256": "87e1d5ca3dfee0631bdcba0ab5d551bba69e633c3bc2a1915ef46e102b9983d7"
+    },
+    {
+      "name": "mixed",
+      "seconds": 14.24,
+      "sha256": "32fe7fae73beb90f6f0ce39df985da1840e8e4eca883f23004c327af2d9d3268",
+      "pcm_sha256": "6a9f05a335b92dd15a9d4e77dffb5203383a4fac76af91cfb6b559e230baeb87"
+    },
+    {
+      "name": "silence",
+      "seconds": 5.0,
+      "sha256": "262d1f34f300560a4c82ba8127ddea9e1d72946f187fdbd3e8f70ee096077aec",
+      "pcm_sha256": "b9ce164d30e4101b009fe4be765a070593cfbdd48f897853de159a8c177fabe8"
+    },
+    {
+      "name": "quiet",
+      "seconds": 6.74,
+      "sha256": "2cc18578ccaf209f979cd84e31c09e9883ac726bb045a39f03ceed0325cf77f8",
+      "pcm_sha256": "190f9db5f06d75fcab140366252e865c4fca9af0f6b46264a2465a5cfcd17b4d"
+    },
+    {
+      "name": "long",
+      "seconds": 44.22,
+      "sha256": "2feb48fd07af1ea256e501dc66d134c93bf3c150d35f5f629248750898f578d3",
+      "pcm_sha256": "767bb898a6f7497e58e33f61cc423817f1f214903e6935d7e36e418f071f356e"
+    }
+  ]
+}

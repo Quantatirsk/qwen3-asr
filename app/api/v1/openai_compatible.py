@@ -22,7 +22,9 @@ from ...core.executor import wait_for_completion
 from ...services.asr.engines import ASRFullResult
 from ...core.security import validate_openai_token
 from ...core.exceptions import (
+    APIException,
     create_error_response,
+    get_http_status_code,
 )
 from ...services.asr.model_selection import (
     get_offline_model_ids,
@@ -262,6 +264,54 @@ class TranscriptionStreamingResponse(StreamingResponse):
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
         self._inference_task = inference_task
+
+    async def stream_response(self, send: Send) -> None:
+        started = False
+        while True:
+            finished = False
+            try:
+                chunk = await anext(self.body_iterator)
+            except StopAsyncIteration:
+                chunk, finished = b"", True
+            except Exception as exc:
+                logger.exception("Transcription response failed")
+                if isinstance(exc, APIException):
+                    status_code = get_http_status_code(exc.status_code)
+                    payload = exc.to_dict()
+                else:
+                    status_code = (
+                        exc.status_code if isinstance(exc, HTTPException) else 500
+                    )
+                    payload = create_error_response(
+                        error_code=(
+                            "DEFAULT_CLIENT_ERROR"
+                            if status_code < 500
+                            else "DEFAULT_SERVER_ERROR"
+                        ),
+                        message=(
+                            exc.detail if isinstance(exc, HTTPException) else str(exc)
+                        ),
+                    )
+                # Heartbeats commit HTTP 200; later errors can only change the body.
+                if not started:
+                    self.status_code = status_code
+                chunk, finished = JSONResponse(payload).body, True
+            if not started:
+                await send(
+                    {
+                        "type": "http.response.start",
+                        "status": self.status_code,
+                        "headers": self.raw_headers,
+                    }
+                )
+                started = True
+            if not isinstance(chunk, (bytes, memoryview)):
+                chunk = chunk.encode(self.charset)
+            await send(
+                {"type": "http.response.body", "body": chunk, "more_body": not finished}
+            )
+            if finished:
+                return
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         try:

@@ -1,0 +1,54 @@
+{
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "library": "/Users/quant/.cache/r2t2-poc/rust-int8/target/release/libqwen_asr.dylib",
+  "library_sha256": "309b749ff8fd464bbdd1aa546ecf1a82dca87af6ce38206bd4e094353e2163f0",
+  "model": "/Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2",
+  "audio": "/Users/quant/.cache/r2t2-poc/audio/quiet.wav",
+  "audio_sha256": "2cc18578ccaf209f979cd84e31c09e9883ac726bb045a39f03ceed0325cf77f8",
+  "mode": "offline",
+  "chunk_seconds": null,
+  "threads": 8,
+  "status": 0,
+  "wall_seconds": 3.4619552500080317,
+  "events": [
+    {
+      "event": "load",
+      "seconds": 0.8866880839923397,
+      "peak_rss_mib": 8115.140625
+    },
+    {
+      "event": "transcription",
+      "repetition": 0,
+      "raw": "之前有顾客自己带酒水，也没加收钱或者不让喝。",
+      "clean": "之前有顾客自己带酒水，也没加收钱或者不让喝。",
+      "seconds": 0.8505203340027947,
+      "audio_seconds": 6.74,
+      "rtf": 0.12618996053453926,
+      "peak_rss_mib": 8334.015625,
+      "stream_events": []
+    },
+    {
+      "event": "transcription",
+      "repetition": 1,
+      "raw": "之前有顾客自己带酒水，也没加收钱或者不让喝。",
+      "clean": "之前有顾客自己带酒水，也没加收钱或者不让喝。",
+      "seconds": 0.8005906660109758,
+      "audio_seconds": 6.74,
+      "rtf": 0.11878199792447712,
+      "peak_rss_mib": 8348.203125,
+      "stream_events": []
+    },
+    {
+      "event": "transcription",
+      "repetition": 2,
+      "raw": "之前有顾客自己带酒水，也没加收钱或者不让喝。",
+      "clean": "之前有顾客自己带酒水，也没加收钱或者不让喝。",
+      "seconds": 0.7986208749935031,
+      "audio_seconds": 6.74,
+      "rtf": 0.11848974406431796,
+      "peak_rss_mib": 8356.28125,
+      "stream_events": []
+    }
+  ],
+  "stderr": "Loading model from /Users/quant/.cache/r2t2-poc/models/Confucius4-R2T2\nDetected: Qwen3-ASR-1.7B\nLoading encoder weights...\nLoading decoder weights...\nModel weights loaded.\nRuntime buffers initialized.\n"
+}

@@ -1,0 +1,362 @@
+{
+  "source_revision": "26d55a54ce5670cff9947a167d8ed95d569fd4d9",
+  "llama_revision": "ad6c66839af3c5646fba8c6c2e2087a1e4e38948",
+  "gguf_revision": "86ff0251cb9f456b63aeef5f80137f104e22869a",
+  "device": "cpu",
+  "metal_compiled": false,
+  "gpu_layers": 0,
+  "threads": 8,
+  "n_ctx": 4096,
+  "n_batch": 2048,
+  "load_seconds": 1.3028817920130678,
+  "stream_step_ms": 640,
+  "stream_lookahead_ms": 640,
+  "stream_rollback_tokens": 1,
+  "samples": [
+    {
+      "name": "zh",
+      "audio_seconds": 6.74,
+      "forced_language": "Chinese",
+      "stream": {
+        "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+        "seconds": 3.270615916000679,
+        "rtf": 0.4852545869437209,
+        "first_text_compute_seconds": 0.18361875001573935,
+        "finish_seconds": 0.43289408399141394,
+        "step_seconds_p50": 0.28766710401396267,
+        "step_seconds_p95": 0.43123451876599567,
+        "calls": [
+          {
+            "audio_end_seconds": 1.28,
+            "seconds": 0.18361366700264625,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 16
+          },
+          {
+            "audio_end_seconds": 1.92,
+            "seconds": 0.1776956249959767,
+            "text": "之前有",
+            "fixed": "之前",
+            "max_tokens": 16
+          },
+          {
+            "audio_end_seconds": 2.56,
+            "seconds": 0.2689313330047298,
+            "text": "之前有顾客自己带酒",
+            "fixed": "之前有顾客自己带",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 3.2,
+            "seconds": 0.302357792010298,
+            "text": "之前有顾客自己带酒水，",
+            "fixed": "之前有顾客自己带酒水",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 3.84,
+            "seconds": 0.27297641601762734,
+            "text": "之前有顾客自己带酒水，",
+            "fixed": "之前有顾客自己带酒水",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 4.48,
+            "seconds": 0.3707951250253245,
+            "text": "之前有顾客自己带酒水也没加收钱",
+            "fixed": "之前有顾客自己带酒水也没加收",
+            "max_tokens": 9
+          },
+          {
+            "audio_end_seconds": 5.12,
+            "seconds": 0.403812000004109,
+            "text": "之前有顾客自己带酒水也没加收钱或者",
+            "fixed": "之前有顾客自己带酒水也没加收钱",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 5.76,
+            "seconds": 0.4037972920050379,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 6.4,
+            "seconds": 0.45367112502572127,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 6.74,
+            "seconds": 1.733301905915141e-05,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "",
+            "max_tokens": 9
+          }
+        ]
+      },
+      "process_peak_rss_bytes": 5746229248
+    },
+    {
+      "name": "en",
+      "audio_seconds": 7.0,
+      "forced_language": "English",
+      "stream": {
+        "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him, but and his",
+        "seconds": 5.186750833992846,
+        "rtf": 0.7409644048561209,
+        "first_text_compute_seconds": 0.1592662500042934,
+        "finish_seconds": 1.218430624983739,
+        "step_seconds_p50": 0.33858785399934277,
+        "step_seconds_p95": 0.8627636501405501,
+        "calls": [
+          {
+            "audio_end_seconds": 1.28,
+            "seconds": 0.15926308298367076,
+            "text": "Oh",
+            "fixed": "",
+            "max_tokens": 16
+          },
+          {
+            "audio_end_seconds": 1.92,
+            "seconds": 0.18749075001687743,
+            "text": "Oh yeah, yeah",
+            "fixed": "Oh yeah,",
+            "max_tokens": 16
+          },
+          {
+            "audio_end_seconds": 2.56,
+            "seconds": 0.25086049997480586,
+            "text": "Oh yeah, yeah, he",
+            "fixed": "Oh yeah, yeah,",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 3.2,
+            "seconds": 0.335863790998701,
+            "text": "Oh yeah, yeah, he wasn't even",
+            "fixed": "Oh yeah, yeah, he wasn't",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 3.84,
+            "seconds": 0.34131191699998453,
+            "text": "Oh yeah, yeah, he wasn't even that big",
+            "fixed": "Oh yeah, yeah, he wasn't even that",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 4.48,
+            "seconds": 0.44746816699625924,
+            "text": "Oh yeah, yeah, he wasn't even that big when I",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 5.12,
+            "seconds": 0.5539337089867331,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 5.76,
+            "seconds": 0.6785569170024246,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him.",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started listening to him",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 6.4,
+            "seconds": 1.0134782499808352,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him, but",
+            "fixed": "Oh yeah, yeah, he wasn't even that big when I started listening to him,",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 7.0,
+            "seconds": 1.9665982108563185e-05,
+            "text": "Oh yeah, yeah, he wasn't even that big when I started listening to him, but",
+            "fixed": "",
+            "max_tokens": 8
+          }
+        ]
+      },
+      "process_peak_rss_bytes": 5775163392
+    },
+    {
+      "name": "mixed",
+      "audio_seconds": 14.24,
+      "forced_language": null,
+      "stream": {
+        "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even that big when I started listening to him, but and his",
+        "seconds": 24.31118079199223,
+        "rtf": 1.7072458421342858,
+        "first_text_compute_seconds": 0.515266333008185,
+        "finish_seconds": 1.607616000022972,
+        "step_seconds_p50": 1.055411854002159,
+        "step_seconds_p95": 1.5786974746908526,
+        "calls": [
+          {
+            "audio_end_seconds": 1.28,
+            "seconds": 0.5152620830049273,
+            "text": "之前",
+            "fixed": "",
+            "max_tokens": 16
+          },
+          {
+            "audio_end_seconds": 1.92,
+            "seconds": 0.34322033301577903,
+            "text": "之前有",
+            "fixed": "之前",
+            "max_tokens": 16
+          },
+          {
+            "audio_end_seconds": 2.56,
+            "seconds": 0.4565750829933677,
+            "text": "之前有顾客自己带酒",
+            "fixed": "之前有顾客自己带",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 3.2,
+            "seconds": 1.097915041988017,
+            "text": "之前有顾客自己带酒水，",
+            "fixed": "之前有顾客自己带酒水",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 3.84,
+            "seconds": 0.9954684159893077,
+            "text": "之前有顾客自己带酒水，",
+            "fixed": "之前有顾客自己带酒水",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 4.48,
+            "seconds": 0.7957938339968678,
+            "text": "之前有顾客自己带酒水也没加收钱",
+            "fixed": "之前有顾客自己带酒水也没加收",
+            "max_tokens": 9
+          },
+          {
+            "audio_end_seconds": 5.12,
+            "seconds": 0.9842345419747289,
+            "text": "之前有顾客自己带酒水也没加收钱或者",
+            "fixed": "之前有顾客自己带酒水也没加收钱",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 5.76,
+            "seconds": 0.8930592499964405,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 6.4,
+            "seconds": 0.9634087919839658,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 7.04,
+            "seconds": 1.0578958750120364,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 9
+          },
+          {
+            "audio_end_seconds": 7.68,
+            "seconds": 1.0529278329922818,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝。",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝",
+            "max_tokens": 10
+          },
+          {
+            "audio_end_seconds": 8.32,
+            "seconds": 1.0725797500053886,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，",
+            "max_tokens": 11
+          },
+          {
+            "audio_end_seconds": 8.96,
+            "seconds": 1.00600929101347,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 9.6,
+            "seconds": 1.0805343750107568,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 10.24,
+            "seconds": 1.3621684999961872,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 10.88,
+            "seconds": 1.3919393329997547,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even that",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 11.52,
+            "seconds": 1.608514916995773,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even that big when",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even that big",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 12.16,
+            "seconds": 1.4900344159977976,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even that big when I started",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even that big when I",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 12.8,
+            "seconds": 1.4594332500128075,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even that big when I started listening to him",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even that big when I started listening to",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 13.44,
+            "seconds": 1.4931669170036912,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even that big when I started listening to him",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even that big when I started listening to",
+            "max_tokens": 8
+          },
+          {
+            "audio_end_seconds": 14.08,
+            "seconds": 1.583199082990177,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even that big when I started listening to him, but",
+            "fixed": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even that big when I started listening to him,",
+            "max_tokens": 9
+          },
+          {
+            "audio_end_seconds": 14.24,
+            "seconds": 2.3917004000395536e-05,
+            "text": "之前有顾客自己带酒水也没加收钱或者不让喝，嗯，oh yeah yeah he wasn't even that big when I started listening to him, but",
+            "fixed": "",
+            "max_tokens": 8
+          }
+        ]
+      },
+      "process_peak_rss_bytes": 5776031744
+    }
+  ]
+}

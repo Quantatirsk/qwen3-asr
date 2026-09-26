@@ -1,0 +1,47 @@
+{
+  "source_commit": "dd53fc059f705ae3059ff9849abf2e3b648fbff1",
+  "source_tree_sha": "27d7409566df57b98c5398c35111d4a4da2ce461",
+  "hardware": [
+    "Apple M5 Pro",
+    "68719476736"
+  ],
+  "rustc": "rustc 1.94.0 (4a4ef493e 2026-03-02) (Homebrew)",
+  "build_command": "cargo build --release -p qwen-asr --features macos-ffi",
+  "files": {
+    ".cargo/config.toml": "f6f713725ec9906c35c79a5d20ad84046fdb512542df67abb4610ed16a78ba92",
+    "Cargo.lock": "8c9460815266ba93347a390683cfe0bc6c90de46f4babaa6d2df8a7ebf1d1d07",
+    "Cargo.toml": "2f58f62d647809f089fa6f3055ff52f3b6fdaf5ae24165a245d95f09b806edeb",
+    "LICENSE": "7a42abf26a67894beb47f3480d5dff3f9b2777b752339045145051d6778d65cb",
+    "VENDORED_FROM.md": "a0629cb980609e03cf3abb21693a11bf7c26292c76ae1a429ee5dfb39bd59797",
+    "crates/qwen-asr-cli/CHANGELOG.md": "0117a8fb10881c69bd65c4b64da5ce0def5106f04da763f72b18e6baf3b9a809",
+    "crates/qwen-asr-cli/Cargo.toml": "ac65c3d11f1265bb5b5f14a7b8adebf453ec0a89f05ae724cda107a7c7e661d2",
+    "crates/qwen-asr-cli/README.md": "12cf2c4d3a77f4745c95b648c609448d1e6b380f34ff17da77c180abb2887e6f",
+    "crates/qwen-asr-cli/src/download.rs": "1d8e19696e571c4d3ab849ba29127a8150c326f54715f0fa424a29cf35ed1c80",
+    "crates/qwen-asr-cli/src/live_capture.rs": "eabbea6c8dbd8771252163862204ed1a07a48947b94a6d0072cc052de060fe06",
+    "crates/qwen-asr-cli/src/main.rs": "826a96daa0b9a039b6a2092394e07f57144372c27dd90d042781216bed1c3e1e",
+    "crates/qwen-asr/CHANGELOG.md": "79422a13b2a530e70d05f7c7e829cb41dbd4ced963c7a2b41613847667ec05e7",
+    "crates/qwen-asr/Cargo.toml": "93cf87abe6090ea2bb58fa11f7d051a6a1820ac3e7d2c1bcf0e4cd8e0116ad90",
+    "crates/qwen-asr/README.md": "dcce82d77c63610837db4606e903f5119f6ab00a8f78b657149295b494402c58",
+    "crates/qwen-asr/build.rs": "5f48041c1293f326f0129687916d1c3a12f72d51497c361b07c051376bd4da02",
+    "crates/qwen-asr/src/align.rs": "f04cff1fb01548b0ce4ab4fc4e20dd054121eeed1d89e202752f55a84308082e",
+    "crates/qwen-asr/src/audio.rs": "9e982700c09e210d5e1c99b73aff1bf3c0956730131f7ae2037cc179288ad46c",
+    "crates/qwen-asr/src/c_api.rs": "30c6a7c77e0b85e4f2ee4ec78fa93f104399c446f375d37ff9b7a62c71d4f621",
+    "crates/qwen-asr/src/config.rs": "e8d02d23024dcbd2aa099f7eeb414736ef77a2abc402ddc50678378c94232111",
+    "crates/qwen-asr/src/context.rs": "5bb2d06c11329779aaa4f5ba0eab7471c119779c45a6f637d9f89b16c5481611",
+    "crates/qwen-asr/src/decoder.rs": "167b6cc4ae2d09f2028adbecd5ed3731f5fa4001e6afb36f13224f1703d3211e",
+    "crates/qwen-asr/src/encoder.rs": "9b2f4a608c803e3c742cd924273c2a9651c2bb2414297da9bfe8944aeadcbb18",
+    "crates/qwen-asr/src/jni_api.rs": "ab5dc2a0cca80cee0d13ec97126da125d6655a26c91c91f50b4cc99a93fe3872",
+    "crates/qwen-asr/src/kernels/avx.rs": "9b75c611f1c17db726133002682129e204a7caf880038c67a14de2062b09e7a6",
+    "crates/qwen-asr/src/kernels/generic.rs": "58adec588fbeb1c13d6ca4d1799a5f7c7d2640ce7968ec8d6fb92762f0971391",
+    "crates/qwen-asr/src/kernels/mod.rs": "2aee7b50a79b031c884500fc6e170c7ffdb6c3e41be138bf54c4ac4fa13e0a70",
+    "crates/qwen-asr/src/kernels/neon.rs": "7c73cb44b2b4094860cc5e70da421657d04920a812a4512f6d9bb8088465a40d",
+    "crates/qwen-asr/src/lib.rs": "b2df5880d1de418c76c2b3c0225990b9f0b1b4462fbe6c5ed3bf8dc9fbf547ac",
+    "crates/qwen-asr/src/safetensors.rs": "89039a0fab0272266a429c6f69de57b24e501f4d2fe9020064935b86d8be29a5",
+    "crates/qwen-asr/src/tokenizer.rs": "17ff4a53a357637b3aaa2b36125253e93c0ade3d0755dc1210ab28ed31bb2075",
+    "crates/qwen-asr/src/transcribe.rs": "f5fc6fea45ff048bde64c81f649dd740181516f12f2de4f354aef0427da1d0c4"
+  },
+  "variants": {
+    "int8": "Unmodified ARM64 INT8 decoder; BF16 prefill and FP32 intermediates.",
+    "bf16": "decode_kernel_mode() aarch64 branch changed to Bf16; BF16 weights converted to FP32 for CPU compute, not native BF16 arithmetic."
+  }
+}

@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import numpy as np
 from fastapi.testclient import TestClient
 
+from app.core.config import settings
 from app.services.realtime.engine import Model
 from app.services.realtime.protocol import StreamConfig, StreamError
 from app.services.realtime.server import create_app, offline_result
@@ -93,7 +94,11 @@ class SharedServerTest(unittest.TestCase):
             ),
             "vllm.v1.engine.async_llm": SimpleNamespace(AsyncLLM=llm),
         }
-        with patch.dict(sys.modules, modules), patch.dict(os.environ, {}, clear=True):
+        with (
+            patch.dict(sys.modules, modules),
+            patch.dict(os.environ, {}, clear=True),
+            patch.object(settings, "DEVICE", "cuda:0"),
+        ):
             model = Model(4)
         llm.from_engine_args.assert_called_once()
         options = llm.from_engine_args.call_args.args[0]
@@ -106,6 +111,7 @@ class SharedServerTest(unittest.TestCase):
 class SharedGenerationTest(unittest.IsolatedAsyncioTestCase):
     def model(self) -> Model:
         model = Model.__new__(Model)
+        model.chunk_samples = 2560
         model.processor = SimpleNamespace(
             apply_chat_template=lambda messages, **kw: messages[0]["content"]
         )
