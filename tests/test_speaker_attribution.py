@@ -4,7 +4,10 @@ import numpy as np
 
 from app.services.asr.engines.base import ASRSegmentResult, WordToken
 from app.services.asr.qwen3_alignment import split_alignment_units
-from app.services.asr.speaker_attribution import assign_speakers
+from app.services.asr.speaker_attribution import (
+    assign_speakers,
+    consolidate_speaker_turns,
+)
 from app.utils.speaker_diarizer import DiarizationResult, SpeakerSegment
 
 
@@ -194,6 +197,126 @@ class SpeakerAttributionTest(unittest.TestCase):
                 assign_speakers(
                     transcript("Invalid.", [(lower, upper)]), diarization([])
                 )
+
+
+def turn(text: str, start: float, end: float, speaker: str | None) -> ASRSegmentResult:
+    return ASRSegmentResult(
+        text, start, end, speaker, [WordToken(text.strip(), 0, end - start)]
+    )
+
+
+class SpeakerTurnConsolidationTest(unittest.TestCase):
+    def assert_preserved(
+        self, source: list[ASRSegmentResult], output: list[ASRSegmentResult]
+    ) -> None:
+        self.assertEqual(
+            "".join(s.text for s in source), "".join(s.text for s in output)
+        )
+        before = [
+            (w.text, s.start_time + w.start_time, s.start_time + w.end_time)
+            for s in source
+            for w in s.word_tokens or []
+        ]
+        after = [
+            (w.text, s.start_time + w.start_time, s.start_time + w.end_time)
+            for s in output
+            for w in s.word_tokens or []
+        ]
+        self.assertEqual([w[0] for w in before], [w[0] for w in after])
+        np.testing.assert_allclose([w[1:] for w in before], [w[1:] for w in after])
+
+    def test_adjacent_main_speaker_groups_merge_and_rebase_words(self) -> None:
+        source = [turn("First. ", 10, 12, "A"), turn("Next!", 13, 15, "A")]
+        result = consolidate_speaker_turns(source)
+        self.assert_preserved(source, result)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].word_tokens[1].start_time, 3)
+        self.assertEqual(result[0].word_tokens[1].end_time, 5)
+        self.assertEqual(source[0].text, "First. ")
+
+    def test_brief_multiple_speaker_and_unknown_run_inherits_main_speaker(self) -> None:
+        source = [
+            turn("First. ", 10, 12, "A"),
+            turn("Yes! ", 12.2, 12.7, "B"),
+            turn("Mixed. ", 12.8, 13, None),
+            turn("Right. ", 13.1, 13.3, "C"),
+            turn("Continue.", 13.4, 15.4, "A"),
+        ]
+        source[2].speaker_candidates = ["A", "B"]
+        result = consolidate_speaker_turns(source)
+        self.assert_preserved(source, result)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].speaker_id, "A")
+        self.assertIsNone(result[0].speaker_candidates)
+        self.assertEqual(source[1].speaker_id, "B")
+        self.assertEqual(source[2].speaker_candidates, ["A", "B"])
+
+    def test_independent_sustained_or_distant_turns_remain_separate(self) -> None:
+        a = turn("Main. ", 0, 3, "A")
+        short = turn("Brief. ", 3, 3.5, "B")
+        cases = [
+            [short, turn("Return.", 3.5, 6.5, "A")],
+            [a, short],
+            [a, turn("Sustained. ", 3, 5, "B"), turn("Return.", 5, 8, "A")],
+            [a, short, turn("Different.", 3.5, 6.5, "C")],
+            [a, short, turn("Delayed.", 4.51, 7.51, "A")],
+            [a, turn("Delayed. ", 4.01, 4.51, "B"), turn("Return.", 4.51, 7.51, "A")],
+            [
+                turn("Short. ", 0, 1, "A"),
+                turn("Brief. ", 1, 1.5, "B"),
+                turn("Short.", 1.5, 2.5, "A"),
+            ],
+            [
+                a,
+                turn("First. ", 3, 4, "B"),
+                turn("Second. ", 4, 5, None),
+                turn("Return.", 5, 8, "A"),
+            ],
+        ]
+        for source in cases:
+            with self.subTest(
+                timeline=[(s.start_time, s.end_time, s.speaker_id) for s in source]
+            ):
+                result = consolidate_speaker_turns(source)
+                self.assertEqual(result, source)
+                self.assert_preserved(source, result)
+
+    def test_same_speaker_limit_does_not_block_short_interruption_suppression(
+        self,
+    ) -> None:
+        plain = [turn("First. ", 0, 20, "A"), turn("Next.", 20, 40, "A")]
+        self.assertEqual(len(consolidate_speaker_turns(plain)), 2)
+        source = [
+            turn("Long. ", 0, 39, "A"),
+            turn("Brief. ", 39, 39.5, "B"),
+            turn("Return.", 39.5, 42, "A"),
+        ]
+        result = consolidate_speaker_turns(source)
+        self.assertEqual(len(result), 1)
+        self.assert_preserved(source, result)
+
+    def test_zero_duration_and_repeated_interruptions_preserve_all_words(self) -> None:
+        source = [
+            turn("Main. ", 0, 3, "A"),
+            turn("Point. ", 3, 3, None),
+            turn("Return. ", 3, 4, "A"),
+            turn("Brief. ", 4, 4.5, "B"),
+            turn("Continue.", 4.5, 5.5, "A"),
+        ]
+        result = consolidate_speaker_turns(source)
+        self.assertEqual(len(result), 1)
+        self.assert_preserved(source, result)
+
+    def test_silence_inside_main_groups_does_not_supply_speech_support(self) -> None:
+        source = [
+            turn("Sparse. ", 0, 10, "A"),
+            turn("Brief. ", 10, 10.5, "B"),
+            turn("Sparse.", 10.5, 20, "A"),
+        ]
+        source[0].word_tokens[0].end_time = 1
+        source[2].word_tokens[0].end_time = 1
+        self.assertEqual(consolidate_speaker_turns(source), source)
+        self.assertEqual(consolidate_speaker_turns([]), [])
 
 
 if __name__ == "__main__":

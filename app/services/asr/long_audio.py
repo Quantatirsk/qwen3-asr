@@ -48,7 +48,7 @@ class PreparedLongAudio:
         *,
         word_timestamps: bool = True,
     ) -> ASRFullResult:
-        from .speaker_attribution import assign_speakers
+        from .speaker_attribution import assign_speakers, consolidate_speaker_turns
 
         output = []
         for segment, result in zip(self.segments, results, strict=True):
@@ -72,7 +72,7 @@ class PreparedLongAudio:
                         )
                         for word in group.word_tokens
                     ]
-                    if word_timestamps and group.word_tokens
+                    if group.word_tokens
                     else None
                 )
                 output.append(
@@ -85,6 +85,7 @@ class PreparedLongAudio:
                 )
         speaker_segments = None
         if self.diarization is not None:
+            output = consolidate_speaker_turns(output)
             speaker_segments = [
                 replace(
                     span,
@@ -93,6 +94,8 @@ class PreparedLongAudio:
                 )
                 for span in self.diarization.segments
             ]
+        if not word_timestamps:
+            output = [replace(group, word_tokens=None) for group in output]
         return ASRFullResult(
             text="\n".join(result.text for result in results if result.text),
             segments=output,

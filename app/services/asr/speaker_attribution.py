@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import unicodedata
 from bisect import bisect_right
+from collections.abc import Sequence
 from dataclasses import replace
 
 import numpy as np
@@ -15,6 +16,95 @@ from .engines.base import ASRSegmentResult, WordToken
 
 MIN_SPEAKER_COVERAGE = 0.5
 MATERIAL_SPEAKER_COVERAGE = 0.2
+MAX_TURN_GAP_SECONDS = 1.0
+MAX_PARAGRAPH_SECONDS = 30.0
+MIN_MAIN_SPEECH_SECONDS = 4.0
+MAX_INTERJECTION_SECONDS = 2.0
+
+
+def _join_turns(segments: Sequence[ASRSegmentResult]) -> ASRSegmentResult:
+    first = segments[0]
+    words = [
+        replace(
+            word,
+            start_time=word.start_time + segment.start_time - first.start_time,
+            end_time=word.end_time + segment.start_time - first.start_time,
+        )
+        for segment in segments
+        for word in segment.word_tokens or []
+    ]
+    return replace(
+        first,
+        text="".join(segment.text for segment in segments),
+        end_time=segments[-1].end_time,
+        word_tokens=words or None,
+    )
+
+
+def consolidate_speaker_turns(
+    segments: Sequence[ASRSegmentResult],
+) -> list[ASRSegmentResult]:
+    """Produce main-speaker paragraphs without changing raw diarization evidence.
+
+    Brief interruptions inherit the surrounding main speaker for paragraph
+    presentation only. Every text character and aligned word instant survives.
+    Thresholds use the final recording timeline, after any sample-rate scaling.
+    """
+    turns: list[ASRSegmentResult] = []
+    speech: list[float] = []
+    for segment in segments:
+        duration = sum(
+            word.end_time - word.start_time for word in segment.word_tokens or []
+        )
+        if (
+            turns
+            and segment.speaker_id is not None
+            and segment.speaker_id == turns[-1].speaker_id
+            and segment.start_time - turns[-1].end_time <= MAX_TURN_GAP_SECONDS
+            and segment.end_time - turns[-1].start_time <= MAX_PARAGRAPH_SECONDS
+        ):
+            turns[-1] = _join_turns([turns[-1], segment])
+            speech[-1] += duration
+        else:
+            turns.append(segment)
+            speech.append(duration)
+
+    output: list[ASRSegmentResult] = []
+    main_speech = 0.0
+    index = 0
+    while index < len(turns):
+        if output and output[-1].speaker_id is not None:
+            main = output[-1]
+            absorbed = False
+            end = index
+            previous = main
+            while end < len(turns):
+                candidate = turns[end]
+                if candidate.start_time - previous.end_time > MAX_TURN_GAP_SECONDS:
+                    break
+                if candidate.speaker_id == main.speaker_id:
+                    if (
+                        end > index
+                        and main_speech + speech[end] >= MIN_MAIN_SPEECH_SECONDS
+                    ):
+                        output[-1] = _join_turns([main, *turns[index : end + 1]])
+                        main_speech += speech[end]
+                        index = end + 1
+                        absorbed = True
+                    break
+                if (
+                    candidate.end_time - turns[index].start_time
+                    >= MAX_INTERJECTION_SECONDS
+                ):
+                    break
+                previous = candidate
+                end += 1
+            if absorbed:
+                continue
+        output.append(turns[index])
+        main_speech = speech[index]
+        index += 1
+    return output
 
 
 def _text_positions(text: str) -> list[int]:

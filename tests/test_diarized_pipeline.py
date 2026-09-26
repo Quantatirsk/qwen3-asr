@@ -9,7 +9,8 @@ from unittest.mock import Mock, patch
 import numpy as np
 
 from app.core.config import settings
-from app.services.asr.engines import ASRFullResult
+from app.services.asr.engines import ASRFullResult, ASRSegmentResult, WordToken
+from app.services.asr.long_audio import PreparedLongAudio
 from app.services.asr.r2t2_engine import R2T2Engine
 from app.utils.audio_splitter import AudioSegment
 from app.utils.speaker_diarizer import DiarizationResult, SpeakerSegment
@@ -102,6 +103,58 @@ class DiarizedPipelineTest(unittest.TestCase):
 
     def assert_cleaned(self) -> None:
         self.assertEqual(list(self.directory.iterdir()), [self.source])
+
+    def test_main_speaker_grouping_uses_scaled_time_before_hiding_words(self) -> None:
+        spans = [
+            SpeakerSegment(10, 13, "A", 0.9),
+            SpeakerSegment(13, 14.5, "B", 0.9),
+            SpeakerSegment(14.5, 16.5, "A", 0.9),
+        ]
+        prepared = PreparedLongAudio(
+            [
+                AudioSegment(10000, 13000),
+                AudioSegment(13000, 14500),
+                AudioSegment(14500, 16500),
+            ],
+            16.5,
+            DiarizationResult(
+                spans,
+                np.zeros((1650, 8)),
+                0.01,
+                16.5,
+                ("A", "B", None, None, None, None, None, None),
+            ),
+        )
+        results = [
+            ASRSegmentResult("First. ", 0, 3, word_tokens=[WordToken("First", 0, 3)]),
+            ASRSegmentResult(
+                "Brief. ", 0, 1.5, word_tokens=[WordToken("Brief", 0, 1.5)]
+            ),
+            ASRSegmentResult("Return.", 0, 2, word_tokens=[WordToken("Return", 0, 2)]),
+        ]
+        visible = prepared.finish(results, 1, word_timestamps=True)
+        hidden = prepared.finish(results, 1, word_timestamps=False)
+        self.assertEqual(len(visible.segments), 1)
+        self.assertEqual(len(hidden.segments), 1)
+        self.assertEqual(visible.segments[0].speaker_id, "A")
+        self.assertEqual(hidden.segments[0].text, visible.segments[0].text)
+        self.assertEqual(hidden.text, "First. \nBrief. \nReturn.")
+        self.assertIsNone(hidden.segments[0].word_tokens)
+        self.assertEqual(
+            [word.start_time for word in visible.segments[0].word_tokens], [0, 3, 4.5]
+        )
+        self.assertEqual(visible.segments[0].start_time, 10)
+        self.assertEqual(visible.segments[0].end_time, 16.5)
+        self.assertEqual(visible.speaker_segments, spans)
+        self.assertEqual(hidden.speaker_segments, spans)
+        scaled = prepared.finish(results, 2, word_timestamps=True)
+        self.assertEqual(
+            [group.speaker_id for group in scaled.segments], ["A", "B", "A"]
+        )
+        self.assertEqual(scaled.segments[1].start_time, 26)
+        self.assertEqual(scaled.segments[1].word_tokens[0].end_time, 3)
+        self.assertEqual(scaled.speaker_segments[1].start_sec, 26)
+        self.assertEqual(spans[1].start_sec, 13)
 
     def test_overlap_does_not_duplicate_asr_and_scaled_times_preserve_short_turn(
         self,

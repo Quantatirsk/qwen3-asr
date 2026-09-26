@@ -209,7 +209,8 @@ button{cursor:pointer;white-space:nowrap;padding:6px}pre{white-space:pre-wrap;ov
 svg{width:100%;background:#f1f5f9}rect[role=button]{cursor:pointer}a{color:#2563eb}
 </style><h1>Nemotron + R2T2 + ForcedAligner</h1>
 <p>Click a transcript or raw activity interval to play it. Unknown means speaker attribution is uncertain;
-overlap activity does not guarantee both voices were transcribed. Labels are session-local.</p>
+overlap activity does not guarantee both voices were transcribed. Labels are session-local.
+Brief interjections are included in the main speaker paragraph; the raw activity timeline remains unmerged.</p>
 """
     page += f'<audio id="audio" preload="none" data-src="{html.escape(media.name)}"></audio>'
     page += '<p id="audio-status" role="status" aria-live="polite">Loading audio for seeking...</p>'
@@ -245,7 +246,7 @@ overlap activity does not guarantee both voices were transcribed. Labels are ses
                 f"After {point['return_start']:.2f}s</button></td></tr>"
             )
         page += "</table>"
-    page += "<h2>Transcript</h2><table><tr><th>Seconds</th><th>Speaker</th><th>Text</th></tr>"
+    page += "<h2>Transcript</h2><table><tr><th>Seconds</th><th>Main speaker</th><th>Text</th></tr>"
     page += (
         "".join(rows)
         + "</table><details><summary>Raw activity intervals</summary><table>"
