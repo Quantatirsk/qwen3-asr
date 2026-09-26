@@ -10,6 +10,7 @@ from app.infrastructure import resolve_model_path
 MODEL_ID = "iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch"
 _TERMINALS = ".?!\u3002\uff1f\uff01\u2026"
 _CLOSING_QUOTES = "\"'\u2019\u201d\u300d\u300f\u3011)]}"
+_CONTINUATIONS = ",;:\uff0c\uff1b\uff1a\u3001"
 _ENGLISH_MARKS = str.maketrans("\u3002\uff1f\uff01", ".?!")
 
 
@@ -42,4 +43,7 @@ def restore_sentence_ending(text: str) -> str:
     mark = restored[-1]
     if ending[-1].isascii() and ending[-1].isalnum():
         mark = mark.translate(_ENGLISH_MARKS)
-    return text + mark
+    suffix = text[len(ending) :]
+    if ending[-1] in _CONTINUATIONS:
+        ending = ending[:-1]
+    return ending + mark + suffix

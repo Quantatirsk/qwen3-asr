@@ -168,7 +168,7 @@ class Model:
                         "prompt": prompt + prefix,
                         "multi_modal_data": {"audio": [samples]},
                     },
-                    self.offline_sampling,
+                    self.sampling[128] if final else self.offline_sampling,
                     request_id=request_id,
                     priority=10,
                 ):

@@ -51,5 +51,13 @@ class SentenceEndingTest(unittest.TestCase):
                 restore_sentence_ending("hello")
 
 
+class TerminalFormattingTest(unittest.TestCase):
+    def test_replaces_only_trailing_continuation_punctuation(self) -> None:
+        with patch("app.services.asr.punctuation.get_punctuation_model") as model:
+            model.return_value.generate.return_value = [{"text": "Ready."}]
+            self.assertEqual(restore_sentence_ending("Ready, "), "Ready. ")
+            self.assertEqual(restore_sentence_ending('"Ready,"'), '"Ready."')
+
+
 if __name__ == "__main__":
     unittest.main()

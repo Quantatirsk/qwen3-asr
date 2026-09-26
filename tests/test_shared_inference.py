@@ -116,7 +116,7 @@ class SharedGenerationTest(unittest.IsolatedAsyncioTestCase):
         model.tokenizer = SimpleNamespace(
             encode=lambda s, **kw: list(s), decode=lambda ids: "".join(ids)
         )
-        model.sampling = {16: 16}
+        model.sampling = {16: 16, 128: 128}
         model.offline_sampling = 4096
         return model
 
@@ -152,7 +152,7 @@ class SharedGenerationTest(unittest.IsolatedAsyncioTestCase):
             ["live", "offline", "offlinelanguage English<asr_text>fresh"],
         )
         self.assertEqual([c[2]["priority"] for c in calls], [0, 10, 10])
-        self.assertEqual([c[1] for c in calls], [16, 4096, 4096])
+        self.assertEqual([c[1] for c in calls], [16, 4096, 128])
         original = calls[1][0]["multi_modal_data"]["audio"][0]
         padded = calls[2][0]["multi_modal_data"]["audio"][0]
         self.assertEqual(len(original), 16000)
