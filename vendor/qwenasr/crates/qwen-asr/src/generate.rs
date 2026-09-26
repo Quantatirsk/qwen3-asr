@@ -5,6 +5,9 @@ use crate::config::{TOKEN_ENDOFTEXT, TOKEN_IM_END};
 use crate::context::QwenCtx;
 use crate::decoder::{decoder_forward, decoder_prefill, tok_embed_bf16_to_f32};
 
+// Include end lookahead after a maximum-length offline segment.
+pub const MAX_AUDIO_SAMPLES: usize = 61 * 16000;
+
 pub struct Generation {
     pub token_ids: Vec<i32>,
     pub reached_limit: bool,
@@ -18,7 +21,7 @@ fn valid_input(
     vocab: usize,
 ) -> bool {
     !samples.is_empty()
-        && samples.len() <= 61 * 16000
+        && samples.len() <= MAX_AUDIO_SAMPLES
         && samples.iter().all(|sample| sample.is_finite())
         && !before.is_empty()
         && !after.is_empty()
@@ -125,7 +128,13 @@ pub fn generate_pcm(
 
 #[cfg(test)]
 mod tests {
-    use super::valid_input;
+    use super::{valid_input, MAX_AUDIO_SAMPLES};
+
+    #[test]
+    fn accepts_offline_finalization_lookahead() {
+        assert!(valid_input(&vec![0.0; 60 * 16000 + 10240], &[1], &[2], 128, 100));
+        assert!(!valid_input(&vec![0.0; MAX_AUDIO_SAMPLES + 1], &[1], &[2], 128, 100));
+    }
 
     #[test]
     fn rejects_invalid_generation_inputs() {

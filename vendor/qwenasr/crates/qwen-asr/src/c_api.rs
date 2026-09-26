@@ -402,7 +402,7 @@ pub unsafe extern "C" fn qwen_asr_generate_pcm(
         || samples.is_null()
         || before_ids.is_null()
         || after_ids.is_null()
-        || !(1..=960000).contains(&n_samples)
+        || !(1..=crate::generate::MAX_AUDIO_SAMPLES as i32).contains(&n_samples)
         || !(1..=8192).contains(&n_before)
         || !(1..=8192).contains(&n_after)
         || n_before + n_after > 8192

@@ -1,0 +1,18 @@
+{
+  "realtime": {
+    "audio": "en",
+    "mode": "stream",
+    "text": "Oh yeah, yeah. He wasn't even that big when I started listening to him. But and",
+    "audio_seconds": 7.0,
+    "wall_seconds": 10.718157374998555,
+    "first_text_seconds": 7.881100375001552,
+    "updates": 8,
+    "frame_lag_p95_ms": 5801.1144169885665,
+    "final_lag_ms": 3718.1374999927357
+  },
+  "offline_boundary": {
+    "audio_seconds": 60,
+    "seconds": 7.490678749978542,
+    "text": "之前有顾客自己带酒水也没加收钱或者不让喝，之前有顾客自己带酒水也没加收钱或者不让喝，之前有顾客自己带酒水也没加收钱或者不让喝，之前有顾客自己带酒水也没加收钱或者不让喝，之前有顾客自己带酒水也没加收钱或者不让喝，之前有顾客自己带酒水也没加收钱或者不让喝，之前有顾客自己带酒水也没加收钱或者不让喝，之前有顾客自己带酒水也没加收钱或者不让喝，之前有顾客自己带酒水也没加收钱或者不让喝"
+  }
+}

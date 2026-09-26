@@ -183,7 +183,7 @@ def verify_required_models_integrity(use_logger: bool = True) -> dict[str, Any]:
 
 
 def preload_models() -> dict[str, Any]:
-    """Load every required CUDA component; startup must not silently degrade."""
+    """Load every required component; startup must not silently degrade."""
     from app.core.config import settings
     from app.core.device import detect_device
     from app.services.asr.engines import get_global_vad_model

@@ -1,4 +1,4 @@
-"""One CUDA offline engine with serialized, cancellation-safe ownership."""
+"""One serialized offline pipeline with cancellation-safe ownership."""
 
 from __future__ import annotations
 

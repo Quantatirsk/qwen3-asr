@@ -59,3 +59,5 @@ uv run python experiments/r2t2_cpu/service_probe.py \
 | `cpu_api_results.json` | 完整 CPU API 初轮结果，含静音失败 |
 
 内核级复现参数与构建差异见 `rust-notes.md`；官方 GGUF 独立环境的复现命令见 `llama-build.md`。探针将失败写入 JSON，不能仅凭脚本退出判断全部通过。
+
+最终整合后的接口验收见 `cpu_api_final.json`；补充的 llama 自动语言结果见 `llama-auto.json`。Mac 默认使用 Rust INT8、640ms 解码间隔、单实时会话，并按最多 160ms 的输入帧检测停顿。

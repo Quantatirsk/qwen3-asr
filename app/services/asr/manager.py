@@ -36,7 +36,7 @@ class ModelManager:
                 "kind": "model",
                 "name": "Confucius4-R2T2",
                 "engine": "r2t2",
-                "description": "CUDA R2T2 offline and realtime transcription",
+                "description": "R2T2 offline and realtime transcription",
                 "languages": ["zh", "en"],
                 "default": True,
                 "supports_realtime": True,
