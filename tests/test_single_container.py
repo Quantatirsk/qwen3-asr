@@ -130,7 +130,7 @@ class SingleContainerTest(unittest.TestCase):
 
     def test_health_sends_api_key_only_to_api(self):
         for url, expected in [
-            (launcher.API_URL, "Bearer test-key"),
+            (launcher.API_URL, "test-key"),
             (launcher.ENGINE_URL, None),
         ]:
             response = io.BytesIO(b'{"ready":true}')
@@ -141,7 +141,7 @@ class SingleContainerTest(unittest.TestCase):
                 ) as request:
                     self.assertTrue(launcher.healthy(url, "ready"))
                     self.assertEqual(
-                        request.call_args.args[0].get_header("Authorization"), expected
+                        request.call_args.args[0].get_header("X-nls-token"), expected
                     )
 
     def test_failed_start_stops_container_without_starting_api(self):

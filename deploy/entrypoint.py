@@ -32,7 +32,7 @@ def healthy(url: str, ready_key: str) -> bool:
     try:
         headers = {}
         if url == API_URL and os.environ.get("API_KEY"):
-            headers["Authorization"] = "Bearer " + os.environ["API_KEY"]
+            headers["X-NLS-Token"] = os.environ["API_KEY"].strip()
         request = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(request, timeout=3) as response:
             payload = json.load(response)

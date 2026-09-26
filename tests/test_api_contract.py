@@ -1,4 +1,6 @@
 import asyncio
+import io
+import os
 from dataclasses import replace
 import unittest
 from types import SimpleNamespace
@@ -12,6 +14,7 @@ from app.api.v1 import api_router
 from app.core.config import settings
 from app.services.asr.engines import ASRFullResult, ASRSegmentResult, WordToken
 from app.services.realtime.protocol import MODEL_ID, StreamError
+from deploy import entrypoint as launcher
 from app.utils.speaker_diarizer import SpeakerSegment
 
 
@@ -330,6 +333,32 @@ class APIContractTest(unittest.TestCase):
                     self.client.get("/stream/v1/asr/health").json()["model_loaded"]
                 )
         runtime.acquire_engine.assert_not_called()
+
+    def test_startup_probe_authenticates_to_the_health_route(self) -> None:
+        runtime = SimpleNamespace(
+            resolve_model_id=Mock(return_value=MODEL_ID),
+            get_loaded_model_ids=Mock(return_value=[MODEL_ID]),
+            get_memory_usage=Mock(return_value={}),
+        )
+
+        def fetch(
+            request: launcher.urllib.request.Request, timeout: float
+        ) -> io.BytesIO:
+            response = self.client.get(
+                "/stream/v1/asr/health", headers=dict(request.header_items())
+            )
+            body = io.BytesIO(response.content)
+            body.status = response.status_code
+            return body
+
+        with (
+            patch.dict(os.environ, {"API_KEY": "health-test-token"}),
+            patch.object(settings, "API_KEY", "health-test-token"),
+            patch("app.api.v1.asr.get_runtime_router", return_value=runtime),
+            patch("app.api.v1.asr.detect_device", return_value="cuda:0"),
+            patch.object(launcher.urllib.request, "urlopen", side_effect=fetch),
+        ):
+            self.assertTrue(launcher.healthy(launcher.API_URL, "model_loaded"))
 
     def test_realtime_auth_and_removed_chat_route(self):
         with patch.object(settings, "API_KEY", "secret-token-123"):
